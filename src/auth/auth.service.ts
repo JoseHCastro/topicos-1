@@ -169,29 +169,39 @@ export class AuthService {
       lastName: createStudentDto.lastName,
       role: createStudentDto.role,
       // Campos específicos de Student
-      ci: createStudentDto.ci,
-      nombre: createStudentDto.nombre,
-      apellido_paterno: createStudentDto.apellido_paterno,
-      apellido_materno: createStudentDto.apellido_materno,
-      fecha_nacimiento: createStudentDto.fecha_nacimiento,
-      telefono: createStudentDto.telefono,
-      estado: createStudentDto.estado,
+      studentCode: createStudentDto.studentCode,
+      nationalId: createStudentDto.nationalId,
+      birthDate: createStudentDto.birthDate,
+      phone: createStudentDto.phone,
+      status: createStudentDto.studentStatus,
     });
 
     return await this.studentRepository.save(student);
   }
 
   private async validateDataStudent(createStudentDto: CreateUserDto) {
-    const { ci } = createStudentDto;
+    const { studentCode, nationalId } = createStudentDto;
 
-    if (ci) {
+    if (studentCode) {
       const existingStudent = await this.studentRepository.findOne({
-        where: { ci },
+        where: { studentCode },
       });
 
       if (existingStudent) {
         throw new BadRequestException(
-          `El estudiante con CI: ${ci} ya existe`,
+          `El estudiante con código: ${studentCode} ya existe`,
+        );
+      }
+    }
+
+    if (nationalId) {
+      const existingStudentByNationalId = await this.studentRepository.findOne({
+        where: { nationalId },
+      });
+
+      if (existingStudentByNationalId) {
+        throw new BadRequestException(
+          `El estudiante con CI: ${nationalId} ya existe`,
         );
       }
     }
@@ -210,6 +220,9 @@ export class AuthService {
       role: createProfessorDto.role,
       // Campos específicos de Professor
       professorCode: createProfessorDto.professorCode,
+      nationalId: createProfessorDto.professorNationalId,
+      birthDate: createProfessorDto.professorBirthDate,
+      phone: createProfessorDto.professorPhone,
       department: createProfessorDto.department,
       status: createProfessorDto.professorStatus,
     });
@@ -218,7 +231,7 @@ export class AuthService {
   }
 
   private async validateDataProfessor(createProfessorDto: CreateUserDto) {
-    const { professorCode } = createProfessorDto;
+    const { professorCode, professorNationalId } = createProfessorDto;
 
     if (professorCode) {
       const existingProfessorByCode = await this.professorRepository.findOne({
@@ -228,6 +241,18 @@ export class AuthService {
       if (existingProfessorByCode) {
         throw new BadRequestException(
           `El docente con código: ${professorCode} ya existe`,
+        );
+      }
+    }
+
+    if (professorNationalId) {
+      const existingProfessorByNationalId = await this.professorRepository.findOne({
+        where: { nationalId: professorNationalId },
+      });
+
+      if (existingProfessorByNationalId) {
+        throw new BadRequestException(
+          `El docente con CI: ${professorNationalId} ya existe`,
         );
       }
     }

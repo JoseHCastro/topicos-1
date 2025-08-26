@@ -1,0 +1,1 @@
+export { GradeController } from './grade.controller';

@@ -5,6 +5,7 @@ import {
   IsNotEmpty,
   IsOptional,
   IsString,
+  IsDateString,
   Matches,
   MaxLength,
   MinLength,
@@ -51,43 +52,48 @@ export class CreateUserDto {
   @IsString()
   @IsOptional()
   @ValidateIf((o) => o.role === UserRole.STUDENT)
-  ci?: string;
+  studentCode?: string;
 
   @IsString()
   @IsOptional()
   @ValidateIf((o) => o.role === UserRole.STUDENT)
-  nombre?: string;
+  nationalId?: string;
+
+  @IsDateString()
+  @IsOptional()
+  @ValidateIf((o) => o.role === UserRole.STUDENT)
+  birthDate?: Date;
 
   @IsString()
   @IsOptional()
   @ValidateIf((o) => o.role === UserRole.STUDENT)
-  apellido_paterno?: string;
-
-  @IsString()
-  @IsOptional()
-  @ValidateIf((o) => o.role === UserRole.STUDENT)
-  apellido_materno?: string;
-
-  @IsString()
-  @IsOptional()
-  @ValidateIf((o) => o.role === UserRole.STUDENT)
-  fecha_nacimiento?: string;
-
-  @IsString()
-  @IsOptional()
-  @ValidateIf((o) => o.role === UserRole.STUDENT)
-  telefono?: string;
+  phone?: string;
 
   @IsEnum(StudentStatus)
   @IsOptional()
   @ValidateIf((o) => o.role === UserRole.STUDENT)
-  estado?: StudentStatus;
+  studentStatus?: StudentStatus;
 
   // Campos específicos de Professor
   @IsString()
   @IsOptional()
   @ValidateIf((o) => o.role === UserRole.PROFESSOR)
   professorCode?: string;
+
+  @IsString()
+  @IsOptional()
+  @ValidateIf((o) => o.role === UserRole.PROFESSOR)
+  professorNationalId?: string;
+
+  @IsDateString()
+  @IsOptional()
+  @ValidateIf((o) => o.role === UserRole.PROFESSOR)
+  professorBirthDate?: Date;
+
+  @IsString()
+  @IsOptional()
+  @ValidateIf((o) => o.role === UserRole.PROFESSOR)
+  professorPhone?: string;
 
   @IsString()
   @IsOptional()

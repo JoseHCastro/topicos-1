@@ -9,28 +9,22 @@ export enum StudentStatus {
 
 @ChildEntity()
 export class Student extends User {
-  @Column('varchar', { length: 100 })
-  ci: string;
+  @Column('varchar', { length: 20, unique: true })
+  studentCode: string; // Código del estudiante
 
   @Column('varchar', { length: 100 })
-  nombre: string;
+  nationalId: string; // CI o cédula de identidad
 
-  @Column('varchar', { length: 100 })
-  apellido_paterno: string;
+  @Column('date')
+  birthDate: Date;
 
-  @Column('varchar', { length: 100 })
-  apellido_materno: string;
-
-  @Column('varchar', { length: 100 })
-  fecha_nacimiento: string;
-
-  @Column('varchar', { length: 100 })
-  telefono: string;
+  @Column('varchar', { length: 15 })
+  phone: string;
 
   @Column({ type: 'enum', enum: StudentStatus, default: StudentStatus.ACTIVE })
-  estado: StudentStatus;
+  status: StudentStatus;
 
   @ManyToOne(() => Career)
-  @JoinColumn({ name: 'carrera_id' })
-  carrera: Career;
+  @JoinColumn({ name: 'career_id' })
+  career: Career;
 }

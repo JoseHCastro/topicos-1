@@ -8,9 +8,17 @@ export enum ProfessorStatus {
 
 @ChildEntity()
 export class Professor extends User {
-  // Solo campos esenciales para profesores
   @Column('varchar', { length: 20, unique: true })
   professorCode: string; // Código del docente
+
+  @Column('varchar', { length: 100 })
+  nationalId: string; // CI o cédula de identidad
+
+  @Column('date')
+  birthDate: Date;
+
+  @Column('varchar', { length: 15 })
+  phone: string;
 
   @Column('varchar', { length: 100, nullable: true })
   department?: string; // Departamento
