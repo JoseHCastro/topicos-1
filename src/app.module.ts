@@ -11,6 +11,7 @@ import { AcademicCalendarModule } from './academic-calendar/academic-calendar.mo
 import { CoursesModule } from './courses/courses.module';
 import { EnrollmentsModule } from './enrollments/enrollments.module';
 import { GradesModule } from './grades/grades.module';
+import { SeedModule } from './seed/seed.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { GradesModule } from './grades/grades.module';
     CoursesModule,
     EnrollmentsModule,
     GradesModule,
+    SeedModule,
   ],
   controllers: [AppController],
   providers: [AppService],
