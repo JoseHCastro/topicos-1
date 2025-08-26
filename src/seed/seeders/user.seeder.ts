@@ -60,7 +60,11 @@ export class UserSeeder implements SeederInterface {
 
   async clear(): Promise<void> {
     this.logger.log('🗑️ Clearing users...');
-    await this.userRepository.clear();
+    await this.userRepository
+      .createQueryBuilder()
+      .delete()
+      .where('type = :type', { type: 'User' })
+      .execute();
     this.logger.log('✅ Users cleared');
   }
 }

@@ -56,7 +56,11 @@ export class AdminSeeder implements SeederInterface {
 
   async clear(): Promise<void> {
     this.logger.log('🗑️ Clearing admins...');
-    await this.adminRepository.clear();
+    await this.adminRepository
+      .createQueryBuilder()
+      .delete()
+      .where('type = :type', { type: 'Admin' })
+      .execute();
     this.logger.log('✅ Admins cleared');
   }
 }

@@ -19,33 +19,83 @@ export class ProfessorSeeder implements SeederInterface {
 
     const professors = [
       {
-        email: 'prof.mathematics@example.com',
-        password: await bcrypt.hash('professor123', 10),
-        firstName: 'Carlos',
-        lastName: 'Matemático',
+        email: 'carlos.matemat@docente.uagrm.edu.bo',
+        password: await bcrypt.hash('profesor123', 10),
+        firstName: 'Carlos Eduardo',
+        lastName: 'Vásquez Morales',
         role: 'PROFESSOR',
-        professorCode: 'PROF001',
-        department: 'Mathematics',
+        professorCode: 'DOC001',
+        department: 'Departamento de Matemáticas',
         status: ProfessorStatus.ACTIVE,
       },
       {
-        email: 'prof.physics@example.com',
-        password: await bcrypt.hash('professor123', 10),
-        firstName: 'Ana',
-        lastName: 'Física',
+        email: 'ana.fisica@docente.uagrm.edu.bo',
+        password: await bcrypt.hash('profesor123', 10),
+        firstName: 'Ana María',
+        lastName: 'Gutiérrez Roca',
         role: 'PROFESSOR',
-        professorCode: 'PROF002',
-        department: 'Physics',
+        professorCode: 'DOC002',
+        department: 'Departamento de Física',
         status: ProfessorStatus.ACTIVE,
       },
       {
-        email: 'prof.chemistry@example.com',
-        password: await bcrypt.hash('professor123', 10),
-        firstName: 'Luis',
-        lastName: 'Química',
+        email: 'luis.programacion@docente.uagrm.edu.bo',
+        password: await bcrypt.hash('profesor123', 10),
+        firstName: 'Luis Fernando',
+        lastName: 'Mendoza Paz',
         role: 'PROFESSOR',
-        professorCode: 'PROF003',
-        department: 'Chemistry',
+        professorCode: 'DOC003',
+        department: 'Departamento de Informática',
+        status: ProfessorStatus.ACTIVE,
+      },
+      {
+        email: 'maria.sistemas@docente.uagrm.edu.bo',
+        password: await bcrypt.hash('profesor123', 10),
+        firstName: 'María del Carmen',
+        lastName: 'López Herrera',
+        role: 'PROFESSOR',
+        professorCode: 'DOC004',
+        department: 'Departamento de Sistemas',
+        status: ProfessorStatus.ACTIVE,
+      },
+      {
+        email: 'pedro.estructuras@docente.uagrm.edu.bo',
+        password: await bcrypt.hash('profesor123', 10),
+        firstName: 'Pedro Antonio',
+        lastName: 'Rivero Sánchez',
+        role: 'PROFESSOR',
+        professorCode: 'DOC005',
+        department: 'Departamento de Informática',
+        status: ProfessorStatus.ACTIVE,
+      },
+      {
+        email: 'jose.algoritmos@docente.uagrm.edu.bo',
+        password: await bcrypt.hash('profesor123', 10),
+        firstName: 'José Luis',
+        lastName: 'Fernández Castro',
+        role: 'PROFESSOR',
+        professorCode: 'DOC006',
+        department: 'Departamento de Informática',
+        status: ProfessorStatus.ACTIVE,
+      },
+      {
+        email: 'sofia.redes@docente.uagrm.edu.bo',
+        password: await bcrypt.hash('profesor123', 10),
+        firstName: 'Sofía Esperanza',
+        lastName: 'Martínez Villa',
+        role: 'PROFESSOR',
+        professorCode: 'DOC007',
+        department: 'Departamento de Redes y Comunicaciones',
+        status: ProfessorStatus.ACTIVE,
+      },
+      {
+        email: 'roberto.basedatos@docente.uagrm.edu.bo',
+        password: await bcrypt.hash('profesor123', 10),
+        firstName: 'Roberto Carlos',
+        lastName: 'Velasco Torrez',
+        role: 'PROFESSOR',
+        professorCode: 'DOC008',
+        department: 'Departamento de Informática',
         status: ProfessorStatus.INACTIVE,
       },
     ];
@@ -72,7 +122,11 @@ export class ProfessorSeeder implements SeederInterface {
 
   async clear(): Promise<void> {
     this.logger.log('🗑️ Clearing professors...');
-    await this.professorRepository.clear();
+    await this.professorRepository
+      .createQueryBuilder()
+      .delete()
+      .where('type = :type', { type: 'Professor' })
+      .execute();
     this.logger.log('✅ Professors cleared');
   }
 }

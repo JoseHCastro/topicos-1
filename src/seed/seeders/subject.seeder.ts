@@ -1,0 +1,761 @@
+import { Injectable, Logger } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Subject } from '../../programs/entities/subject.entity';
+import { StudyPlan } from '../../programs/entities/study-plan.entity';
+import { Level } from '../../catalogs/entities/level.entity';
+import { Career } from '../../programs/entities/career.entity';
+import { SeederInterface } from '../interfaces/seeder.interface';
+
+@Injectable()
+export class SubjectSeeder implements SeederInterface {
+  private readonly logger = new Logger(SubjectSeeder.name);
+
+  constructor(
+    @InjectRepository(Subject)
+    private readonly subjectRepository: Repository<Subject>,
+    @InjectRepository(StudyPlan)
+    private readonly studyPlanRepository: Repository<StudyPlan>,
+    @InjectRepository(Level)
+    private readonly levelRepository: Repository<Level>,
+    @InjectRepository(Career)
+    private readonly careerRepository: Repository<Career>,
+  ) {}
+
+  async run(): Promise<void> {
+    this.logger.log('🌱 Seeding subjects...');
+
+    // Obtener el plan de estudio vigente de Ingeniería Informática
+    const career = await this.careerRepository.findOne({
+      where: { codigo_carrera: '187-3' },
+    });
+
+    if (!career) {
+      this.logger.error('❌ Career not found. Run career seeder first.');
+      return;
+    }
+
+    const studyPlan = await this.studyPlanRepository.findOne({
+      where: { id_carrera: career.id_carrera, estado: 'vigente' },
+    });
+
+    if (!studyPlan) {
+      this.logger.error('❌ Study plan not found. Run study plan seeder first.');
+      return;
+    }
+
+    // Obtener niveles
+    const levels = await this.levelRepository.find();
+    if (levels.length === 0) {
+      this.logger.error('❌ Levels not found. Run level seeder first.');
+      return;
+    }
+
+    const subjects = [
+      // PRIMER SEMESTRE
+      {
+        codigo_materia: 'LIN100',
+        nombre_materia: 'Inglés Técnico I',
+        descripcion: 'Inglés técnico orientado a la informática',
+        creditos: 4,
+        horas_teoricas: 2,
+        horas_practicas: 2,
+        horas_laboratorio: 0,
+        semestre_recomendado: 1,
+        es_obligatoria: true,
+        estado: 'activa',
+        nivel_numero: 1,
+      },
+      {
+        codigo_materia: 'FIS100',
+        nombre_materia: 'Física I',
+        descripcion: 'Fundamentos de física mecánica',
+        creditos: 5,
+        horas_teoricas: 4,
+        horas_practicas: 2,
+        horas_laboratorio: 0,
+        semestre_recomendado: 1,
+        es_obligatoria: true,
+        estado: 'activa',
+        nivel_numero: 1,
+      },
+      {
+        codigo_materia: 'INF110',
+        nombre_materia: 'Introducción a la Informática',
+        descripcion: 'Conceptos básicos de informática y computación',
+        creditos: 4,
+        horas_teoricas: 2,
+        horas_practicas: 2,
+        horas_laboratorio: 2,
+        semestre_recomendado: 1,
+        es_obligatoria: true,
+        estado: 'activa',
+        nivel_numero: 1,
+      },
+      {
+        codigo_materia: 'INF119',
+        nombre_materia: 'Estructuras Discretas',
+        descripcion: 'Matemática discreta aplicada a la informática',
+        creditos: 5,
+        horas_teoricas: 4,
+        horas_practicas: 2,
+        horas_laboratorio: 0,
+        semestre_recomendado: 1,
+        es_obligatoria: true,
+        estado: 'activa',
+        nivel_numero: 1,
+      },
+      {
+        codigo_materia: 'MAT101',
+        nombre_materia: 'Cálculo I',
+        descripcion: 'Límites, derivadas e integrales',
+        creditos: 5,
+        horas_teoricas: 4,
+        horas_practicas: 2,
+        horas_laboratorio: 0,
+        semestre_recomendado: 1,
+        es_obligatoria: true,
+        estado: 'activa',
+        nivel_numero: 1,
+      },
+
+      // SEGUNDO SEMESTRE
+      {
+        codigo_materia: 'LIN101',
+        nombre_materia: 'Inglés Técnico II',
+        descripcion: 'Continuación del inglés técnico',
+        creditos: 4,
+        horas_teoricas: 2,
+        horas_practicas: 2,
+        horas_laboratorio: 0,
+        semestre_recomendado: 2,
+        es_obligatoria: true,
+        estado: 'activa',
+        nivel_numero: 2,
+      },
+      {
+        codigo_materia: 'FIS102',
+        nombre_materia: 'Física II',
+        descripcion: 'Electricidad y magnetismo',
+        creditos: 5,
+        horas_teoricas: 4,
+        horas_practicas: 2,
+        horas_laboratorio: 0,
+        semestre_recomendado: 2,
+        es_obligatoria: true,
+        estado: 'activa',
+        nivel_numero: 2,
+      },
+      {
+        codigo_materia: 'INF120',
+        nombre_materia: 'Programación I',
+        descripcion: 'Fundamentos de programación',
+        creditos: 5,
+        horas_teoricas: 3,
+        horas_practicas: 2,
+        horas_laboratorio: 2,
+        semestre_recomendado: 2,
+        es_obligatoria: true,
+        estado: 'activa',
+        nivel_numero: 2,
+      },
+      {
+        codigo_materia: 'MAT103',
+        nombre_materia: 'Álgebra Lineal',
+        descripcion: 'Vectores, matrices y sistemas lineales',
+        creditos: 5,
+        horas_teoricas: 4,
+        horas_practicas: 2,
+        horas_laboratorio: 0,
+        semestre_recomendado: 2,
+        es_obligatoria: true,
+        estado: 'activa',
+        nivel_numero: 2,
+      },
+      {
+        codigo_materia: 'MAT102',
+        nombre_materia: 'Cálculo II',
+        descripcion: 'Integrales múltiples y series',
+        creditos: 5,
+        horas_teoricas: 4,
+        horas_practicas: 2,
+        horas_laboratorio: 0,
+        semestre_recomendado: 2,
+        es_obligatoria: true,
+        estado: 'activa',
+        nivel_numero: 2,
+      },
+
+      // TERCER SEMESTRE
+      {
+        codigo_materia: 'ADM100',
+        nombre_materia: 'Administración',
+        descripcion: 'Principios básicos de administración',
+        creditos: 4,
+        horas_teoricas: 3,
+        horas_practicas: 2,
+        horas_laboratorio: 0,
+        semestre_recomendado: 3,
+        es_obligatoria: true,
+        estado: 'activa',
+        nivel_numero: 3,
+      },
+      {
+        codigo_materia: 'FISICA200',
+        nombre_materia: 'Física III',
+        descripcion: 'Ondas y óptica',
+        creditos: 5,
+        horas_teoricas: 4,
+        horas_practicas: 2,
+        horas_laboratorio: 0,
+        semestre_recomendado: 3,
+        es_obligatoria: true,
+        estado: 'activa',
+        nivel_numero: 3,
+      },
+      {
+        codigo_materia: 'INF211',
+        nombre_materia: 'Arquitectura de Computadoras',
+        descripcion: 'Organización y arquitectura de sistemas computacionales',
+        creditos: 5,
+        horas_teoricas: 3,
+        horas_practicas: 2,
+        horas_laboratorio: 2,
+        semestre_recomendado: 3,
+        es_obligatoria: true,
+        estado: 'activa',
+        nivel_numero: 3,
+      },
+      {
+        codigo_materia: 'INF210',
+        nombre_materia: 'Programación II',
+        descripcion: 'Programación orientada a objetos',
+        creditos: 5,
+        horas_teoricas: 3,
+        horas_practicas: 2,
+        horas_laboratorio: 3,
+        semestre_recomendado: 3,
+        es_obligatoria: true,
+        estado: 'activa',
+        nivel_numero: 3,
+      },
+      {
+        codigo_materia: 'MAT207',
+        nombre_materia: 'Ecuaciones Diferenciales',
+        descripcion: 'Ecuaciones diferenciales ordinarias y parciales',
+        creditos: 5,
+        horas_teoricas: 4,
+        horas_practicas: 2,
+        horas_laboratorio: 0,
+        semestre_recomendado: 3,
+        es_obligatoria: true,
+        estado: 'activa',
+        nivel_numero: 3,
+      },
+
+      // CUARTO SEMESTRE
+      {
+        codigo_materia: 'ADM200',
+        nombre_materia: 'Contabilidad',
+        descripcion: 'Fundamentos de contabilidad general',
+        creditos: 4,
+        horas_teoricas: 3,
+        horas_practicas: 2,
+        horas_laboratorio: 0,
+        semestre_recomendado: 4,
+        es_obligatoria: true,
+        estado: 'activa',
+        nivel_numero: 4,
+      },
+      {
+        codigo_materia: 'INF221',
+        nombre_materia: 'Programación Ensamblador',
+        descripcion: 'Programación en lenguaje ensamblador',
+        creditos: 5,
+        horas_teoricas: 3,
+        horas_practicas: 2,
+        horas_laboratorio: 2,
+        semestre_recomendado: 4,
+        es_obligatoria: true,
+        estado: 'activa',
+        nivel_numero: 4,
+      },
+      {
+        codigo_materia: 'INF220',
+        nombre_materia: 'Estructura de Datos I',
+        descripcion: 'Estructuras de datos fundamentales',
+        creditos: 5,
+        horas_teoricas: 3,
+        horas_practicas: 2,
+        horas_laboratorio: 3,
+        semestre_recomendado: 4,
+        es_obligatoria: true,
+        estado: 'activa',
+        nivel_numero: 4,
+      },
+      {
+        codigo_materia: 'MAT202',
+        nombre_materia: 'Probabilidades y Estadísticas I',
+        descripcion: 'Teoría de probabilidades y estadística descriptiva',
+        creditos: 5,
+        horas_teoricas: 4,
+        horas_practicas: 2,
+        horas_laboratorio: 0,
+        semestre_recomendado: 4,
+        es_obligatoria: true,
+        estado: 'activa',
+        nivel_numero: 4,
+      },
+      {
+        codigo_materia: 'MAT205',
+        nombre_materia: 'Métodos Numéricos',
+        descripcion: 'Métodos numéricos para resolución de problemas',
+        creditos: 5,
+        horas_teoricas: 3,
+        horas_practicas: 2,
+        horas_laboratorio: 2,
+        semestre_recomendado: 4,
+        es_obligatoria: true,
+        estado: 'activa',
+        nivel_numero: 4,
+      },
+
+      // QUINTO SEMESTRE
+      {
+        codigo_materia: 'ELC101',
+        nombre_materia: 'Modelado y Simulación de Sistemas',
+        descripcion: 'Técnicas de modelado y simulación de sistemas complejos',
+        creditos: 4,
+        horas_teoricas: 3,
+        horas_practicas: 2,
+        horas_laboratorio: 0,
+        semestre_recomendado: 5,
+        es_obligatoria: false,
+        estado: 'activa',
+        nivel_numero: 5,
+      },
+      {
+        codigo_materia: 'INF318',
+        nombre_materia: 'Programación Lógica y Funcional',
+        descripcion: 'Paradigmas de programación lógica y funcional',
+        creditos: 5,
+        horas_teoricas: 3,
+        horas_practicas: 2,
+        horas_laboratorio: 2,
+        semestre_recomendado: 5,
+        es_obligatoria: true,
+        estado: 'activa',
+        nivel_numero: 5,
+      },
+      {
+        codigo_materia: 'INF310',
+        nombre_materia: 'Estructura de Datos II',
+        descripcion: 'Estructuras de datos avanzadas y algoritmos',
+        creditos: 5,
+        horas_teoricas: 3,
+        horas_practicas: 2,
+        horas_laboratorio: 3,
+        semestre_recomendado: 5,
+        es_obligatoria: true,
+        estado: 'activa',
+        nivel_numero: 5,
+      },
+      {
+        codigo_materia: 'INF319',
+        nombre_materia: 'Lenguaje Formales',
+        descripcion: 'Teoría de lenguajes formales y autómatas',
+        creditos: 5,
+        horas_teoricas: 4,
+        horas_practicas: 2,
+        horas_laboratorio: 0,
+        semestre_recomendado: 5,
+        es_obligatoria: true,
+        estado: 'activa',
+        nivel_numero: 5,
+      },
+      {
+        codigo_materia: 'INF312',
+        nombre_materia: 'Base de Datos I',
+        descripcion: 'Fundamentos de bases de datos relacionales',
+        creditos: 5,
+        horas_teoricas: 3,
+        horas_practicas: 2,
+        horas_laboratorio: 2,
+        semestre_recomendado: 5,
+        es_obligatoria: true,
+        estado: 'activa',
+        nivel_numero: 5,
+      },
+      {
+        codigo_materia: 'MAT302',
+        nombre_materia: 'Probabilidades y Estadísticas II',
+        descripcion: 'Estadística inferencial y análisis de datos',
+        creditos: 5,
+        horas_teoricas: 3,
+        horas_practicas: 2,
+        horas_laboratorio: 2,
+        semestre_recomendado: 5,
+        es_obligatoria: true,
+        estado: 'activa',
+        nivel_numero: 5,
+      },
+
+      // SEXTO SEMESTRE
+      {
+        codigo_materia: 'ELC104',
+        nombre_materia: 'Procesamiento de Aplicaciones de Tiempo Real',
+        descripcion: 'Sistemas de tiempo real y procesamiento en tiempo real',
+        creditos: 4,
+        horas_teoricas: 3,
+        horas_practicas: 2,
+        horas_laboratorio: 0,
+        semestre_recomendado: 6,
+        es_obligatoria: false,
+        estado: 'activa',
+        nivel_numero: 6,
+      },
+      {
+        codigo_materia: 'INF329',
+        nombre_materia: 'Compiladores',
+        descripcion: 'Diseño e implementación de compiladores',
+        creditos: 5,
+        horas_teoricas: 3,
+        horas_practicas: 2,
+        horas_laboratorio: 3,
+        semestre_recomendado: 6,
+        es_obligatoria: true,
+        estado: 'activa',
+        nivel_numero: 6,
+      },
+      {
+        codigo_materia: 'INF323',
+        nombre_materia: 'Sistemas Operativos I',
+        descripcion: 'Fundamentos de sistemas operativos',
+        creditos: 5,
+        horas_teoricas: 3,
+        horas_practicas: 2,
+        horas_laboratorio: 2,
+        semestre_recomendado: 6,
+        es_obligatoria: true,
+        estado: 'activa',
+        nivel_numero: 6,
+      },
+      {
+        codigo_materia: 'INF322',
+        nombre_materia: 'Base de Datos II',
+        descripcion: 'Bases de datos avanzadas y administración',
+        creditos: 5,
+        horas_teoricas: 3,
+        horas_practicas: 2,
+        horas_laboratorio: 2,
+        semestre_recomendado: 6,
+        es_obligatoria: true,
+        estado: 'activa',
+        nivel_numero: 6,
+      },
+      {
+        codigo_materia: 'INF342',
+        nombre_materia: 'Sistema de Información I',
+        descripcion: 'Análisis y diseño de sistemas de información',
+        creditos: 5,
+        horas_teoricas: 3,
+        horas_practicas: 2,
+        horas_laboratorio: 2,
+        semestre_recomendado: 6,
+        es_obligatoria: true,
+        estado: 'activa',
+        nivel_numero: 6,
+      },
+      {
+        codigo_materia: 'MAT329',
+        nombre_materia: 'Investigación Operativa I',
+        descripcion: 'Métodos de investigación operativa y optimización',
+        creditos: 5,
+        horas_teoricas: 3,
+        horas_practicas: 2,
+        horas_laboratorio: 2,
+        semestre_recomendado: 6,
+        es_obligatoria: true,
+        estado: 'activa',
+        nivel_numero: 6,
+      },
+
+      // SÉPTIMO SEMESTRE
+      {
+        codigo_materia: 'ELC105',
+        nombre_materia: 'Sistemas Distribuidos',
+        descripcion: 'Diseño y desarrollo de sistemas distribuidos',
+        creditos: 4,
+        horas_teoricas: 3,
+        horas_practicas: 2,
+        horas_laboratorio: 0,
+        semestre_recomendado: 7,
+        es_obligatoria: false,
+        estado: 'activa',
+        nivel_numero: 7,
+      },
+      {
+        codigo_materia: 'INF418',
+        nombre_materia: 'Inteligencia Artificial',
+        descripcion: 'Fundamentos de inteligencia artificial',
+        creditos: 5,
+        horas_teoricas: 3,
+        horas_practicas: 2,
+        horas_laboratorio: 2,
+        semestre_recomendado: 7,
+        es_obligatoria: true,
+        estado: 'activa',
+        nivel_numero: 7,
+      },
+      {
+        codigo_materia: 'INF433',
+        nombre_materia: 'Redes I',
+        descripcion: 'Fundamentos de redes de computadoras',
+        creditos: 5,
+        horas_teoricas: 3,
+        horas_practicas: 2,
+        horas_laboratorio: 2,
+        semestre_recomendado: 7,
+        es_obligatoria: true,
+        estado: 'activa',
+        nivel_numero: 7,
+      },
+      {
+        codigo_materia: 'INF413',
+        nombre_materia: 'Sistemas Operativos II',
+        descripcion: 'Sistemas operativos avanzados y concurrencia',
+        creditos: 5,
+        horas_teoricas: 3,
+        horas_practicas: 2,
+        horas_laboratorio: 2,
+        semestre_recomendado: 7,
+        es_obligatoria: true,
+        estado: 'activa',
+        nivel_numero: 7,
+      },
+      {
+        codigo_materia: 'INF412',
+        nombre_materia: 'Sistema de Información II',
+        descripcion: 'Implementación y mantenimiento de sistemas de información',
+        creditos: 5,
+        horas_teoricas: 3,
+        horas_practicas: 2,
+        horas_laboratorio: 2,
+        semestre_recomendado: 7,
+        es_obligatoria: true,
+        estado: 'activa',
+        nivel_numero: 7,
+      },
+      {
+        codigo_materia: 'MAT419',
+        nombre_materia: 'Investigación Operativa II',
+        descripcion: 'Investigación operativa aplicada y métodos avanzados',
+        creditos: 5,
+        horas_teoricas: 3,
+        horas_practicas: 2,
+        horas_laboratorio: 2,
+        semestre_recomendado: 7,
+        es_obligatoria: true,
+        estado: 'activa',
+        nivel_numero: 7,
+      },
+
+      // OCTAVO SEMESTRE
+      {
+        codigo_materia: 'ELC107',
+        nombre_materia: 'Criptografía y Seguridad',
+        descripcion: 'Fundamentos de criptografía y seguridad informática',
+        creditos: 4,
+        horas_teoricas: 3,
+        horas_practicas: 2,
+        horas_laboratorio: 0,
+        semestre_recomendado: 8,
+        es_obligatoria: false,
+        estado: 'activa',
+        nivel_numero: 8,
+      },
+      {
+        codigo_materia: 'INF423',
+        nombre_materia: 'Redes II',
+        descripcion: 'Redes avanzadas y protocolos de comunicación',
+        creditos: 5,
+        horas_teoricas: 3,
+        horas_practicas: 2,
+        horas_laboratorio: 2,
+        semestre_recomendado: 8,
+        es_obligatoria: true,
+        estado: 'activa',
+        nivel_numero: 8,
+      },
+      {
+        codigo_materia: 'INF428',
+        nombre_materia: 'Sistemas Expertos',
+        descripcion: 'Desarrollo de sistemas expertos y bases de conocimiento',
+        creditos: 5,
+        horas_teoricas: 3,
+        horas_practicas: 2,
+        horas_laboratorio: 2,
+        semestre_recomendado: 8,
+        es_obligatoria: true,
+        estado: 'activa',
+        nivel_numero: 8,
+      },
+      {
+        codigo_materia: 'INF422',
+        nombre_materia: 'Ingeniería de Software',
+        descripcion: 'Metodologías de desarrollo de software',
+        creditos: 5,
+        horas_teoricas: 3,
+        horas_practicas: 2,
+        horas_laboratorio: 2,
+        semestre_recomendado: 8,
+        es_obligatoria: true,
+        estado: 'activa',
+        nivel_numero: 8,
+      },
+      {
+        codigo_materia: 'INF442',
+        nombre_materia: 'Sistema de Información Geográfica',
+        descripcion: 'Sistemas de información geográfica y cartografía digital',
+        creditos: 5,
+        horas_teoricas: 3,
+        horas_practicas: 2,
+        horas_laboratorio: 2,
+        semestre_recomendado: 8,
+        es_obligatoria: true,
+        estado: 'activa',
+        nivel_numero: 8,
+      },
+      {
+        codigo_materia: 'ECO449',
+        nombre_materia: 'Preparación y Evaluación de Proyectos',
+        descripcion: 'Formulación y evaluación de proyectos de inversión',
+        creditos: 4,
+        horas_teoricas: 3,
+        horas_practicas: 2,
+        horas_laboratorio: 0,
+        semestre_recomendado: 8,
+        es_obligatoria: true,
+        estado: 'activa',
+        nivel_numero: 8,
+      },
+
+      // NOVENO SEMESTRE
+      {
+        codigo_materia: 'INF511',
+        nombre_materia: 'Taller de Grado I',
+        descripcion: 'Desarrollo del proyecto de grado - Fase I',
+        creditos: 8,
+        horas_teoricas: 2,
+        horas_practicas: 4,
+        horas_laboratorio: 6,
+        semestre_recomendado: 9,
+        es_obligatoria: true,
+        estado: 'activa',
+        nivel_numero: 9,
+      },
+      {
+        codigo_materia: 'INF512',
+        nombre_materia: 'Ingeniería de Software II',
+        descripcion: 'Metodologías ágiles y gestión de proyectos de software',
+        creditos: 5,
+        horas_teoricas: 3,
+        horas_practicas: 2,
+        horas_laboratorio: 2,
+        semestre_recomendado: 9,
+        es_obligatoria: true,
+        estado: 'activa',
+        nivel_numero: 9,
+      },
+      {
+        codigo_materia: 'INF513',
+        nombre_materia: 'Tecnología Web',
+        descripcion: 'Desarrollo de aplicaciones web modernas',
+        creditos: 5,
+        horas_teoricas: 3,
+        horas_practicas: 2,
+        horas_laboratorio: 3,
+        semestre_recomendado: 9,
+        es_obligatoria: true,
+        estado: 'activa',
+        nivel_numero: 9,
+      },
+      {
+        codigo_materia: 'INF552',
+        nombre_materia: 'Arquitectura de Software II',
+        descripcion: 'Patrones de diseño y arquitecturas de software',
+        creditos: 5,
+        horas_teoricas: 3,
+        horas_practicas: 2,
+        horas_laboratorio: 2,
+        semestre_recomendado: 9,
+        es_obligatoria: true,
+        estado: 'activa',
+        nivel_numero: 9,
+      },
+
+      // DÉCIMO SEMESTRE
+      {
+        codigo_materia: 'GDI001',
+        nombre_materia: 'Graduación Directa',
+        descripcion: 'Modalidad de graduación directa',
+        creditos: 12,
+        horas_teoricas: 0,
+        horas_practicas: 0,
+        horas_laboratorio: 12,
+        semestre_recomendado: 10,
+        es_obligatoria: false,
+        estado: 'activa',
+        nivel_numero: 10,
+      },
+      {
+        codigo_materia: 'GRL001',
+        nombre_materia: 'Modalidad de Graduación',
+        descripcion: 'Modalidades alternativas de graduación',
+        creditos: 12,
+        horas_teoricas: 0,
+        horas_practicas: 0,
+        horas_laboratorio: 12,
+        semestre_recomendado: 10,
+        es_obligatoria: false,
+        estado: 'activa',
+        nivel_numero: 10,
+      },
+    ];
+
+    for (const subjectData of subjects) {
+      const existingSubject = await this.subjectRepository.findOne({
+        where: { codigo_materia: subjectData.codigo_materia },
+      });
+
+      if (!existingSubject) {
+        // Buscar el nivel correspondiente
+        const level = levels.find(l => l.numero_nivel === subjectData.nivel_numero);
+        if (!level) {
+          this.logger.error(`❌ Level ${subjectData.nivel_numero} not found`);
+          continue;
+        }
+
+        const { nivel_numero, ...subjectDataWithoutLevel } = subjectData;
+        const subject = this.subjectRepository.create({
+          ...subjectDataWithoutLevel,
+          planEstudio: studyPlan,
+          nivel: level,
+        });
+
+        await this.subjectRepository.save(subject);
+        this.logger.log(`✅ Created subject: ${subjectData.nombre_materia} (${subjectData.codigo_materia})`);
+      } else {
+        this.logger.log(`⚠️ Subject already exists: ${subjectData.codigo_materia}`);
+      }
+    }
+
+    this.logger.log('✅ Subjects seeding completed');
+  }
+
+  async clear(): Promise<void> {
+    this.logger.log('🗑️ Clearing subjects...');
+    await this.subjectRepository.createQueryBuilder().delete().execute();
+    this.logger.log('✅ Subjects cleared');
+  }
+}

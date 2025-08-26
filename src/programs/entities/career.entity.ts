@@ -6,7 +6,7 @@ export class Career {
   @PrimaryGeneratedColumn('increment')
   id_carrera: number;
 
-  @Column('varchar', { length: 10 })
+  @Column('varchar', { length: 20 })
   codigo_carrera: string;
 
   @Column('varchar', { length: 150 })
@@ -18,7 +18,7 @@ export class Career {
   @Column('int')
   duracion_semestres: number;
 
-  @Column('varchar', { length: 10 })
+  @Column('varchar', { length: 100 })
   titulo_otorgado: string;
 
   @Column({ type: 'enum', enum: ['presencial', 'virtual'], default: 'presencial' })
