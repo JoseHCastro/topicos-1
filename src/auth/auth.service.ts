@@ -169,25 +169,29 @@ export class AuthService {
       lastName: createStudentDto.lastName,
       role: createStudentDto.role,
       // Campos específicos de Student
-      studentId: createStudentDto.studentId,
-      career: createStudentDto.career,
-      status: createStudentDto.studentStatus,
+      ci: createStudentDto.ci,
+      nombre: createStudentDto.nombre,
+      apellido_paterno: createStudentDto.apellido_paterno,
+      apellido_materno: createStudentDto.apellido_materno,
+      fecha_nacimiento: createStudentDto.fecha_nacimiento,
+      telefono: createStudentDto.telefono,
+      estado: createStudentDto.estado,
     });
 
     return await this.studentRepository.save(student);
   }
 
   private async validateDataStudent(createStudentDto: CreateUserDto) {
-    const { studentId } = createStudentDto;
+    const { ci } = createStudentDto;
 
-    if (studentId) {
+    if (ci) {
       const existingStudent = await this.studentRepository.findOne({
-        where: { studentId },
+        where: { ci },
       });
 
       if (existingStudent) {
         throw new BadRequestException(
-          `El estudiante con ID: ${studentId} ya existe`,
+          `El estudiante con CI: ${ci} ya existe`,
         );
       }
     }

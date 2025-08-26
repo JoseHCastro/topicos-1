@@ -51,17 +51,37 @@ export class CreateUserDto {
   @IsString()
   @IsOptional()
   @ValidateIf((o) => o.role === UserRole.STUDENT)
-  studentId?: string;
+  ci?: string;
 
   @IsString()
   @IsOptional()
   @ValidateIf((o) => o.role === UserRole.STUDENT)
-  career?: string;
+  nombre?: string;
+
+  @IsString()
+  @IsOptional()
+  @ValidateIf((o) => o.role === UserRole.STUDENT)
+  apellido_paterno?: string;
+
+  @IsString()
+  @IsOptional()
+  @ValidateIf((o) => o.role === UserRole.STUDENT)
+  apellido_materno?: string;
+
+  @IsString()
+  @IsOptional()
+  @ValidateIf((o) => o.role === UserRole.STUDENT)
+  fecha_nacimiento?: string;
+
+  @IsString()
+  @IsOptional()
+  @ValidateIf((o) => o.role === UserRole.STUDENT)
+  telefono?: string;
 
   @IsEnum(StudentStatus)
   @IsOptional()
   @ValidateIf((o) => o.role === UserRole.STUDENT)
-  studentStatus?: StudentStatus;
+  estado?: StudentStatus;
 
   // Campos específicos de Professor
   @IsString()
