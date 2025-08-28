@@ -18,15 +18,15 @@ export class EnrollmentDetailService {
 
   async findAll() {
     return await this.enrollmentDetailRepository.find({
-      relations: ['inscripcion', 'grupoMateria'],
-      order: { fecha_inscripcion_materia: 'DESC' },
+      relations: ['enrollment', 'course_section'],
+      order: { created_at: 'DESC' },
     });
   }
 
-  async findOne(id: number) {
+  async findOne(id: string) {
     const enrollmentDetail = await this.enrollmentDetailRepository.findOne({
-      where: { id_detalle: id },
-      relations: ['inscripcion', 'grupoMateria'],
+      where: { id: id },
+      relations: ['enrollment', 'course_section'],
     });
 
     if (!enrollmentDetail) {
@@ -36,9 +36,9 @@ export class EnrollmentDetailService {
     return enrollmentDetail;
   }
 
-  async update(id: number, updateEnrollmentDetailDto: UpdateEnrollmentDetailDto) {
+  async update(id: string, updateEnrollmentDetailDto: UpdateEnrollmentDetailDto) {
     const enrollmentDetail = await this.enrollmentDetailRepository.preload({
-      id_detalle: id,
+      id: id,
       ...updateEnrollmentDetailDto,
     });
 

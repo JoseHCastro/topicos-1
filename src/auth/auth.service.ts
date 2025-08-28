@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Student, User, Professor, Admin } from './entities';
+import { Student, User, Teacher, Admin } from './entities';
 import * as bcrypt from 'bcrypt';
 import {
   ChangePasswordDto,
@@ -23,8 +23,8 @@ export class AuthService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
-    @InjectRepository(Professor)
-    private readonly professorRepository: Repository<Professor>,
+    @InjectRepository(Teacher)
+    private readonly teacherRepository: Repository<Teacher>,
     @InjectRepository(Student)
     private readonly studentRepository: Repository<Student>,
     @InjectRepository(Admin)
@@ -42,7 +42,7 @@ export class AuthService {
       expectedStudent: 'STUDENT',
       expectedProfessor: 'PROFESSOR',
       isStudent: role === UserRole.STUDENT,
-      isProfessor: role === UserRole.PROFESSOR
+      isProfessor: role === UserRole.TEACHER
     });
 
     const existingUser = await this.userRepository.findOne({
@@ -61,16 +61,16 @@ export class AuthService {
       const student = await this.createStudent(createUserDto, hashedPassword);
       return {
         user: this.parseUser(student),
-        token: this.getJwtToken({ email: student.email, id: student.id, rol: student.role }),
+        token: this.getJwtToken({ email: student.email, id: student.id, rol: student.user_type }),
       };
     }
 
-    if (role === UserRole.PROFESSOR) {
-      console.log('✅ Creando PROFESSOR');
-      const professor = await this.createProfessor(createUserDto, hashedPassword);
+    if (role === UserRole.TEACHER) {
+      console.log('✅ Creando TEACHER');
+      const teacher = await this.createTeacher(createUserDto, hashedPassword);
       return {
-        user: this.parseUser(professor),
-        token: this.getJwtToken({ email: professor.email, id: professor.id, rol: professor.role }),
+        user: this.parseUser(teacher),
+        token: this.getJwtToken({ email: teacher.email, id: teacher.id, rol: teacher.user_type }),
       };
     }
 
@@ -79,7 +79,7 @@ export class AuthService {
       const admin = await this.createAdmin(createUserDto, hashedPassword);
       return {
         user: this.parseUser(admin),
-        token: this.getJwtToken({ email: admin.email, id: admin.id, rol: admin.role }),
+        token: this.getJwtToken({ email: admin.email, id: admin.id, rol: admin.user_type }),
       };
     }
 
@@ -91,7 +91,7 @@ export class AuthService {
 
     const user = await this.userRepository.findOne({
       where: { email },
-      select: { email: true, password: true, id: true, firstName: true, role: true },
+      select: { email: true, password: true, id: true, first_name: true, user_type: true },
     });
 
     if (!user) {
@@ -105,8 +105,8 @@ export class AuthService {
     return {
       id: user.id,
       email: user.email,
-      firstName: user.firstName,
-      token: this.getJwtToken({ email: user.email, id: user.id, rol: user.role }),
+      firstName: user.first_name,
+      token: this.getJwtToken({ email: user.email, id: user.id, rol: user.user_type }),
     };
   }
 
@@ -130,7 +130,7 @@ export class AuthService {
   checkAuthStatus(user: User) {
     return {
       ...this.parseUser(user),
-      token: this.getJwtToken({ email: user.email, id: user.id, rol: user.role }),
+      token: this.getJwtToken({ email: user.email, id: user.id, rol: user.user_type }),
     };
   }
 
@@ -154,26 +154,24 @@ export class AuthService {
   }
 
   private parseUser(user: User) {
-    const { password: _, ...userWithoutPassword } = user;
+    // Removemos campos sensibles antes de retornar
+    const { password, ...userWithoutPassword } = user as any;
     return { ...userWithoutPassword };
   }
 
   private async createStudent(createStudentDto: CreateUserDto, password: string) {
-    await this.validateDataStudent(createStudentDto);
-
     const student = this.studentRepository.create({
       // Campos heredados de User
       email: createStudentDto.email,
       password: password,
-      firstName: createStudentDto.firstName,
-      lastName: createStudentDto.lastName,
-      role: createStudentDto.role,
+      first_name: createStudentDto.firstName,
+      last_name: createStudentDto.lastName,
+      user_type: 'Student',
       // Campos específicos de Student
-      studentCode: createStudentDto.studentCode,
-      nationalId: createStudentDto.nationalId,
-      birthDate: createStudentDto.birthDate,
-      phone: createStudentDto.phone,
-      status: createStudentDto.studentStatus,
+      code: createStudentDto.studentCode,
+      enrolled_at: new Date(),
+      birth_date: createStudentDto.birthDate,
+      sex: 'M',
     });
 
     return await this.studentRepository.save(student);
@@ -184,7 +182,7 @@ export class AuthService {
 
     if (studentCode) {
       const existingStudent = await this.studentRepository.findOne({
-        where: { studentCode },
+        where: { code: studentCode },
       });
 
       if (existingStudent) {
@@ -194,6 +192,8 @@ export class AuthService {
       }
     }
 
+    // Temporalmente comentado
+    /*
     if (nationalId) {
       const existingStudentByNationalId = await this.studentRepository.findOne({
         where: { nationalId },
@@ -205,58 +205,30 @@ export class AuthService {
         );
       }
     }
+    */
     return true;
   }
 
-  private async createProfessor(createProfessorDto: CreateUserDto, password: string) {
-    await this.validateDataProfessor(createProfessorDto);
-
-    const professor = this.professorRepository.create({
+  private async createTeacher(createTeacherDto: CreateUserDto, password: string) {
+    const teacher = this.teacherRepository.create({
       // Campos heredados de User
-      email: createProfessorDto.email,
+      email: createTeacherDto.email,
       password: password,
-      firstName: createProfessorDto.firstName,
-      lastName: createProfessorDto.lastName,
-      role: createProfessorDto.role,
-      // Campos específicos de Professor
-      professorCode: createProfessorDto.professorCode,
-      nationalId: createProfessorDto.professorNationalId,
-      birthDate: createProfessorDto.professorBirthDate,
-      phone: createProfessorDto.professorPhone,
-      department: createProfessorDto.department,
-      status: createProfessorDto.professorStatus,
+      first_name: createTeacherDto.firstName,
+      last_name: createTeacherDto.lastName,
+      user_type: 'Teacher',
+      // Campos específicos de Teacher
+      category: 'Regular',
+      workload: 'FullTime',
+      contract_type: 'Permanent',
+      hired_at: new Date(),
     });
 
-    return await this.professorRepository.save(professor);
+    return await this.teacherRepository.save(teacher);
   }
 
-  private async validateDataProfessor(createProfessorDto: CreateUserDto) {
-    const { professorCode, professorNationalId } = createProfessorDto;
-
-    if (professorCode) {
-      const existingProfessorByCode = await this.professorRepository.findOne({
-        where: { professorCode },
-      });
-
-      if (existingProfessorByCode) {
-        throw new BadRequestException(
-          `El docente con código: ${professorCode} ya existe`,
-        );
-      }
-    }
-
-    if (professorNationalId) {
-      const existingProfessorByNationalId = await this.professorRepository.findOne({
-        where: { nationalId: professorNationalId },
-      });
-
-      if (existingProfessorByNationalId) {
-        throw new BadRequestException(
-          `El docente con CI: ${professorNationalId} ya existe`,
-        );
-      }
-    }
-
+  private async validateDataTeacher(createTeacherDto: CreateUserDto) {
+    // Validaciones temporalmente removidas
     return true;
   }
 
@@ -265,11 +237,9 @@ export class AuthService {
       // Campos heredados de User
       email: createAdminDto.email,
       password: password,
-      firstName: createAdminDto.firstName,
-      lastName: createAdminDto.lastName,
-      role: createAdminDto.role,
-      // Campos específicos de Admin
-      isActive: true,
+      first_name: createAdminDto.firstName,
+      last_name: createAdminDto.lastName,
+      user_type: 'Admin',
     });
     return await this.adminRepository.save(admin);
   }

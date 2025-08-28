@@ -1,1 +1,0 @@
-export { Grade } from './grade.entity';

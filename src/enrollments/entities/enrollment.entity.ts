@@ -1,30 +1,51 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, JoinColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, JoinColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 import { Student } from '../../auth/entities/student.entity';
-import { Period } from '../../academic-calendar/entities/period.entity';
+import { Term } from '../../calendar/entities/term.entity';
 import { EnrollmentDetail } from './enrollment-detail.entity';
 
-@Entity('inscripcion')
+@Entity('enrollment')
 export class Enrollment {
-  @PrimaryGeneratedColumn('increment')
-  id_inscripcion: number;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
-  @Column('timestamp')
-  fecha_inscripcion: Date;
+  @Column('uuid')
+  student_id: string;
 
-  @Column({ type: 'enum', enum: ['regular', 'segunda', 'final'] })
-  tipo_inscripcion: string;
+  @Column('uuid')
+  term_id: string;
 
-  @Column({ type: 'enum', enum: ['activa', 'cancelada', 'finalizada'] })
-  estado: string;
+  @Column('date')
+  enrolled_on: Date;
+
+  @Column('varchar', { length: 20 })
+  state: string; // Active, Canceled
+
+  @Column('varchar', { length: 20, nullable: true })
+  origin: string; // Regular, Extra
+
+  @Column('varchar', { length: 200, nullable: true })
+  note: string;
+
+  @CreateDateColumn({
+    type: 'timestamptz',
+    name: 'created_at'
+  })
+  created_at: Date;
+
+  @UpdateDateColumn({
+    type: 'timestamptz',
+    name: 'updated_at'
+  })
+  updated_at: Date;
 
   @ManyToOne(() => Student)
-  @JoinColumn({ name: 'id_estudiante' })
-  estudiante: Student;
+  @JoinColumn({ name: 'student_id' })
+  student: Student;
 
-  @ManyToOne(() => Period)
-  @JoinColumn({ name: 'id_periodo' })
-  periodo: Period;
+  @ManyToOne(() => Term)
+  @JoinColumn({ name: 'term_id' })
+  term: Term;
 
-  @OneToMany(() => EnrollmentDetail, detail => detail.inscripcion)
-  detalles: EnrollmentDetail[];
+  @OneToMany(() => EnrollmentDetail, detail => detail.enrollment, { cascade: true })
+  enrollment_details: EnrollmentDetail[];
 }

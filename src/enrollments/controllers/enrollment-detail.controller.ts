@@ -5,7 +5,7 @@ import {
   Body,
   Patch,
   Param,
-  ParseIntPipe,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import { EnrollmentDetailService } from '../services';
 import { CreateEnrollmentDetailDto, UpdateEnrollmentDetailDto } from '../dto';
@@ -30,14 +30,14 @@ export class EnrollmentDetailController {
 
   @Get(':id')
   @Auth(ValidRoles.ADMIN, ValidRoles.STUDENT, ValidRoles.PROFESSOR)
-  findOne(@Param('id', ParseIntPipe) id: number) {
+  findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.enrollmentDetailService.findOne(id);
   }
 
   @Patch(':id')
   @Auth(ValidRoles.ADMIN, ValidRoles.STUDENT, ValidRoles.PROFESSOR)
   update(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() updateEnrollmentDetailDto: UpdateEnrollmentDetailDto,
   ) {
     return this.enrollmentDetailService.update(id, updateEnrollmentDetailDto);

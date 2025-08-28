@@ -1,14 +1,14 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Subject } from '../entities';
+import { Course } from '../entities';
 import { CreateSubjectDto, UpdateSubjectDto } from '../dto';
 
 @Injectable()
 export class SubjectService {
   constructor(
-    @InjectRepository(Subject)
-    private readonly subjectRepository: Repository<Subject>,
+    @InjectRepository(Course)
+    private readonly subjectRepository: Repository<Course>,
   ) {}
 
   async create(createSubjectDto: CreateSubjectDto) {
@@ -18,15 +18,15 @@ export class SubjectService {
 
   async findAll() {
     return await this.subjectRepository.find({
-      relations: ['planEstudio', 'nivel', 'prerequisitos'],
-      order: { semestre_recomendado: 'ASC', nombre_materia: 'ASC' },
+      relations: ['study_plan', 'level', 'prerequisites_as_main'],
+      order: { name: 'ASC' },
     });
   }
 
-  async findOne(id: number) {
+  async findOne(id: string) {
     const subject = await this.subjectRepository.findOne({
-      where: { id_materia: id },
-      relations: ['planEstudio', 'nivel', 'prerequisitos'],
+      where: { id: id },
+      relations: ['study_plan', 'level', 'prerequisites_as_main'],
     });
 
     if (!subject) {
@@ -36,9 +36,9 @@ export class SubjectService {
     return subject;
   }
 
-  async update(id: number, updateSubjectDto: UpdateSubjectDto) {
+  async update(id: string, updateSubjectDto: UpdateSubjectDto) {
     const subject = await this.subjectRepository.preload({
-      id_materia: id,
+      id: id,
       ...updateSubjectDto,
     });
 

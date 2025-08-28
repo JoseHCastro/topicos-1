@@ -5,7 +5,7 @@ import {
   Body,
   Patch,
   Param,
-  ParseIntPipe,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import { StudyPlanService } from '../services';
 import { CreateStudyPlanDto, UpdateStudyPlanDto } from '../dto';
@@ -30,14 +30,14 @@ export class StudyPlanController {
 
   @Get(':id')
   @Auth(ValidRoles.ADMIN, ValidRoles.STUDENT, ValidRoles.PROFESSOR)
-  findOne(@Param('id', ParseIntPipe) id: number) {
+  findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.studyPlanService.findOne(id);
   }
 
   @Patch(':id')
   @Auth(ValidRoles.ADMIN, ValidRoles.STUDENT, ValidRoles.PROFESSOR)
   update(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() updateStudyPlanDto: UpdateStudyPlanDto,
   ) {
     return this.studyPlanService.update(id, updateStudyPlanDto);

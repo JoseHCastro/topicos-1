@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Classroom } from '../../courses/entities/classroom.entity';
+import { Classroom } from '../../facilities/entities';
 import { SeederInterface } from '../interfaces/seeder.interface';
 
 @Injectable()
@@ -19,142 +19,106 @@ export class ClassroomSeeder implements SeederInterface {
     const classrooms = [
       // Edificio FICO - Aulas tradicionales
       {
-        codigo_aula: 'FICO-101',
-        nombre_aula: 'Salon Auditorio',
-        capacidad: 120,
-        edificio: 'Facultad Integral del Chaco',
-        piso: 4,
-        tipo_aula: 'tradicional',
-        equipamiento: 'Proyector, sistema de audio, pizarra digital, aire acondicionado',
-        estado: 'disponible',
+        code: 'FICO-101',
+        building: 'Building A',
+        campus: 'Main Campus',
+        capacity: 120,
+        room_type: 'Lecture',
       },
       {
-        codigo_aula: 'FICO-102',
-        nombre_aula: 'Aula 102',
-        capacidad: 80,
-        edificio: 'Facultad Integral del Chaco',
-        piso: 1,
-        tipo_aula: 'tradicional',
-        equipamiento: 'Proyector, pizarra acrílica, aire acondicionado',
-        estado: 'disponible',
+        code: 'FICO-102',
+        building: 'Building A',
+        campus: 'Main Campus',
+        capacity: 80,
+        room_type: 'Lecture',
       },
       {
-        codigo_aula: 'FICO-103',
-        nombre_aula: 'Aula 103',
-        capacidad: 60,
-        edificio: 'Facultad Integral del Chaco',
-        piso: 1,
-        tipo_aula: 'tradicional',
-        equipamiento: 'Proyector, pizarra acrílica',
-        estado: 'disponible',
+        code: 'FICO-103',
+        building: 'Building A',
+        campus: 'Main Campus',
+        capacity: 60,
+        room_type: 'Lecture',
       },
       {
-        codigo_aula: 'FICO-201',
-        nombre_aula: 'Aula 201',
-        capacidad: 70,
-        edificio: 'Facultad Integral del Chaco',
-        piso: 2,
-        tipo_aula: 'tradicional',
-        equipamiento: 'Proyector, pizarra acrílica, aire acondicionado',
-        estado: 'disponible',
+        code: 'FICO-201',
+        building: 'Building A',
+        campus: 'Main Campus',
+        capacity: 70,
+        room_type: 'Lecture',
       },
       {
-        codigo_aula: 'FICO-202',
-        nombre_aula: 'Aula 202',
-        capacidad: 65,
-        edificio: 'Facultad Integral del Chaco',
-        piso: 2,
-        tipo_aula: 'tradicional',
-        equipamiento: 'Proyector, pizarra acrílica',
-        estado: 'disponible',
+        code: 'FICO-202',
+        building: 'Building A',
+        campus: 'Main Campus',
+        capacity: 65,
+        room_type: 'Lecture',
       },
 
       // Laboratorios de Informática
       {
-        codigo_aula: 'LAB-INF1',
-        nombre_aula: 'Laboratorio de Programación 1',
-        capacidad: 30,
-        edificio: 'Facultad Integral del Chaco',
-        piso: 1,
-        tipo_aula: 'laboratorio',
-        equipamiento: '30 computadoras, proyector, servidor local, software de desarrollo',
-        estado: 'disponible',
+        code: 'LAB-INF1',
+        building: 'Building B',
+        campus: 'Main Campus',
+        capacity: 30,
+        room_type: 'Lab',
       },
       {
-        codigo_aula: 'LAB-INF2',
-        nombre_aula: 'Laboratorio de Programación 2',
-        capacidad: 25,
-        edificio: 'Facultad Integral del Chaco',
-        piso: 1,
-        tipo_aula: 'laboratorio',
-        equipamiento: '25 computadoras, proyector, software especializado',
-        estado: 'disponible',
+        code: 'LAB-INF2',
+        building: 'Building B',
+        campus: 'Main Campus',
+        capacity: 25,
+        room_type: 'Lab',
       },
       {
-        codigo_aula: 'LAB-INF3',
-        nombre_aula: 'Laboratorio de Redes',
-        capacidad: 20,
-        edificio: 'Facultad Integral del Chaco',
-        piso: 2,
-        tipo_aula: 'laboratorio',
-        equipamiento: 'Equipos de red, switches, routers, simuladores',
-        estado: 'disponible',
+        code: 'LAB-INF3',
+        building: 'Building B',
+        campus: 'Main Campus',
+        capacity: 20,
+        room_type: 'Lab',
       },
       {
-        codigo_aula: 'LAB-HW',
-        nombre_aula: 'Laboratorio de Hardware',
-        capacidad: 15,
-        edificio: 'Facultad Integral del Chaco',
-        piso: 2,
-        tipo_aula: 'laboratorio',
-        equipamiento: 'Herramientas, componentes de hardware, bancos de trabajo',
-        estado: 'mantenimiento',
+        code: 'LAB-HW',
+        building: 'Building B',
+        campus: 'Main Campus',
+        capacity: 15,
+        room_type: 'Lab',
       },
       {
-        codigo_aula: 'LAB-SIS',
-        nombre_aula: 'Laboratorio de Sistemas',
-        capacidad: 35,
-        edificio: 'Facultad Integral del Chaco',
-        piso: 3,
-        tipo_aula: 'laboratorio',
-        equipamiento: '35 computadoras, servidores, software de gestión',
-        estado: 'disponible',
+        code: 'LAB-SIS',
+        building: 'Building B',
+        campus: 'Main Campus',
+        capacity: 35,
+        room_type: 'Lab',
       },
 
       // Aulas del segundo piso
       {
-        codigo_aula: 'FICO-301',
-        nombre_aula: 'Aula de Seminarios',
-        capacidad: 40,
-        edificio: 'Facultad Integral del Chaco',
-        piso: 3,
-        tipo_aula: 'tradicional',
-        equipamiento: 'Mesa redonda, proyector, sistema de videoconferencia',
-        estado: 'disponible',
+        code: 'FICO-301',
+        building: 'Building A',
+        campus: 'Main Campus',
+        capacity: 40,
+        room_type: 'Lecture',
       },
       {
-        codigo_aula: 'FICO-302',
-        nombre_aula: 'Aula de Posgrado',
-        capacidad: 25,
-        edificio: 'Facultad Integral del Chaco',
-        piso: 3,
-        tipo_aula: 'tradicional',
-        equipamiento: 'Mobiliario ejecutivo, proyector, aire acondicionado',
-        estado: 'disponible',
+        code: 'FICO-302',
+        building: 'Building A',
+        campus: 'Main Campus',
+        capacity: 25,
+        room_type: 'Lecture',
       },
     ];
 
     for (const classroomData of classrooms) {
       const existingClassroom = await this.classroomRepository.findOne({
-        where: { codigo_aula: classroomData.codigo_aula },
+        where: { code: classroomData.code },
       });
 
       if (!existingClassroom) {
         const classroom = this.classroomRepository.create(classroomData);
         await this.classroomRepository.save(classroom);
-        this.logger.log(`✅ Created classroom: ${classroomData.nombre_aula} (${classroomData.codigo_aula})`);
+        this.logger.log(`✅ Created classroom: ${classroomData.code} - ${classroomData.building}`);
       } else {
-        this.logger.log(`⚠️ Classroom already exists: ${classroomData.codigo_aula}`);
+        this.logger.log(`⚠️ Classroom already exists: ${classroomData.code}`);
       }
     }
 

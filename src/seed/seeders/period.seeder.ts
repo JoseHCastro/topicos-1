@@ -1,8 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Period } from '../../academic-calendar/entities/period.entity';
-import { Management } from '../../academic-calendar/entities/management.entity';
+import { Term, AcademicYear } from '../../calendar/entities';
 import { SeederInterface } from '../interfaces/seeder.interface';
 
 @Injectable()
@@ -10,76 +9,70 @@ export class PeriodSeeder implements SeederInterface {
   private readonly logger = new Logger(PeriodSeeder.name);
 
   constructor(
-    @InjectRepository(Period)
-    private readonly periodRepository: Repository<Period>,
-    @InjectRepository(Management)
-    private readonly managementRepository: Repository<Management>,
+    @InjectRepository(Term)
+    private readonly termRepository: Repository<Term>,
+    @InjectRepository(AcademicYear)
+    private readonly academicYearRepository: Repository<AcademicYear>,
   ) {}
 
   async run(): Promise<void> {
-    this.logger.log('🌱 Seeding periods...');
+    this.logger.log('🌱 Seeding terms...');
 
-    // Obtener las gestiones existentes
-    const managements = await this.managementRepository.find();
+    // Obtener los años académicos existentes
+    const academicYears = await this.academicYearRepository.find();
 
-    if (managements.length === 0) {
-      this.logger.warn('⚠️ No managements found, skipping periods seeding');
+    if (academicYears.length === 0) {
+      this.logger.warn('⚠️ No academic years found, skipping terms seeding');
       return;
     }
 
-    for (const management of managements) {
+    for (const academicYear of academicYears) {
       // Primer período del año
-      const firstPeriod = {
-        id_gestion: management.id_gestion,
-        numero_periodo: 1,
-        nombre_periodo: 'Primer Semestre',
-        fecha_inicio: new Date(`${management.año}-02-01`),
-        fecha_fin: new Date(`${management.año}-06-30`),
-        fecha_inicio_inscripciones: new Date(`${management.año}-01-15`),
-        fecha_fin_inscripciones: new Date(`${management.año}-01-31`),
-        estado: management.año === 2024 ? 'activo' as const : 
-                management.año > 2024 ? 'planificado' as const : 'finalizado' as const,
+      const firstTerm = {
+        academic_year_id: academicYear.id,
+        name: `${academicYear.year}-I`,
+        start_date: new Date(`${academicYear.year}-02-01`),
+        end_date: new Date(`${academicYear.year}-06-30`),
+        status: academicYear.year === 2024 ? 'active' : 
+                academicYear.year > 2024 ? 'planned' : 'completed',
       };
 
       // Segundo período del año
-      const secondPeriod = {
-        id_gestion: management.id_gestion,
-        numero_periodo: 2,
-        nombre_periodo: 'Segundo Semestre',
-        fecha_inicio: new Date(`${management.año}-08-01`),
-        fecha_fin: new Date(`${management.año}-12-15`),
-        fecha_inicio_inscripciones: new Date(`${management.año}-07-15`),
-        fecha_fin_inscripciones: new Date(`${management.año}-07-31`),
-        estado: management.año === 2024 ? 'planificado' as const : 
-                management.año > 2024 ? 'planificado' as const : 'finalizado' as const,
+      const secondTerm = {
+        academic_year_id: academicYear.id,
+        name: `${academicYear.year}-II`,
+        start_date: new Date(`${academicYear.year}-08-01`),
+        end_date: new Date(`${academicYear.year}-12-15`),
+        status: academicYear.year === 2024 ? 'planned' : 
+                academicYear.year > 2024 ? 'planned' : 'completed',
       };
 
-      const periods = [firstPeriod, secondPeriod];
+      const terms = [firstTerm, secondTerm];
 
-      for (const periodData of periods) {
-        const existingPeriod = await this.periodRepository.findOne({
+      for (const termData of terms) {
+        const existingTerm = await this.termRepository.findOne({
           where: { 
-            id_gestion: periodData.id_gestion, 
-            numero_periodo: periodData.numero_periodo 
+            academic_year_id: termData.academic_year_id, 
+            name: termData.name 
           },
         });
 
-        if (!existingPeriod) {
-          const period = this.periodRepository.create(periodData);
-          await this.periodRepository.save(period);
-          this.logger.log(`✅ Created period: ${management.año} - ${periodData.nombre_periodo}`);
+        if (!existingTerm) {
+          const term = this.termRepository.create(termData);
+          await this.termRepository.save(term);
+          this.logger.log(`✅ Created term: ${termData.name}`);
         } else {
-          this.logger.log(`⚠️ Period already exists: ${management.año} - ${periodData.nombre_periodo}`);
+          this.logger.log(`⚠️ Term already exists: ${termData.name}`);
         }
       }
     }
 
-    this.logger.log('✅ Periods seeding completed');
+    this.logger.log('✅ Terms seeding completed');
   }
 
   async clear(): Promise<void> {
-    this.logger.log('🧹 Clearing periods...');
-    await this.periodRepository.createQueryBuilder().delete().execute();
-    this.logger.log('✅ Periods cleared');
+    this.logger.log('🧹 Clearing terms...');
+    await this.termRepository.createQueryBuilder().delete().execute();
+    this.logger.log('✅ Terms cleared');
   }
 }

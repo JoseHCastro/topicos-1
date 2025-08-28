@@ -1,0 +1,1 @@
+export { ClassroomController } from './classroom.controller';

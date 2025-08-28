@@ -5,7 +5,7 @@ import {
   Body,
   Patch,
   Param,
-  ParseIntPipe,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import { CareerService } from '../services';
 import { CreateCareerDto, UpdateCareerDto } from '../dto';
@@ -30,14 +30,14 @@ export class CareerController {
 
   @Get(':id')
   @Auth(ValidRoles.ADMIN, ValidRoles.STUDENT, ValidRoles.PROFESSOR)
-  findOne(@Param('id', ParseIntPipe) id: number) {
+  findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.careerService.findOne(id);
   }
 
   @Patch(':id')
   @Auth(ValidRoles.ADMIN, ValidRoles.STUDENT, ValidRoles.PROFESSOR)
   update(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() updateCareerDto: UpdateCareerDto,
   ) {
     return this.careerService.update(id, updateCareerDto);

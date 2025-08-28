@@ -1,29 +1,51 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn, Unique } from 'typeorm';
 import { Enrollment } from './enrollment.entity';
-import { SubjectGroup } from '../../courses/entities/subject-group.entity';
+import { CourseSection } from '../../teaching/entities/course-section.entity';
 
-@Entity('detalle')
+@Entity('enrollment_detail')
+@Unique(['enrollment_id', 'course_section_id'])
 export class EnrollmentDetail {
-  @PrimaryGeneratedColumn('increment')
-  id_detalle: number;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
-  @Column('int')
-  id_inscripcion: number;
+  @Column('uuid')
+  enrollment_id: string;
 
-  @Column('int')
-  id_grupo_materia: number;
+  @Column('uuid')
+  course_section_id: string;
 
-  @Column('timestamp')
-  fecha_inscripcion_materia: Date;
+  @Column('varchar', { length: 20 })
+  course_state: string; // Enrolled, Approved, Failed, Withdrawn
 
-  @Column({ type: 'enum', enum: ['inscrito', 'aprobado', 'reprobado'] })
-  estado_materia: string;
+  @Column('numeric', { precision: 5, scale: 2, nullable: true })
+  final_grade: number;
 
-  @ManyToOne(() => Enrollment, enrollment => enrollment.detalles)
-  @JoinColumn({ name: 'id_inscripcion' })
-  inscripcion: Enrollment;
+  @Column('smallint', { default: 1 })
+  attempts: number;
 
-  @ManyToOne(() => SubjectGroup)
-  @JoinColumn({ name: 'id_grupo_materia' })
-  grupoMateria: SubjectGroup;
+  @Column('date', { nullable: true })
+  closed_on: Date;
+
+  @Column('varchar', { length: 200, nullable: true })
+  remark: string;
+
+  @CreateDateColumn({
+    type: 'timestamptz',
+    name: 'created_at'
+  })
+  created_at: Date;
+
+  @UpdateDateColumn({
+    type: 'timestamptz',
+    name: 'updated_at'
+  })
+  updated_at: Date;
+
+  @ManyToOne(() => Enrollment, enrollment => enrollment.enrollment_details, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'enrollment_id' })
+  enrollment: Enrollment;
+
+  @ManyToOne(() => CourseSection)
+  @JoinColumn({ name: 'course_section_id' })
+  course_section: CourseSection;
 }

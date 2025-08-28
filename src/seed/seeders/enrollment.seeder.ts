@@ -3,7 +3,7 @@ import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Enrollment } from '../../enrollments/entities/enrollment.entity';
 import { Student } from '../../auth/entities/student.entity';
-import { Period } from '../../academic-calendar/entities/period.entity';
+import { Term } from '../../calendar/entities/term.entity';
 import { SeederInterface } from '../interfaces/seeder.interface';
 
 @Injectable()
@@ -15,56 +15,47 @@ export class EnrollmentSeeder implements SeederInterface {
     private readonly enrollmentRepository: Repository<Enrollment>,
     @InjectRepository(Student)
     private readonly studentRepository: Repository<Student>,
-    @InjectRepository(Period)
-    private readonly periodRepository: Repository<Period>,
+    @InjectRepository(Term)
+    private readonly termRepository: Repository<Term>,
   ) {}
 
   async run(): Promise<void> {
     this.logger.log('🌱 Seeding enrollments...');
 
     const students = await this.studentRepository.find();
-    const periods = await this.periodRepository.find({
-      where: { estado: 'activo' }
-    });
+    const terms = await this.termRepository.find();
 
-    if (students.length === 0 || periods.length === 0) {
-      this.logger.warn('⚠️ Missing required data (students or active periods), skipping enrollments seeding');
+    if (students.length === 0 || terms.length === 0) {
+      this.logger.warn('⚠️ Missing required data (students or terms), skipping enrollments seeding');
       return;
     }
 
-    const activePeriod = periods[0];
-    const enrollmentTypes = ['regular', 'segunda', 'final'];
-    const enrollmentStates = ['activa', 'cancelada', 'finalizada'];
+    const activeTerm = terms.find(t => t.status === 'active') || terms[0];
 
     // Crear inscripciones para cada estudiante
     for (const student of students) {
-      const enrollmentTypeIndex = Math.floor(Math.random() * enrollmentTypes.length);
-      const stateIndex = Math.floor(Math.random() * enrollmentStates.length);
-
       const enrollmentData = {
-        fecha_inscripcion: new Date(),
-        tipo_inscripcion: enrollmentTypes[enrollmentTypeIndex] as any,
-        estado: enrollmentStates[stateIndex] as any,
+        student_id: student.id,
+        term_id: activeTerm.id,
+        enrolled_on: new Date(),
+        state: 'Active',
+        origin: 'Regular',
+        note: `Enrollment for student ${student.first_name} ${student.last_name}`,
       };
 
       const existingEnrollment = await this.enrollmentRepository.findOne({
         where: {
-          estudiante: { id: student.id },
-          periodo: { id_periodo: activePeriod.id_periodo }
+          student_id: student.id,
+          term_id: activeTerm.id,
         },
-        relations: ['estudiante', 'periodo']
       });
 
       if (!existingEnrollment) {
-        const enrollment = this.enrollmentRepository.create({
-          ...enrollmentData,
-          estudiante: student,
-          periodo: activePeriod,
-        });
+        const enrollment = this.enrollmentRepository.create(enrollmentData);
         await this.enrollmentRepository.save(enrollment);
-        this.logger.log(`✅ Created enrollment for student: ${student.firstName} ${student.lastName}`);
+        this.logger.log(`✅ Created enrollment for student: ${student.first_name} ${student.last_name}`);
       } else {
-        this.logger.log(`⚠️ Enrollment already exists for student: ${student.firstName} ${student.lastName}`);
+        this.logger.log(`⚠️ Enrollment already exists for student: ${student.first_name} ${student.last_name}`);
       }
     }
 

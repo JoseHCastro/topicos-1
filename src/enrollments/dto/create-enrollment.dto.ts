@@ -1,27 +1,30 @@
 import {
   IsDateString,
   IsEnum,
-  IsNumber,
+  IsUUID,
   IsOptional,
-  Min,
+  IsString,
 } from 'class-validator';
 
 export class CreateEnrollmentDto {
+  @IsUUID()
+  student_id: string;
+
+  @IsUUID()
+  term_id: string;
+
   @IsDateString()
-  fecha_inscripcion: Date;
+  enrolled_on: Date;
 
-  @IsEnum(['regular', 'segunda', 'final'])
-  tipo_inscripcion: string;
-
-  @IsEnum(['activa', 'cancelada', 'finalizada'])
+  @IsEnum(['Active', 'Canceled'])
   @IsOptional()
-  estado?: string = 'activa';
+  state?: string = 'Active';
 
-  @IsNumber()
-  @Min(1)
-  id_estudiante: number;
+  @IsEnum(['Regular', 'Extra'])
+  @IsOptional()
+  origin?: string = 'Regular';
 
-  @IsNumber()
-  @Min(1)
-  id_periodo: number;
+  @IsString()
+  @IsOptional()
+  note?: string;
 }

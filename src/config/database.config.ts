@@ -1,11 +1,11 @@
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
-import { User, Student, Professor, Admin } from '../auth/entities';
-import { Level, Term } from '../catalogs/entities';
-import { Career, StudyPlan, Subject, Prerequisite } from '../programs/entities';
-import { Period, Management } from '../academic-calendar/entities';
-import { Classroom, Schedule, SubjectGroup } from '../courses/entities';
+import { User, Student, Teacher, Admin } from '../auth/entities';
+import { DegreeProgram, StudyPlan, Level, Course, Prerequisite } from '../programs/entities';
+import { AcademicYear, Term } from '../calendar/entities';
+import { Classroom } from '../facilities/entities';
+import { CourseSection, Schedule } from '../teaching/entities';
 import { Enrollment, EnrollmentDetail } from '../enrollments/entities';
-import { Grade } from '../grades/entities';
+import { Grade, AcademicProgress, CourseHistory } from '../assessments/entities';
 
 export const databaseConfig = (): TypeOrmModuleOptions => ({
   type: 'postgres',
@@ -15,13 +15,13 @@ export const databaseConfig = (): TypeOrmModuleOptions => ({
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME || 'uagrm_inscripciones',
   entities: [
-    User, Student, Professor, Admin,
-    Level, Term,
-    Career, StudyPlan, Subject, Prerequisite,
-    Period, Management,
-    Classroom, Schedule, SubjectGroup,
+    User, Student, Teacher, Admin,
+    DegreeProgram, StudyPlan, Level, Course, Prerequisite,
+    AcademicYear, Term,
+    Classroom,
+    CourseSection, Schedule,
     Enrollment, EnrollmentDetail,
-    Grade,
+    Grade, AcademicProgress, CourseHistory,
   ],
   synchronize: true,
   logging: process.env.NODE_ENV === 'development',

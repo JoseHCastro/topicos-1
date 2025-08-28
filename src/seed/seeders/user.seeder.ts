@@ -21,23 +21,29 @@ export class UserSeeder implements SeederInterface {
       {
         email: 'admin@example.com',
         password: await bcrypt.hash('admin123', 10),
-        firstName: 'System',
-        lastName: 'Administrator',
-        role: 'ADMIN',
+        first_name: 'System',
+        last_name: 'Administrator',
+        user_type: 'Admin',
+        phone: '+591-12345678',
+        status: 'Active',
       },
       {
         email: 'professor@example.com',
         password: await bcrypt.hash('professor123', 10),
-        firstName: 'John',
-        lastName: 'Professor',
-        role: 'PROFESSOR',
+        first_name: 'John',
+        last_name: 'Professor',
+        user_type: 'Teacher',
+        phone: '+591-87654321',
+        status: 'Active',
       },
       {
         email: 'student@example.com',
         password: await bcrypt.hash('student123', 10),
-        firstName: 'Jane',
-        lastName: 'Student',
-        role: 'STUDENT',
+        first_name: 'Jane',
+        last_name: 'Student',
+        user_type: 'Student',
+        phone: '+591-11223344',
+        status: 'Active',
       },
     ];
 
@@ -63,7 +69,9 @@ export class UserSeeder implements SeederInterface {
     await this.userRepository
       .createQueryBuilder()
       .delete()
-      .where('type = :type', { type: 'User' })
+      .where('user_type = :type', { type: 'Admin' })
+      .orWhere('user_type = :type2', { type2: 'Teacher' })
+      .orWhere('user_type = :type3', { type3: 'Student' })
       .execute();
     this.logger.log('✅ Users cleared');
   }

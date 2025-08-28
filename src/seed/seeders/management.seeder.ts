@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Management } from '../../academic-calendar/entities/management.entity';
+import { AcademicYear } from '../../calendar/entities';
 import { SeederInterface } from '../interfaces/seeder.interface';
 
 @Injectable()
@@ -9,64 +9,64 @@ export class ManagementSeeder implements SeederInterface {
   private readonly logger = new Logger(ManagementSeeder.name);
 
   constructor(
-    @InjectRepository(Management)
-    private readonly managementRepository: Repository<Management>,
+    @InjectRepository(AcademicYear)
+    private readonly academicYearRepository: Repository<AcademicYear>,
   ) {}
 
   async run(): Promise<void> {
-    this.logger.log('🌱 Seeding managements...');
+    this.logger.log('🌱 Seeding academic years...');
 
-    const managements = [
+    const academicYears = [
       {
-        año: 2025,
-        descripcion: 'Gestión Académica 2025',
-        fecha_inicio: new Date('2025-01-01'),
-        fecha_fin: new Date('2025-12-31'),
-        estado: 'planificada' as const,
+        year: 2025,
+        description: 'Academic Year 2025',
+        start_date: new Date('2025-01-01'),
+        end_date: new Date('2025-12-31'),
+        status: 'planned' as const,
       },
       {
-        año: 2024,
-        descripcion: 'Gestión Académica 2024',
-        fecha_inicio: new Date('2024-01-01'),
-        fecha_fin: new Date('2024-12-31'),
-        estado: 'activa' as const,
+        year: 2024,
+        description: 'Academic Year 2024',
+        start_date: new Date('2024-01-01'),
+        end_date: new Date('2024-12-31'),
+        status: 'active' as const,
       },
       {
-        año: 2023,
-        descripcion: 'Gestión Académica 2023',
-        fecha_inicio: new Date('2023-01-01'),
-        fecha_fin: new Date('2023-12-31'),
-        estado: 'finalizada' as const,
+        year: 2023,
+        description: 'Academic Year 2023',
+        start_date: new Date('2023-01-01'),
+        end_date: new Date('2023-12-31'),
+        status: 'completed' as const,
       },
       {
-        año: 2022,
-        descripcion: 'Gestión Académica 2022',
-        fecha_inicio: new Date('2022-01-01'),
-        fecha_fin: new Date('2022-12-31'),
-        estado: 'finalizada' as const,
+        year: 2022,
+        description: 'Academic Year 2022',
+        start_date: new Date('2022-01-01'),
+        end_date: new Date('2022-12-31'),
+        status: 'completed' as const,
       },
     ];
 
-    for (const managementData of managements) {
-      const existingManagement = await this.managementRepository.findOne({
-        where: { año: managementData.año },
+    for (const academicYearData of academicYears) {
+      const existingAcademicYear = await this.academicYearRepository.findOne({
+        where: { year: academicYearData.year },
       });
 
-      if (!existingManagement) {
-        const management = this.managementRepository.create(managementData);
-        await this.managementRepository.save(management);
-        this.logger.log(`✅ Created management: ${managementData.descripcion}`);
+      if (!existingAcademicYear) {
+        const academicYear = this.academicYearRepository.create(academicYearData);
+        await this.academicYearRepository.save(academicYear);
+        this.logger.log(`✅ Created academic year: ${academicYearData.description}`);
       } else {
-        this.logger.log(`⚠️ Management already exists: ${managementData.descripcion}`);
+        this.logger.log(`⚠️ Academic year already exists: ${academicYearData.description}`);
       }
     }
 
-    this.logger.log('✅ Managements seeding completed');
+    this.logger.log('✅ Academic years seeding completed');
   }
 
   async clear(): Promise<void> {
-    this.logger.log('🧹 Clearing managements...');
-    await this.managementRepository.createQueryBuilder().delete().execute();
-    this.logger.log('✅ Managements cleared');
+    this.logger.log('🧹 Clearing academic years...');
+    await this.academicYearRepository.createQueryBuilder().delete().execute();
+    this.logger.log('✅ Academic years cleared');
   }
 }

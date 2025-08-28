@@ -1,13 +1,13 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Career, StudyPlan, Subject, Prerequisite } from './entities';
+import { DegreeProgram, StudyPlan, Course, Prerequisite, Level } from './entities';
 import { CareerService, StudyPlanService, SubjectService, PrerequisiteService } from './services';
 import { CareerController, StudyPlanController, SubjectController, PrerequisiteController } from './controllers';
 import { AuthModule } from '../auth/auth.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Career, StudyPlan, Subject, Prerequisite]),
+    TypeOrmModule.forFeature([DegreeProgram, StudyPlan, Course, Prerequisite, Level]),
     AuthModule,
   ],
   controllers: [CareerController, StudyPlanController, SubjectController, PrerequisiteController],

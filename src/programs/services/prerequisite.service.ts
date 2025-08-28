@@ -18,15 +18,15 @@ export class PrerequisiteService {
 
   async findAll() {
     return await this.prerequisiteRepository.find({
-      relations: ['materia', 'materiaPrerequisito'],
-      order: { fecha_creacion: 'DESC' },
+      relations: ['main_course', 'required_course'],
+      order: { created_at: 'DESC' },
     });
   }
 
-  async findOne(id: number) {
+  async findOne(id: string) {
     const prerequisite = await this.prerequisiteRepository.findOne({
-      where: { id_prerequisito: id },
-      relations: ['materia', 'materiaPrerequisito'],
+      where: { id: id },
+      relations: ['main_course', 'required_course'],
     });
 
     if (!prerequisite) {
@@ -36,9 +36,9 @@ export class PrerequisiteService {
     return prerequisite;
   }
 
-  async update(id: number, updatePrerequisiteDto: UpdatePrerequisiteDto) {
+  async update(id: string, updatePrerequisiteDto: UpdatePrerequisiteDto) {
     const prerequisite = await this.prerequisiteRepository.preload({
-      id_prerequisito: id,
+      id: id,
       ...updatePrerequisiteDto,
     });
 

@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Level } from '../../catalogs/entities/level.entity';
+import { Level } from '../../programs/entities/level.entity';
 import { SeederInterface } from '../interfaces/seeder.interface';
 
 @Injectable()
@@ -18,68 +18,58 @@ export class LevelSeeder implements SeederInterface {
 
     const levels = [
       {
-        numero_nivel: 1,
-        nombre_nivel: 'Primer Semestre',
-        descripcion: 'Materias introductorias y fundamentales para la carrera',
+        name: 'Primer Semestre',
+        order: 1,
       },
       {
-        numero_nivel: 2,
-        nombre_nivel: 'Segundo Semestre',
-        descripcion: 'Continuación de materias básicas con mayor profundidad',
+        name: 'Segundo Semestre',
+        order: 2,
       },
       {
-        numero_nivel: 3,
-        nombre_nivel: 'Tercer Semestre',
-        descripcion: 'Materias intermedias que consolidan conocimientos básicos',
+        name: 'Tercer Semestre',
+        order: 3,
       },
       {
-        numero_nivel: 4,
-        nombre_nivel: 'Cuarto Semestre',
-        descripcion: 'Materias especializadas del área de informática',
+        name: 'Cuarto Semestre',
+        order: 4,
       },
       {
-        numero_nivel: 5,
-        nombre_nivel: 'Quinto Semestre',
-        descripcion: 'Materias avanzadas con enfoque práctico',
+        name: 'Quinto Semestre',
+        order: 5,
       },
       {
-        numero_nivel: 6,
-        nombre_nivel: 'Sexto Semestre',
-        descripcion: 'Materias de especialización y proyectos aplicados',
+        name: 'Sexto Semestre',
+        order: 6,
       },
       {
-        numero_nivel: 7,
-        nombre_nivel: 'Séptimo Semestre',
-        descripcion: 'Materias avanzadas de la especialización elegida',
+        name: 'Séptimo Semestre',
+        order: 7,
       },
       {
-        numero_nivel: 8,
-        nombre_nivel: 'Octavo Semestre',
-        descripcion: 'Materias de profundización y desarrollo de proyectos',
+        name: 'Octavo Semestre',
+        order: 8,
       },
       {
-        numero_nivel: 9,
-        nombre_nivel: 'Noveno Semestre',
-        descripcion: 'Trabajo de grado y materias electivas',
+        name: 'Noveno Semestre',
+        order: 9,
       },
       {
-        numero_nivel: 10,
-        nombre_nivel: 'Décimo Semestre',
-        descripcion: 'Finalización del trabajo de grado y modalidad de graduación',
+        name: 'Décimo Semestre',
+        order: 10,
       },
     ];
 
     for (const levelData of levels) {
       const existingLevel = await this.levelRepository.findOne({
-        where: { numero_nivel: levelData.numero_nivel },
+        where: { order: levelData.order },
       });
 
       if (!existingLevel) {
         const level = this.levelRepository.create(levelData);
         await this.levelRepository.save(level);
-        this.logger.log(`✅ Created level: ${levelData.nombre_nivel}`);
+        this.logger.log(`✅ Created level: ${levelData.name}`);
       } else {
-        this.logger.log(`⚠️ Level already exists: ${levelData.nombre_nivel}`);
+        this.logger.log(`⚠️ Level already exists: ${levelData.name}`);
       }
     }
 

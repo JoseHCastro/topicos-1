@@ -18,15 +18,15 @@ export class StudyPlanService {
 
   async findAll() {
     return await this.studyPlanRepository.find({
-      relations: ['carrera', 'materias'],
-      order: { año_aprobacion: 'DESC' },
+      relations: ['degree_program', 'courses'],
+      order: { created_at: 'DESC' },
     });
   }
 
-  async findOne(id: number) {
+  async findOne(id: string) {
     const studyPlan = await this.studyPlanRepository.findOne({
-      where: { id_plan_estudio: id },
-      relations: ['carrera', 'materias'],
+      where: { id: id },
+      relations: ['degree_program', 'courses'],
     });
 
     if (!studyPlan) {
@@ -36,9 +36,9 @@ export class StudyPlanService {
     return studyPlan;
   }
 
-  async update(id: number, updateStudyPlanDto: UpdateStudyPlanDto) {
+  async update(id: string, updateStudyPlanDto: UpdateStudyPlanDto) {
     const studyPlan = await this.studyPlanRepository.preload({
-      id_plan_estudio: id,
+      id: id,
       ...updateStudyPlanDto,
     });
 

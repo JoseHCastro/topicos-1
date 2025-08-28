@@ -1,8 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Repository } from 'typeorm';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Grade } from '../../grades/entities/grade.entity';
-import { EnrollmentDetail } from '../../enrollments/entities/enrollment-detail.entity';
+import { Grade } from '../../assessments/entities';
+import { Student } from '../../auth/entities/student.entity';
+import { CourseSection } from '../../teaching/entities/course-section.entity';
 import { SeederInterface } from '../interfaces/seeder.interface';
 
 @Injectable()
@@ -12,98 +13,82 @@ export class GradeSeeder implements SeederInterface {
   constructor(
     @InjectRepository(Grade)
     private readonly gradeRepository: Repository<Grade>,
-    @InjectRepository(EnrollmentDetail)
-    private readonly enrollmentDetailRepository: Repository<EnrollmentDetail>,
+    @InjectRepository(Student)
+    private readonly studentRepository: Repository<Student>,
+    @InjectRepository(CourseSection)
+    private readonly courseSectionRepository: Repository<CourseSection>,
   ) {}
 
   async run(): Promise<void> {
     this.logger.log('🌱 Seeding grades...');
 
-    const enrollmentDetails = await this.enrollmentDetailRepository.find({
-      where: { estado_materia: 'inscrito' }
-    });
+    const students = await this.studentRepository.find();
+    const courseSections = await this.courseSectionRepository.find();
 
-    if (enrollmentDetails.length === 0) {
-      this.logger.warn('⚠️ No enrolled subjects found, skipping grades seeding');
+    if (students.length === 0 || courseSections.length === 0) {
+      this.logger.warn('⚠️ Missing required data (students or course sections), skipping grades seeding');
       return;
     }
 
-    for (const enrollmentDetail of enrollmentDetails) {
-      const existingGrade = await this.gradeRepository.findOne({
-        where: { detalle: { id_detalle: enrollmentDetail.id_detalle } },
-        relations: ['detalle']
-      });
+    const assessmentTypes = ['Midterm1', 'Midterm2', 'Final', 'Assignment1', 'Project'];
 
-      if (!existingGrade) {
-        // Generar notas aleatorias realistas
-        const primerParcial = this.generateRandomGrade();
-        const segundoParcial = this.generateRandomGrade();
-        const examenFinal = this.generateRandomGrade();
-        const trabajosPracticos = this.generateRandomGrade();
+    for (const student of students) {
+      const selectedSections = this.getRandomSections(courseSections, Math.min(3, courseSections.length));
 
-        // Calcular nota final (promedio ponderado)
-        const notaFinal = this.calculateFinalGrade(
-          primerParcial,
-          segundoParcial,
-          examenFinal,
-          trabajosPracticos
-        );
+      for (const courseSection of selectedSections) {
+        for (const assessment of assessmentTypes) {
+          const existingGrade = await this.gradeRepository.findOne({
+            where: {
+              course_section_id: courseSection.id,
+              student_id: student.id,
+              assessment: assessment,
+            },
+          });
 
-        const gradeData = {
-          primer_parcial: primerParcial,
-          segundo_parcial: segundoParcial,
-          examen_final: examenFinal,
-          trabajos_practicos: trabajosPracticos,
-          nota_final: notaFinal,
-          observaciones: notaFinal >= 51 ? 'Aprobado' : 'Reprobado',
-          fecha_registro: new Date(),
-          detalle: enrollmentDetail,
-        };
+          if (!existingGrade) {
+            const score = Math.floor(Math.random() * 100);
+            const gradeData = {
+              course_section_id: courseSection.id,
+              student_id: student.id,
+              assessment: assessment,
+              weight: this.getAssessmentWeight(assessment),
+              score: score,
+              recorded_at: new Date(),
+            };
 
-        const grade = this.gradeRepository.create(gradeData);
-        await this.gradeRepository.save(grade);
-
-        // Actualizar estado del detalle de inscripción
-        enrollmentDetail.estado_materia = notaFinal >= 51 ? 'aprobado' : 'reprobado';
-        await this.enrollmentDetailRepository.save(enrollmentDetail);
-
-        this.logger.log(`✅ Created grade for enrollment detail ${enrollmentDetail.id_detalle}: ${notaFinal.toFixed(2)}`);
-      } else {
-        this.logger.log(`⚠️ Grade already exists for enrollment detail ${enrollmentDetail.id_detalle}`);
+            const grade = this.gradeRepository.create(gradeData);
+            await this.gradeRepository.save(grade);
+            this.logger.log(`✅ Created grade: ${student.first_name} ${student.last_name} - ${assessment}: ${score}`);
+          }
+        }
       }
     }
 
     this.logger.log('✅ Grades seeding completed');
   }
 
-  private generateRandomGrade(): number {
-    // Generar notas entre 0 y 100, con tendencia hacia valores medios
-    const random = Math.random();
-    if (random < 0.1) return Math.floor(Math.random() * 30); // 10% notas bajas (0-29)
-    if (random < 0.3) return Math.floor(Math.random() * 21) + 30; // 20% notas regulares (30-50)
-    if (random < 0.7) return Math.floor(Math.random() * 25) + 51; // 40% notas buenas (51-75)
-    return Math.floor(Math.random() * 25) + 76; // 30% notas altas (76-100)
+  private getRandomSections(courseSections: any[], count: number): any[] {
+    const shuffled = [...courseSections].sort(() => 0.5 - Math.random());
+    return shuffled.slice(0, count);
   }
 
-  private calculateFinalGrade(
-    primerParcial: number,
-    segundoParcial: number,
-    examenFinal: number,
-    trabajosPracticos: number
-  ): number {
-    // Ponderación: 25% primer parcial, 25% segundo parcial, 30% examen final, 20% trabajos prácticos
-    const finalGrade = (
-      primerParcial * 0.25 +
-      segundoParcial * 0.25 +
-      examenFinal * 0.30 +
-      trabajosPracticos * 0.20
-    );
-    
-    return Math.round(finalGrade * 100) / 100; // Redondear a 2 decimales
+  private getAssessmentWeight(assessment: string): number {
+    switch (assessment) {
+      case 'Midterm1':
+      case 'Midterm2':
+        return 25.0;
+      case 'Final':
+        return 40.0;
+      case 'Assignment1':
+      case 'Project':
+        return 5.0;
+      default:
+        return 10.0;
+    }
   }
 
   async clear(): Promise<void> {
-    this.logger.log('🧹 Clearing grades...');
+    this.logger.log('🗑️ Clearing grades...');
     await this.gradeRepository.createQueryBuilder().delete().execute();
     this.logger.log('✅ Grades cleared');
   }

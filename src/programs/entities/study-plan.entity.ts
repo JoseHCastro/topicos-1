@@ -1,37 +1,46 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, JoinColumn } from 'typeorm';
-import { Career } from './career.entity';
-import { Subject } from './subject.entity';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, JoinColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { DegreeProgram } from './degree-program.entity';
+import { Course } from './course.entity';
 
-@Entity('plan_estudio')
+@Entity('study_plan')
 export class StudyPlan {
-  @PrimaryGeneratedColumn('increment')
-  id_plan_estudio: number;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
-  @Column('int')
-  id_carrera: number;
+  @Column('uuid')
+  degree_program_id: string;
 
   @Column('varchar', { length: 20 })
   version: string;
 
-  @Column('int')
-  año_aprobacion: number;
-
-  @Column('int')
-  creditos_totales: number;
+  @Column('boolean', { default: false })
+  is_current: boolean;
 
   @Column('date')
-  fecha_inicio_vigencia: Date;
+  valid_from: Date;
 
-  @Column('date')
-  fecha_fin_vigencia: Date;
+  @Column('date', { nullable: true })
+  valid_to: Date;
 
-  @Column({ type: 'enum', enum: ['vigente', 'obsoleto'], default: 'vigente' })
-  estado: string;
+  @Column('varchar', { length: 50, nullable: true })
+  resolution: string;
 
-  @ManyToOne(() => Career, career => career.planesEstudio)
-  @JoinColumn({ name: 'id_carrera' })
-  carrera: Career;
+  @CreateDateColumn({
+    type: 'timestamptz',
+    name: 'created_at'
+  })
+  created_at: Date;
 
-  @OneToMany(() => Subject, subject => subject.planEstudio)
-  materias: Subject[];
+  @UpdateDateColumn({
+    type: 'timestamptz',
+    name: 'updated_at'
+  })
+  updated_at: Date;
+
+  @ManyToOne(() => DegreeProgram, degreeProgram => degreeProgram.study_plans)
+  @JoinColumn({ name: 'degree_program_id' })
+  degree_program: DegreeProgram;
+
+  @OneToMany(() => Course, course => course.study_plan)
+  courses: Course[];
 }

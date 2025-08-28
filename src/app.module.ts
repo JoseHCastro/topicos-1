@@ -5,12 +5,12 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { databaseConfig } from './config/database.config';
 import { AuthModule } from './auth/auth.module';
-import { CatalogsModule } from './catalogs/catalogs.module';
 import { ProgramsModule } from './programs/programs.module';
-import { AcademicCalendarModule } from './academic-calendar/academic-calendar.module';
-import { CoursesModule } from './courses/courses.module';
+import { CalendarModule } from './calendar/calendar.module';
+import { FacilitiesModule } from './facilities/facilities.module';
+import { TeachingModule } from './teaching/teaching.module';
 import { EnrollmentsModule } from './enrollments/enrollments.module';
-import { GradesModule } from './grades/grades.module';
+import { AssessmentsModule } from './assessments/assessments.module';
 import { SeedModule } from './seed/seed.module';
 
 @Module({
@@ -21,12 +21,12 @@ import { SeedModule } from './seed/seed.module';
     }),
     TypeOrmModule.forRoot(databaseConfig()),
     AuthModule,
-    CatalogsModule,
     ProgramsModule,
-    AcademicCalendarModule,
-    CoursesModule,
+    CalendarModule,
+    FacilitiesModule,
+    TeachingModule,
     EnrollmentsModule,
-    GradesModule,
+    AssessmentsModule,
     SeedModule,
   ],
   controllers: [AppController],

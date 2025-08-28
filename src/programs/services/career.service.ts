@@ -1,14 +1,14 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Career } from '../entities';
+import { DegreeProgram } from '../entities';
 import { CreateCareerDto, UpdateCareerDto } from '../dto';
 
 @Injectable()
 export class CareerService {
   constructor(
-    @InjectRepository(Career)
-    private readonly careerRepository: Repository<Career>,
+    @InjectRepository(DegreeProgram)
+    private readonly careerRepository: Repository<DegreeProgram>,
   ) {}
 
   async create(createCareerDto: CreateCareerDto) {
@@ -18,15 +18,15 @@ export class CareerService {
 
   async findAll() {
     return await this.careerRepository.find({
-      relations: ['planesEstudio'],
-      order: { nombre_carrera: 'ASC' },
+      relations: ['study_plans'],
+      order: { name: 'ASC' },
     });
   }
 
-  async findOne(id: number) {
+  async findOne(id: string) {
     const career = await this.careerRepository.findOne({
-      where: { id_carrera: id },
-      relations: ['planesEstudio'],
+      where: { id: id },
+      relations: ['study_plans'],
     });
 
     if (!career) {
@@ -36,9 +36,9 @@ export class CareerService {
     return career;
   }
 
-  async update(id: number, updateCareerDto: UpdateCareerDto) {
+  async update(id: string, updateCareerDto: UpdateCareerDto) {
     const career = await this.careerRepository.preload({
-      id_carrera: id,
+      id: id,
       ...updateCareerDto,
     });
 

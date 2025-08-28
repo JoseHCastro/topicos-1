@@ -2,61 +2,43 @@ import {
   IsNotEmpty,
   IsString,
   IsNumber,
-  IsBoolean,
   IsEnum,
   IsOptional,
+  IsUUID,
   MinLength,
   Min,
 } from 'class-validator';
 
 export class CreateSubjectDto {
+  @IsUUID()
+  study_plan_id: string;
+
+  @IsUUID()
+  level_id: string;
+
   @IsString()
   @IsNotEmpty()
   @MinLength(3)
-  codigo_materia: string;
+  code: string;
 
   @IsString()
   @IsNotEmpty()
   @MinLength(5)
-  nombre_materia: string;
-
-  @IsString()
-  @IsOptional()
-  descripcion?: string;
+  name: string;
 
   @IsNumber()
   @Min(1)
-  creditos: number;
+  credits: number;
 
   @IsNumber()
   @Min(0)
-  horas_teoricas: number;
+  hours_theory: number;
 
   @IsNumber()
   @Min(0)
-  horas_practicas: number;
+  hours_practice: number;
 
-  @IsNumber()
-  @Min(0)
-  horas_laboratorio: number;
-
-  @IsNumber()
-  @Min(1)
-  semestre_recomendado: number;
-
-  @IsBoolean()
+  @IsEnum(['active', 'inactive'])
   @IsOptional()
-  es_obligatoria?: boolean = false;
-
-  @IsEnum(['activa', 'inactiva'])
-  @IsOptional()
-  estado?: string = 'activa';
-
-  @IsNumber()
-  @Min(1)
-  id_plan_estudio: number;
-
-  @IsNumber()
-  @Min(1)
-  id_nivel: number;
+  status?: string = 'active';
 }
