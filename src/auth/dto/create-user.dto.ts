@@ -46,6 +46,11 @@ export class CreateUserDto {
   @IsNotEmpty()
   role: UserRole;
 
+  // Campo teléfono general para todos los tipos de usuario
+  @IsString()
+  @IsOptional()
+  phone?: string;
+
   // Campos específicos de Student
   @IsString()
   @IsOptional()
@@ -62,11 +67,6 @@ export class CreateUserDto {
   @ValidateIf((o) => o.role === UserRole.STUDENT)
   birthDate?: Date;
 
-  @IsString()
-  @IsOptional()
-  @ValidateIf((o) => o.role === UserRole.STUDENT)
-  phone?: string;
-
   // Campos específicos de Teacher
   @IsString()
   @IsOptional()
@@ -82,11 +82,6 @@ export class CreateUserDto {
   @IsOptional()
   @ValidateIf((o) => o.role === UserRole.TEACHER)
   teacherBirthDate?: Date;
-
-  @IsString()
-  @IsOptional()
-  @ValidateIf((o) => o.role === UserRole.TEACHER)
-  teacherPhone?: string;
 
   @IsString()
   @IsOptional()

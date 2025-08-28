@@ -38,7 +38,7 @@ export class UserRoleGuard implements CanActivate {
     }
 
     // Verificar rol principal
-    if (validRoles.includes(user.user_type)) {
+    if (validRoles.includes(user.role)) { // ✅ CORREGIDO: usar 'role' en lugar de 'user_type'
       return true;
     }
 

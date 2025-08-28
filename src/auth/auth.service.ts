@@ -43,9 +43,9 @@ export class AuthService {
       email,
       role,
       expectedStudent: 'STUDENT',
-      expectedProfessor: 'PROFESSOR',
+      expectedTeacher: 'TEACHER', // ✅ CORREGIDO: usar TEACHER
       isStudent: role === UserRole.STUDENT,
-      isProfessor: role === UserRole.TEACHER
+      isTeacher: role === UserRole.TEACHER // ✅ CORREGIDO: usar isTeacher
     });
 
     const existingUser = await this.userRepository.findOne({
@@ -168,7 +168,8 @@ export class AuthService {
       email: user.email,
       first_name: user.first_name,
       last_name: user.last_name,
-      user_type: user.user_type,
+      phone: user.phone,
+      role: user.user_type, // ✅ CORREGIDO: mapear user_type a role
       roles: [user.user_type], // Array para futura expansión
       iat: now,
       exp: exp,
@@ -176,11 +177,11 @@ export class AuthService {
     };
 
     // Agregar información específica por tipo de usuario
-    if (user.user_type === 'Student' && 'code' in user) {
+    if (user.user_type === 'STUDENT' && 'code' in user) {
       payload.student_code = (user as Student).code;
     }
 
-    if (user.user_type === 'Teacher' && 'category' in user) {
+    if (user.user_type === 'TEACHER' && 'category' in user) {
       payload.teacher_category = (user as Teacher).category;
     }
 
@@ -196,13 +197,13 @@ export class AuthService {
    */
   private async loadFullUserInfo(user: User): Promise<User | Student | Teacher | Admin> {
     switch (user.user_type) {
-      case 'Student':
+      case 'STUDENT':
         const student = await this.studentRepository.findOne({ where: { id: user.id } });
         return student || user;
-      case 'Teacher':
+      case 'TEACHER':
         const teacher = await this.teacherRepository.findOne({ where: { id: user.id } });
         return teacher || user;
-      case 'Admin':
+      case 'ADMIN':
         const admin = await this.adminRepository.findOne({ where: { id: user.id } });
         return admin || user;
       default:
@@ -226,18 +227,27 @@ export class AuthService {
 
   private parseUser(user: User) {
     // Removemos campos sensibles antes de retornar
-    const { password, ...userWithoutPassword } = user as any;
-    return { ...userWithoutPassword };
+    const { password, user_type, ...userWithoutPassword } = user as any;
+    
+    // Devolver solo 'role' para consistencia con frontend
+    return { 
+      ...userWithoutPassword,
+      role: user_type // ✅ SOLO role, eliminamos user_type
+    };
   }
 
   private async createStudent(createStudentDto: CreateUserDto, password: string) {
+    // Validar datos específicos del estudiante
+    await this.validateDataStudent(createStudentDto);
+    
     const student = this.studentRepository.create({
       // Campos heredados de User
       email: createStudentDto.email,
       password: password,
       first_name: createStudentDto.firstName,
       last_name: createStudentDto.lastName,
-      user_type: 'Student',
+      phone: createStudentDto.phone,
+      user_type: createStudentDto.role, // ✅ CORREGIDO: usar role del DTO
       // Campos específicos de Student
       code: createStudentDto.studentCode,
       enrolled_at: new Date(),
@@ -281,15 +291,19 @@ export class AuthService {
   }
 
   private async createTeacher(createTeacherDto: CreateUserDto, password: string) {
+    // Validar datos específicos del profesor
+    await this.validateDataTeacher(createTeacherDto);
+    
     const teacher = this.teacherRepository.create({
       // Campos heredados de User
       email: createTeacherDto.email,
       password: password,
       first_name: createTeacherDto.firstName,
       last_name: createTeacherDto.lastName,
-      user_type: 'Teacher',
+      phone: createTeacherDto.phone,
+      user_type: createTeacherDto.role, // ✅ CORREGIDO: usar role del DTO
       // Campos específicos de Teacher
-      category: 'Regular',
+      category: createTeacherDto.department || 'Regular',
       workload: 'FullTime',
       contract_type: 'Permanent',
       hired_at: new Date(),
@@ -310,7 +324,8 @@ export class AuthService {
       password: password,
       first_name: createAdminDto.firstName,
       last_name: createAdminDto.lastName,
-      user_type: 'Admin',
+      phone: createAdminDto.phone,
+      user_type: createAdminDto.role, // ✅ CORREGIDO: usar role del DTO
     });
     return await this.adminRepository.save(admin);
   }

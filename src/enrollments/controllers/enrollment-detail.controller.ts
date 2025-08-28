@@ -17,25 +17,25 @@ export class EnrollmentDetailController {
   constructor(private readonly enrollmentDetailService: EnrollmentDetailService) {}
 
   @Post()
-  @Auth(ValidRoles.ADMIN, ValidRoles.STUDENT, ValidRoles.PROFESSOR)
+  @Auth(ValidRoles.ADMIN, ValidRoles.STUDENT, ValidRoles.TEACHER)
   create(@Body() createEnrollmentDetailDto: CreateEnrollmentDetailDto) {
     return this.enrollmentDetailService.create(createEnrollmentDetailDto);
   }
 
   @Get()
-  @Auth(ValidRoles.ADMIN, ValidRoles.STUDENT, ValidRoles.PROFESSOR)
+  @Auth(ValidRoles.ADMIN, ValidRoles.STUDENT, ValidRoles.TEACHER)
   findAll() {
     return this.enrollmentDetailService.findAll();
   }
 
   @Get(':id')
-  @Auth(ValidRoles.ADMIN, ValidRoles.STUDENT, ValidRoles.PROFESSOR)
+  @Auth(ValidRoles.ADMIN, ValidRoles.STUDENT, ValidRoles.TEACHER)
   findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.enrollmentDetailService.findOne(id);
   }
 
   @Patch(':id')
-  @Auth(ValidRoles.ADMIN, ValidRoles.STUDENT, ValidRoles.PROFESSOR)
+  @Auth(ValidRoles.ADMIN, ValidRoles.STUDENT, ValidRoles.TEACHER)
   update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateEnrollmentDetailDto: UpdateEnrollmentDetailDto,

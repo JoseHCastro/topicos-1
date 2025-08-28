@@ -6,7 +6,8 @@ export interface JwtPayload {
   // Información del usuario (evita consulta a BD)
   first_name: string;
   last_name: string;
-  user_type: string; // 'Student', 'Teacher', 'Admin'
+  phone?: string;
+  role: string; // ✅ CAMBIADO: usar 'role' en lugar de 'user_type'
   
   // Información de autorización
   roles: string[]; // Para futuras expansiones de roles

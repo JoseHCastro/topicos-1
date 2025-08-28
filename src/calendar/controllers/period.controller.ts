@@ -17,25 +17,25 @@ export class PeriodController {
   constructor(private readonly periodService: PeriodService) {}
 
   @Post()
-  @Auth(ValidRoles.ADMIN, ValidRoles.STUDENT, ValidRoles.PROFESSOR)
+  @Auth(ValidRoles.ADMIN, ValidRoles.STUDENT, ValidRoles.TEACHER)
   create(@Body() createPeriodDto: CreatePeriodDto) {
     return this.periodService.create(createPeriodDto);
   }
 
   @Get()
-  @Auth(ValidRoles.ADMIN, ValidRoles.STUDENT, ValidRoles.PROFESSOR)
+  @Auth(ValidRoles.ADMIN, ValidRoles.STUDENT, ValidRoles.TEACHER)
   findAll() {
     return this.periodService.findAll();
   }
 
   @Get(':id')
-  @Auth(ValidRoles.ADMIN, ValidRoles.STUDENT, ValidRoles.PROFESSOR)
+  @Auth(ValidRoles.ADMIN, ValidRoles.STUDENT, ValidRoles.TEACHER)
   findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.periodService.findOne(id);
   }
 
   @Patch(':id')
-  @Auth(ValidRoles.ADMIN, ValidRoles.STUDENT, ValidRoles.PROFESSOR)
+  @Auth(ValidRoles.ADMIN, ValidRoles.STUDENT, ValidRoles.TEACHER)
   update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updatePeriodDto: UpdatePeriodDto,

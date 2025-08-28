@@ -24,7 +24,7 @@ import { TokenCacheService } from './services/token-cache.service';
       useFactory: (configService: ConfigService) => {
         return {
           secret: configService.get<string>('JWT_SECRET'),
-          signOptions: { expiresIn: '24h' }, // Expandido para JWT stateless
+          // Sin signOptions.expiresIn para JWT stateless (exp manual)
         };
       },
     }),

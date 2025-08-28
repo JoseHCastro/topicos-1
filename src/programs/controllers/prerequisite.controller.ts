@@ -17,25 +17,25 @@ export class PrerequisiteController {
   constructor(private readonly prerequisiteService: PrerequisiteService) {}
 
   @Post()
-  @Auth(ValidRoles.ADMIN, ValidRoles.STUDENT, ValidRoles.PROFESSOR)
+  @Auth(ValidRoles.ADMIN, ValidRoles.STUDENT, ValidRoles.TEACHER)
   create(@Body() createPrerequisiteDto: CreatePrerequisiteDto) {
     return this.prerequisiteService.create(createPrerequisiteDto);
   }
 
   @Get()
-  @Auth(ValidRoles.ADMIN, ValidRoles.STUDENT, ValidRoles.PROFESSOR)
+  @Auth(ValidRoles.ADMIN, ValidRoles.STUDENT, ValidRoles.TEACHER)
   findAll() {
     return this.prerequisiteService.findAll();
   }
 
   @Get(':id')
-  @Auth(ValidRoles.ADMIN, ValidRoles.STUDENT, ValidRoles.PROFESSOR)
+  @Auth(ValidRoles.ADMIN, ValidRoles.STUDENT, ValidRoles.TEACHER)
   findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.prerequisiteService.findOne(id);
   }
 
   @Patch(':id')
-  @Auth(ValidRoles.ADMIN, ValidRoles.STUDENT, ValidRoles.PROFESSOR)
+  @Auth(ValidRoles.ADMIN, ValidRoles.STUDENT, ValidRoles.TEACHER)
   update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updatePrerequisiteDto: UpdatePrerequisiteDto,

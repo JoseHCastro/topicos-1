@@ -14,13 +14,13 @@ export class DegreeProgramController {
   }
 
   @Get()
-  @Auth(ValidRoles.ADMIN, ValidRoles.STUDENT, ValidRoles.PROFESSOR)
+  @Auth(ValidRoles.ADMIN, ValidRoles.STUDENT, ValidRoles.TEACHER)
   findAll() {
     return this.degreeProgramService.findAll();
   }
 
   @Get(':id')
-  @Auth(ValidRoles.ADMIN, ValidRoles.STUDENT, ValidRoles.PROFESSOR)
+  @Auth(ValidRoles.ADMIN, ValidRoles.STUDENT, ValidRoles.TEACHER)
   findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.degreeProgramService.findOne(id);
   }

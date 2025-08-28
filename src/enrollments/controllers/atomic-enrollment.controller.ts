@@ -71,7 +71,7 @@ export class AtomicEnrollmentController {
    * Obtiene el estado actual de cupos de una sección de curso
    */
   @Get('course-section/:id/quota-status')
-  @Auth(ValidRoles.ADMIN, ValidRoles.STUDENT, ValidRoles.PROFESSOR)
+  @Auth(ValidRoles.ADMIN, ValidRoles.STUDENT, ValidRoles.TEACHER)
   async getQuotaStatus(@Param('id', ParseUUIDPipe) courseSectionId: string) {
     const status = await this.atomicEnrollmentService.getCourseSectionQuotaStatus(
       courseSectionId,

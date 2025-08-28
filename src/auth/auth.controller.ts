@@ -38,8 +38,9 @@ export class AuthController {
       email: user.email,
       firstName: user.first_name,
       lastName: user.last_name,
-      userType: user.user_type,
+      role: user.role, // ✅ CORREGIDO: usar 'role' en lugar de 'user_type'
       roles: user.roles,
+      phone: user.phone, // ✅ AGREGADO: incluir teléfono
     };
   }
 
