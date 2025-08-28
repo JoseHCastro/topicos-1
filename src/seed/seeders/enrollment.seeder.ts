@@ -20,13 +20,13 @@ export class EnrollmentSeeder implements SeederInterface {
   ) {}
 
   async run(): Promise<void> {
-    this.logger.log('🌱 Seeding enrollments...');
+    this.logger.log(' Seeding enrollments...');
 
     const students = await this.studentRepository.find();
     const terms = await this.termRepository.find();
 
     if (students.length === 0 || terms.length === 0) {
-      this.logger.warn('⚠️ Missing required data (students or terms), skipping enrollments seeding');
+      this.logger.warn(' Missing required data (students or terms), skipping enrollments seeding');
       return;
     }
 
@@ -53,18 +53,18 @@ export class EnrollmentSeeder implements SeederInterface {
       if (!existingEnrollment) {
         const enrollment = this.enrollmentRepository.create(enrollmentData);
         await this.enrollmentRepository.save(enrollment);
-        this.logger.log(`✅ Created enrollment for student: ${student.first_name} ${student.last_name}`);
+        this.logger.log(` Created enrollment for student: ${student.first_name} ${student.last_name}`);
       } else {
-        this.logger.log(`⚠️ Enrollment already exists for student: ${student.first_name} ${student.last_name}`);
+        this.logger.log(` Enrollment already exists for student: ${student.first_name} ${student.last_name}`);
       }
     }
 
-    this.logger.log('✅ Enrollments seeding completed');
+    this.logger.log(' Enrollments seeding completed');
   }
 
   async clear(): Promise<void> {
-    this.logger.log('🧹 Clearing enrollments...');
+    this.logger.log(' Clearing enrollments...');
     await this.enrollmentRepository.createQueryBuilder().delete().execute();
-    this.logger.log('✅ Enrollments cleared');
+    this.logger.log(' Enrollments cleared');
   }
 }

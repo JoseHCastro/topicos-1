@@ -24,7 +24,7 @@ export const databaseConfig = (): TypeOrmModuleOptions => ({
     Grade, AcademicProgress, CourseHistory,
   ],
   synchronize: true,
-  logging: process.env.NODE_ENV === 'development',
+  logging: false, // Disable query logging
   dropSchema: false,
   migrationsRun: false,
 });

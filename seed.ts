@@ -20,7 +20,7 @@ async function bootstrap() {
     const command = args[0];
     const seederName = args[1];
     
-    logger.log('🚀 Starting seed script...');
+    logger.log('Starting seed script...');
     
     switch (command) {
       case 'run':
@@ -36,7 +36,7 @@ async function bootstrap() {
         break;
         
       case 'fresh':
-        logger.log('🔄 Running fresh seed (clear + seed)...');
+        logger.log('Running fresh seed (clear + seed)...');
         await seedService.clearDatabase();
         await seedService.runAllSeeders();
         break;
@@ -51,7 +51,7 @@ async function bootstrap() {
     }
     
     await app.close();
-    logger.log('✨ Seed script completed!');
+    logger.log('Seed script completed!');
     process.exit(0);
     
   } catch (error) {

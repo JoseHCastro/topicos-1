@@ -15,7 +15,7 @@ export class UserSeeder implements SeederInterface {
   ) {}
 
   async run(): Promise<void> {
-    this.logger.log('🌱 Seeding users...');
+    this.logger.log('Seeding users...');
 
     const users = [
       {
@@ -55,24 +55,24 @@ export class UserSeeder implements SeederInterface {
       if (!existingUser) {
         const user = this.userRepository.create(userData);
         await this.userRepository.save(user);
-        this.logger.log(`✅ Created user: ${userData.email}`);
+        this.logger.log(`Created user: ${userData.email}`);
       } else {
-        this.logger.log(`⚠️ User already exists: ${userData.email}`);
+        this.logger.log(`User already exists: ${userData.email}`);
       }
     }
 
-    this.logger.log('✅ Users seeding completed');
+    this.logger.log('Users seeding completed');
   }
 
   async clear(): Promise<void> {
-    this.logger.log('🗑️ Clearing users...');
+    this.logger.log('Clearing users...');
     await this.userRepository
       .createQueryBuilder()
       .delete()
-      .where('user_type = :type', { type: 'Admin' })
-      .orWhere('user_type = :type2', { type2: 'Teacher' })
-      .orWhere('user_type = :type3', { type3: 'Student' })
+    .where('user_type = :admin', { admin: 'Admin' })
+    .orWhere('user_type = :teacher', { teacher: 'Teacher' })
+    .orWhere('user_type = :student', { student: 'Student' })
       .execute();
-    this.logger.log('✅ Users cleared');
+    this.logger.log('Users cleared');
   }
 }

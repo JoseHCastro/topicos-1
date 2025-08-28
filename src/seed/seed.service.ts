@@ -28,7 +28,7 @@ export class SeedService {
   ) {}
 
   async runAllSeeders(): Promise<void> {
-    this.logger.log('🌱 Starting database seeding...');
+    this.logger.log('Starting database seeding...');
 
     try {
       // Ejecutar seeders en orden específico (dependencias primero)
@@ -53,7 +53,7 @@ export class SeedService {
       await this.enrollmentSeeder.run();
       await this.gradeSeeder.run();
 
-      this.logger.log('✅ Database seeding completed successfully!');
+      this.logger.log('Database seeding completed successfully!');
     } catch (error) {
       this.logger.error('❌ Database seeding failed:', error);
       throw error;
@@ -61,7 +61,7 @@ export class SeedService {
   }
 
   async runSpecificSeeder(seederName: string): Promise<void> {
-    this.logger.log(`🌱 Running ${seederName} seeder...`);
+    this.logger.log(`Running ${seederName} seeder...`);
 
     try {
       switch (seederName.toLowerCase()) {
@@ -99,7 +99,7 @@ export class SeedService {
           throw new Error(`Seeder "${seederName}" not found`);
       }
 
-      this.logger.log(`✅ ${seederName} seeder completed successfully!`);
+      this.logger.log(`${seederName} seeder completed successfully!`);
     } catch (error) {
       this.logger.error(`❌ ${seederName} seeder failed:`, error);
       throw error;
@@ -107,7 +107,7 @@ export class SeedService {
   }
 
   async clearDatabase(): Promise<void> {
-    this.logger.log('🗑️ Clearing database...');
+    this.logger.log('Clearing database...');
 
     try {
       // Limpiar en orden inverso para mantener integridad referencial
@@ -132,7 +132,7 @@ export class SeedService {
       await this.levelSeeder.clear();
       await this.careerSeeder.clear();
 
-      this.logger.log('✅ Database cleared successfully!');
+      this.logger.log('Database cleared successfully!');
     } catch (error) {
       this.logger.error('❌ Database clearing failed:', error);
       throw error;

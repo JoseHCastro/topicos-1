@@ -14,7 +14,7 @@ export class LevelSeeder implements SeederInterface {
   ) {}
 
   async run(): Promise<void> {
-    this.logger.log('🌱 Seeding levels...');
+    this.logger.log(' Seeding levels...');
 
     const levels = [
       {
@@ -67,18 +67,18 @@ export class LevelSeeder implements SeederInterface {
       if (!existingLevel) {
         const level = this.levelRepository.create(levelData);
         await this.levelRepository.save(level);
-        this.logger.log(`✅ Created level: ${levelData.name}`);
+        this.logger.log(` Created level: ${levelData.name}`);
       } else {
-        this.logger.log(`⚠️ Level already exists: ${levelData.name}`);
+        this.logger.log(` Level already exists: ${levelData.name}`);
       }
     }
 
-    this.logger.log('✅ Levels seeding completed');
+    this.logger.log(' Levels seeding completed');
   }
 
   async clear(): Promise<void> {
-    this.logger.log('🗑️ Clearing levels...');
+    this.logger.log(' Clearing levels...');
     await this.levelRepository.createQueryBuilder().delete().execute();
-    this.logger.log('✅ Levels cleared');
+    this.logger.log(' Levels cleared');
   }
 }

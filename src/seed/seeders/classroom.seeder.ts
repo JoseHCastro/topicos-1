@@ -14,7 +14,7 @@ export class ClassroomSeeder implements SeederInterface {
   ) {}
 
   async run(): Promise<void> {
-    this.logger.log('🌱 Seeding classrooms...');
+    this.logger.log(' Seeding classrooms...');
 
     const classrooms = [
       // Edificio FICO - Aulas tradicionales
@@ -116,18 +116,18 @@ export class ClassroomSeeder implements SeederInterface {
       if (!existingClassroom) {
         const classroom = this.classroomRepository.create(classroomData);
         await this.classroomRepository.save(classroom);
-        this.logger.log(`✅ Created classroom: ${classroomData.code} - ${classroomData.building}`);
+        this.logger.log(` Created classroom: ${classroomData.code} - ${classroomData.building}`);
       } else {
-        this.logger.log(`⚠️ Classroom already exists: ${classroomData.code}`);
+        this.logger.log(` Classroom already exists: ${classroomData.code}`);
       }
     }
 
-    this.logger.log('✅ Classrooms seeding completed');
+    this.logger.log(' Classrooms seeding completed');
   }
 
   async clear(): Promise<void> {
-    this.logger.log('🗑️ Clearing classrooms...');
+    this.logger.log(' Clearing classrooms...');
     await this.classroomRepository.createQueryBuilder().delete().execute();
-    this.logger.log('✅ Classrooms cleared');
+    this.logger.log(' Classrooms cleared');
   }
 }

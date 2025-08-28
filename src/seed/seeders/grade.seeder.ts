@@ -20,13 +20,13 @@ export class GradeSeeder implements SeederInterface {
   ) {}
 
   async run(): Promise<void> {
-    this.logger.log('🌱 Seeding grades...');
+    this.logger.log('Seeding grades...');
 
     const students = await this.studentRepository.find();
     const courseSections = await this.courseSectionRepository.find();
 
     if (students.length === 0 || courseSections.length === 0) {
-      this.logger.warn('⚠️ Missing required data (students or course sections), skipping grades seeding');
+      this.logger.warn('Missing required data (students or course sections), skipping grades seeding');
       return;
     }
 
@@ -58,13 +58,13 @@ export class GradeSeeder implements SeederInterface {
 
             const grade = this.gradeRepository.create(gradeData);
             await this.gradeRepository.save(grade);
-            this.logger.log(`✅ Created grade: ${student.first_name} ${student.last_name} - ${assessment}: ${score}`);
+            this.logger.log(`Created grade: ${student.first_name} ${student.last_name} - ${assessment}: ${score}`);
           }
         }
       }
     }
 
-    this.logger.log('✅ Grades seeding completed');
+    this.logger.log('Grades seeding completed');
   }
 
   private getRandomSections(courseSections: any[], count: number): any[] {
@@ -88,8 +88,8 @@ export class GradeSeeder implements SeederInterface {
   }
 
   async clear(): Promise<void> {
-    this.logger.log('🗑️ Clearing grades...');
+    this.logger.log('Clearing grades...');
     await this.gradeRepository.createQueryBuilder().delete().execute();
-    this.logger.log('✅ Grades cleared');
+    this.logger.log('Grades cleared');
   }
 }

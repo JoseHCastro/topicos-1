@@ -17,7 +17,7 @@ export class TermSeeder implements SeederInterface {
   ) {}
 
   async run(): Promise<void> {
-    this.logger.log('🌱 Seeding academic years and terms...');
+    this.logger.log(' Seeding academic years and terms...');
 
     // Primero crear años académicos
     const academicYears = [
@@ -51,9 +51,9 @@ export class TermSeeder implements SeederInterface {
       if (!existingYear) {
         existingYear = this.academicYearRepository.create(yearData);
         await this.academicYearRepository.save(existingYear);
-        this.logger.log(`✅ Created academic year: ${yearData.name}`);
+        this.logger.log(` Created academic year: ${yearData.name}`);
       } else {
-        this.logger.log(`⚠️ Academic year already exists: ${yearData.name}`);
+        this.logger.log(` Academic year already exists: ${yearData.name}`);
       }
 
       createdAcademicYears.push(existingYear);
@@ -129,18 +129,18 @@ export class TermSeeder implements SeederInterface {
           academic_year_id: academicYear.id,
         });
         await this.termRepository.save(term);
-        this.logger.log(`✅ Created term: ${termData.name}`);
+        this.logger.log(` Created term: ${termData.name}`);
       } else {
-        this.logger.log(`⚠️ Term already exists: ${termData.name}`);
+        this.logger.log(` Term already exists: ${termData.name}`);
       }
     }
 
-    this.logger.log('✅ Academic years and terms seeding completed');
+    this.logger.log(' Academic years and terms seeding completed');
   }
 
   async clear(): Promise<void> {
-    this.logger.log('🧹 Clearing terms...');
+    this.logger.log(' Clearing terms...');
     await this.termRepository.createQueryBuilder().delete().execute();
-    this.logger.log('✅ Terms cleared');
+    this.logger.log(' Terms cleared');
   }
 }

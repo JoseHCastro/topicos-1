@@ -14,7 +14,7 @@ export class CareerSeeder implements SeederInterface {
   ) {}
 
   async run(): Promise<void> {
-    this.logger.log('🌱 Seeding careers...');
+    this.logger.log(' Seeding careers...');
 
     const careers = [
       {
@@ -41,18 +41,18 @@ export class CareerSeeder implements SeederInterface {
       if (!existingCareer) {
         const career = this.careerRepository.create(careerData);
         await this.careerRepository.save(career);
-        this.logger.log(`✅ Created career: ${careerData.name} (${careerData.code})`);
+        this.logger.log(` Created career: ${careerData.name} (${careerData.code})`);
       } else {
-        this.logger.log(`⚠️ Career already exists: ${careerData.code}`);
+        this.logger.log(` Career already exists: ${careerData.code}`);
       }
     }
 
-    this.logger.log('✅ Careers seeding completed');
+    this.logger.log(' Careers seeding completed');
   }
 
   async clear(): Promise<void> {
-    this.logger.log('🗑️ Clearing careers...');
+    this.logger.log(' Clearing careers...');
     await this.careerRepository.createQueryBuilder().delete().execute();
-    this.logger.log('✅ Careers cleared');
+    this.logger.log(' Careers cleared');
   }
 }

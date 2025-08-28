@@ -16,13 +16,13 @@ export class PeriodSeeder implements SeederInterface {
   ) {}
 
   async run(): Promise<void> {
-    this.logger.log('🌱 Seeding terms...');
+    this.logger.log(' Seeding terms...');
 
     // Obtener los años académicos existentes
     const academicYears = await this.academicYearRepository.find();
 
     if (academicYears.length === 0) {
-      this.logger.warn('⚠️ No academic years found, skipping terms seeding');
+      this.logger.warn(' No academic years found, skipping terms seeding');
       return;
     }
 
@@ -60,19 +60,19 @@ export class PeriodSeeder implements SeederInterface {
         if (!existingTerm) {
           const term = this.termRepository.create(termData);
           await this.termRepository.save(term);
-          this.logger.log(`✅ Created term: ${termData.name}`);
+          this.logger.log(` Created term: ${termData.name}`);
         } else {
-          this.logger.log(`⚠️ Term already exists: ${termData.name}`);
+          this.logger.log(` Term already exists: ${termData.name}`);
         }
       }
     }
 
-    this.logger.log('✅ Terms seeding completed');
+    this.logger.log(' Terms seeding completed');
   }
 
   async clear(): Promise<void> {
-    this.logger.log('🧹 Clearing terms...');
+    this.logger.log(' Clearing terms...');
     await this.termRepository.createQueryBuilder().delete().execute();
-    this.logger.log('✅ Terms cleared');
+    this.logger.log(' Terms cleared');
   }
 }
