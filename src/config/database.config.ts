@@ -5,7 +5,7 @@ import { AcademicYear, Term } from '../calendar/entities';
 import { Classroom } from '../facilities/entities';
 import { CourseSection, Schedule } from '../teaching/entities';
 import { Enrollment, EnrollmentDetail } from '../enrollments/entities';
-import { Grade, AcademicProgress, CourseHistory } from '../assessments/entities';
+import { Grade } from '../assessments/entities';
 
 export const databaseConfig = (): TypeOrmModuleOptions => ({
   type: 'postgres',
@@ -21,7 +21,7 @@ export const databaseConfig = (): TypeOrmModuleOptions => ({
     Classroom,
     CourseSection, Schedule,
     Enrollment, EnrollmentDetail,
-    Grade, AcademicProgress, CourseHistory,
+    Grade,
   ],
   synchronize: true,
   logging: false, // Disable query logging

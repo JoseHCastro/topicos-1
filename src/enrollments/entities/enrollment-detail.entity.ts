@@ -8,7 +8,7 @@ export class EnrollmentDetail {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column('uuid')
+  @Column('uuid', { nullable: false })
   enrollment_id: string;
 
   @Column('uuid')

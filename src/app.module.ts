@@ -11,7 +11,6 @@ import { FacilitiesModule } from './facilities/facilities.module';
 import { TeachingModule } from './teaching/teaching.module';
 import { EnrollmentsModule } from './enrollments/enrollments.module';
 import { AssessmentsModule } from './assessments/assessments.module';
-import { SeedModule } from './seed/seed.module';
 
 @Module({
   imports: [
@@ -27,7 +26,6 @@ import { SeedModule } from './seed/seed.module';
     TeachingModule,
     EnrollmentsModule,
     AssessmentsModule,
-    SeedModule,
   ],
   controllers: [AppController],
   providers: [AppService],

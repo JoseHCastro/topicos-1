@@ -1,4 +1,5 @@
-export { CareerController } from './career.controller';
+export { DegreeProgramController } from './degree-program.controller';
 export { StudyPlanController } from './study-plan.controller';
-export { SubjectController } from './subject.controller';
+export { CourseController } from './course.controller';
 export { PrerequisiteController } from './prerequisite.controller';
+export { LevelController } from './level.controller';

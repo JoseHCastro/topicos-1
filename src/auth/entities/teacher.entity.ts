@@ -1,5 +1,6 @@
-import { ChildEntity, Column } from 'typeorm';
+import { ChildEntity, Column, OneToMany } from 'typeorm';
 import { User } from './user.entity';
+import { CourseSection } from '../../teaching/entities/course-section.entity';
 
 @ChildEntity()
 export class Teacher extends User {
@@ -14,4 +15,7 @@ export class Teacher extends User {
 
   @Column('date')
   hired_at: Date;
+
+  @OneToMany(() => CourseSection, courseSection => courseSection.teacher)
+  course_sections: CourseSection[];
 }

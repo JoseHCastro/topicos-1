@@ -1,5 +1,6 @@
-import { ChildEntity, Column } from 'typeorm';
+import { ChildEntity, Column, OneToMany } from 'typeorm';
 import { User } from './user.entity';
+import { Enrollment } from '../../enrollments/entities/enrollment.entity';
 
 @ChildEntity()
 export class Student extends User {
@@ -14,4 +15,7 @@ export class Student extends User {
 
   @Column('char', { length: 1, nullable: true })
   sex: string; // M, F, O
+
+  @OneToMany(() => Enrollment, enrollment => enrollment.student)
+  enrollments: Enrollment[];
 }

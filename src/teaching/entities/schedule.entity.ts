@@ -7,7 +7,7 @@ export class Schedule {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column('uuid')
+  @Column('uuid', { nullable: false })
   course_section_id: string;
 
   @Column('uuid')

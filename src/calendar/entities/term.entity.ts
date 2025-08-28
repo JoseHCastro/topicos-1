@@ -1,5 +1,7 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, JoinColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 import { AcademicYear } from './academic-year.entity';
+import { CourseSection } from '../../teaching/entities/course-section.entity';
+import { Enrollment } from '../../enrollments/entities/enrollment.entity';
 
 @Entity('term')
 export class Term {
@@ -36,4 +38,10 @@ export class Term {
   @ManyToOne(() => AcademicYear, academicYear => academicYear.terms)
   @JoinColumn({ name: 'academic_year_id' })
   academic_year: AcademicYear;
+
+  @OneToMany(() => CourseSection, courseSection => courseSection.term)
+  course_sections: CourseSection[];
+
+  @OneToMany(() => Enrollment, enrollment => enrollment.term)
+  enrollments: Enrollment[];
 }

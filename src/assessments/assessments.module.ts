@@ -1,11 +1,17 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { Grade, AcademicProgress, CourseHistory } from './entities';
+import { PassportModule } from '@nestjs/passport';
+import { Grade } from './entities';
 import { GradeService } from './services';
 import { GradeController } from './controllers';
+import { AuthModule } from '../auth/auth.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Grade, AcademicProgress, CourseHistory])],
+  imports: [
+    TypeOrmModule.forFeature([Grade]),
+    PassportModule.register({ defaultStrategy: 'jwt' }),
+    AuthModule,
+  ],
   controllers: [GradeController],
   providers: [GradeService],
   exports: [GradeService],

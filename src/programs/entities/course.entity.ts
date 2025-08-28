@@ -2,6 +2,7 @@ import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, JoinColum
 import { StudyPlan } from './study-plan.entity';
 import { Level } from './level.entity';
 import { Prerequisite } from './prerequisite.entity';
+import { CourseSection } from '../../teaching/entities/course-section.entity';
 
 @Entity('course')
 @Unique(['study_plan_id', 'code'])
@@ -58,4 +59,7 @@ export class Course {
 
   @OneToMany(() => Prerequisite, prerequisite => prerequisite.required_course)
   prerequisites_as_required: Prerequisite[];
+
+  @OneToMany(() => CourseSection, courseSection => courseSection.course)
+  course_sections: CourseSection[];
 }

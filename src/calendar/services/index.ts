@@ -1,2 +1,2 @@
-export { ManagementService } from './management.service';
+export { ManagementService } from './academic-year.service';
 export { PeriodService } from './period.service';
