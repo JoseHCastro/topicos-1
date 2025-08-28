@@ -22,6 +22,7 @@ import {
 } from './controllers';
 import { AuthModule } from '../auth/auth.module';
 import { CommonModule } from '../common/common.module';
+import { IdempotencyService } from '../common/services';
 
 @Module({
   imports: [
@@ -49,7 +50,8 @@ import { CommonModule } from '../common/common.module';
     EnrollmentDetailService, 
     AtomicEnrollmentService, 
     AcademicValidationService,
-    OptimizedQueryService
+    OptimizedQueryService,
+    IdempotencyService
   ],
   exports: [
     TypeOrmModule, 
