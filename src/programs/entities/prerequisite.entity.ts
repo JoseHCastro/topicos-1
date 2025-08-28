@@ -1,9 +1,12 @@
-import { Entity, PrimaryGeneratedColumn, ManyToOne, JoinColumn, Column, CreateDateColumn, UpdateDateColumn, Unique, Check } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, ManyToOne, JoinColumn, Column, CreateDateColumn, UpdateDateColumn, Unique, Check, Index } from 'typeorm';
 import { Course } from './course.entity';
 
 @Entity('prerequisite')
 @Unique(['main_course_id', 'required_course_id'])
 @Check('"main_course_id" <> "required_course_id"')
+@Index('IDX_prerequisite_main_course', ['main_course_id'])
+@Index('IDX_prerequisite_required_course', ['required_course_id'])
+@Index('IDX_prerequisite_validation', ['main_course_id', 'required_course_id', 'kind'])
 export class Prerequisite {
   @PrimaryGeneratedColumn('uuid')
   id: string;

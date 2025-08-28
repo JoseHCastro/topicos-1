@@ -7,6 +7,7 @@ import { CourseSection } from '../../teaching/entities/course-section.entity';
 import { EnrollmentDetail } from '../entities/enrollment-detail.entity';
 import { Grade } from '../../assessments/entities/grade.entity';
 import { TransactionService } from '../../common/services/transaction.service';
+import { OptimizedQueryService } from './optimized-query.service';
 
 export interface ValidationResult {
   isValid: boolean;
@@ -21,8 +22,9 @@ export interface ScheduleConflict {
 }
 
 /**
- * Servicio de validaciones académicas para inscripciones
- * Maneja prerequisitos, conflictos de horario y límites académicos
+ * FASE PRE-1D: Servicio de validaciones académicas optimizado
+ * Utiliza OptimizedQueryService para consultas de alta concurrencia
+ * Versión unificada que combina validaciones tradicionales con optimizaciones
  */
 @Injectable()
 export class AcademicValidationService {
@@ -39,7 +41,11 @@ export class AcademicValidationService {
     @InjectRepository(Grade)
     private readonly gradeRepository: Repository<Grade>,
     
+    @InjectRepository(CourseSection)
+    private readonly courseSectionRepository: Repository<CourseSection>,
+    
     private readonly transactionService: TransactionService,
+    private readonly optimizedQueryService: OptimizedQueryService,
   ) {}
 
   /**
@@ -51,90 +57,75 @@ export class AcademicValidationService {
     termId: string,
     manager?: EntityManager
   ): Promise<ValidationResult> {
-    const result: ValidationResult = {
-      isValid: true,
-      errors: [],
-      warnings: []
-    };
-
-    // Ejecutar todas las validaciones
-    const validations = await Promise.allSettled([
+    const results = await Promise.all([
       this.validatePrerequisites(studentId, courseSectionId, manager),
       this.validateScheduleConflicts(studentId, courseSectionId, termId, manager),
       this.validateAcademicLimits(studentId, termId, manager),
       this.validateCourseNotPassed(studentId, courseSectionId, manager)
     ]);
 
-    // Procesar resultados de validaciones
-    validations.forEach((validation, index) => {
-      if (validation.status === 'rejected') {
-        result.isValid = false;
-        result.errors.push(validation.reason.message || 'Error en validación académica');
-      } else if (validation.value && !validation.value.isValid) {
-        result.isValid = false;
-        result.errors.push(...validation.value.errors);
-        result.warnings.push(...validation.value.warnings);
-      }
-    });
+    const result: ValidationResult = {
+      isValid: results.every(r => r.isValid),
+      errors: results.flatMap(r => r.errors),
+      warnings: results.flatMap(r => r.warnings)
+    };
 
     return result;
   }
 
   /**
-   * Valida que el estudiante tenga aprobados todos los prerequisitos
+   * FASE PRE-1D: Validación optimizada de prerrequisitos
+   * Utiliza consultas indexadas para alta concurrencia
    */
   async validatePrerequisites(
     studentId: string,
     courseSectionId: string,
     manager?: EntityManager
   ): Promise<ValidationResult> {
-    const repo = manager ? manager.getRepository(Prerequisite) : this.prerequisiteRepository;
-    const gradeRepo = manager ? manager.getRepository(Grade) : this.gradeRepository;
-    
-    // Obtener prerequisitos de la materia
-    const prerequisites = await repo
-      .createQueryBuilder('p')
-      .innerJoin('p.main_course', 'mc')
-      .innerJoin('course_section', 'cs', 'cs.course_id = mc.id')
-      .innerJoin('p.required_course', 'rc')
-      .where('cs.id = :courseSectionId', { courseSectionId })
-      .select(['p.id', 'rc.code', 'rc.name', 'p.kind'])
-      .getMany();
+    // Obtener la información de la sección de curso
+    const courseSection = await this.courseSectionRepository.findOne({
+      where: { id: courseSectionId },
+      relations: ['course']
+    });
+
+    if (!courseSection) {
+      return {
+        isValid: false,
+        errors: ['Sección de curso no encontrada'],
+        warnings: []
+      };
+    }
+
+    // Usar consulta optimizada para obtener prerrequisitos
+    const prerequisites = await this.optimizedQueryService.getPrerequisitesByCourse(
+      courseSection.course.id
+    );
 
     if (prerequisites.length === 0) {
       return { isValid: true, errors: [], warnings: [] };
     }
 
+    // Verificar prerrequisitos en lote usando consulta optimizada
+    const prerequisiteChecks = await this.optimizedQueryService.batchCheckPrerequisites(
+      studentId,
+      [courseSection.course.id]
+    );
+
+    const courseCheck = prerequisiteChecks[0];
     const result: ValidationResult = {
-      isValid: true,
-      errors: [],
+      isValid: courseCheck.hasPrerequisites,
+      errors: courseCheck.missingPrerequisites.map(code => 
+        `Prerrequisito no cumplido: ${code}`
+      ),
       warnings: []
     };
-
-    // Verificar cada prerequisito
-    for (const prerequisite of prerequisites) {
-      const passingGrade = await gradeRepo
-        .createQueryBuilder('g')
-        .innerJoin('g.course_section', 'cs')
-        .innerJoin('cs.course', 'c')
-        .where('g.student_id = :studentId', { studentId })
-        .andWhere('c.id = :courseId', { courseId: prerequisite.required_course.id })
-        .andWhere('g.final_grade >= 60') // Nota mínima de aprobación
-        .getOne();
-
-      if (!passingGrade) {
-        result.isValid = false;
-        result.errors.push(
-          `Prerequisito no cumplido: ${prerequisite.required_course.name} (${prerequisite.required_course.code})`
-        );
-      }
-    }
 
     return result;
   }
 
   /**
-   * Detecta conflictos de horario con materias ya inscritas
+   * FASE PRE-1D: Detección optimizada de conflictos de horario
+   * Utiliza índices para consultas eficientes
    */
   async validateScheduleConflicts(
     studentId: string,
@@ -142,225 +133,201 @@ export class AcademicValidationService {
     termId: string,
     manager?: EntityManager
   ): Promise<ValidationResult> {
-    const scheduleRepo = manager ? manager.getRepository(Schedule) : this.scheduleRepository;
-    const enrollmentRepo = manager ? manager.getRepository(EnrollmentDetail) : this.enrollmentDetailRepository;
+    // Obtener horarios de la nueva materia usando consulta optimizada
+    const newSchedules = await this.optimizedQueryService.getSchedulesBySections([courseSectionId]);
 
-    // Obtener horarios de la nueva materia
-    const newSchedules = await scheduleRepo
-      .createQueryBuilder('s')
-      .where('s.course_section_id = :courseSectionId', { courseSectionId })
-      .getMany();
-
-    // Obtener materias ya inscritas en el período
-    const enrolledSections = await enrollmentRepo
-      .createQueryBuilder('ed')
-      .innerJoin('ed.enrollment', 'e')
-      .innerJoin('ed.course_section', 'cs')
-      .where('e.student_id = :studentId', { studentId })
-      .andWhere('cs.term_id = :termId', { termId })
-      .andWhere('ed.status = :status', { status: 'enrolled' })
-      .select(['cs.id'])
-      .getMany();
-
-    if (enrolledSections.length === 0) {
+    if (newSchedules.length === 0) {
       return { isValid: true, errors: [], warnings: [] };
     }
 
-    const enrolledSectionIds = enrolledSections.map(es => es.course_section.id);
+    // Obtener detalles de inscripción del estudiante usando consulta optimizada
+    const enrolledDetails = await this.optimizedQueryService.getStudentEnrollmentDetails(
+      studentId,
+      termId
+    );
 
-    // Obtener horarios de materias inscritas
-    const existingSchedules = await scheduleRepo
-      .createQueryBuilder('s')
-      .innerJoin('s.course_section', 'cs')
-      .innerJoin('cs.course', 'c')
-      .where('s.course_section_id IN (:...sectionIds)', { sectionIds: enrolledSectionIds })
-      .select([
-        's.weekday',
-        's.time_start',
-        's.time_end',
-        'cs.id',
-        'c.name',
-        'c.code'
-      ])
-      .getMany();
+    if (enrolledDetails.length === 0) {
+      return { isValid: true, errors: [], warnings: [] };
+    }
+
+    // Obtener horarios de las materias ya inscritas
+    const enrolledSectionIds = enrolledDetails.map(detail => detail.course_section.id);
+    const enrolledSchedules = await this.optimizedQueryService.getSchedulesBySections(enrolledSectionIds);
 
     const conflicts: ScheduleConflict[] = [];
 
-    // Detectar conflictos
+    // Detectar conflictos usando algoritmo optimizado
     for (const newSchedule of newSchedules) {
-      for (const existingSchedule of existingSchedules) {
-        if (newSchedule.weekday === existingSchedule.weekday) {
-          // Verificar overlap de tiempo
-          if (this.hasTimeOverlap(
-            newSchedule.time_start,
-            newSchedule.time_end,
-            existingSchedule.time_start,
-            existingSchedule.time_end
-          )) {
-            conflicts.push({
-              existingCourseSection: `${existingSchedule.course_section.course.name} (${existingSchedule.course_section.course.code})`,
-              conflictingTime: `${existingSchedule.time_start} - ${existingSchedule.time_end}`,
-              day: existingSchedule.weekday
-            });
-          }
+      for (const existingSchedule of enrolledSchedules) {
+        if (this.hasTimeOverlap(newSchedule, existingSchedule)) {
+          conflicts.push({
+            existingCourseSection: `${existingSchedule.course_section.course.code} - Grupo ${existingSchedule.course_section.group_label}`,
+            conflictingTime: `${newSchedule.time_start} - ${newSchedule.time_end}`,
+            day: newSchedule.weekday
+          });
         }
       }
     }
 
-    const result: ValidationResult = {
+    return {
       isValid: conflicts.length === 0,
-      errors: [],
+      errors: conflicts.map(c => 
+        `Conflicto de horario el ${c.day} de ${c.conflictingTime} con ${c.existingCourseSection}`
+      ),
       warnings: []
     };
-
-    if (conflicts.length > 0) {
-      result.errors = conflicts.map(conflict => 
-        `Conflicto de horario el ${conflict.day}: ${conflict.existingCourseSection} (${conflict.conflictingTime})`
-      );
-    }
-
-    return result;
   }
 
   /**
-   * Valida límites académicos (carga mínima/máxima)
+   * FASE PRE-1D: Validación optimizada de límites académicos
+   * Usa conteo eficiente con índices
    */
   async validateAcademicLimits(
     studentId: string,
     termId: string,
     manager?: EntityManager
   ): Promise<ValidationResult> {
-    const enrollmentRepo = manager ? manager.getRepository(EnrollmentDetail) : this.enrollmentDetailRepository;
+    // Usar consulta optimizada para contar materias inscritas
+    const enrolledCount = await this.optimizedQueryService.getEnrolledCoursesCount(
+      studentId,
+      termId
+    );
 
-    // Contar materias inscritas en el período
-    const enrolledCount = await enrollmentRepo
-      .createQueryBuilder('ed')
-      .innerJoin('ed.enrollment', 'e')
-      .innerJoin('ed.course_section', 'cs')
-      .where('e.student_id = :studentId', { studentId })
-      .andWhere('cs.term_id = :termId', { termId })
-      .andWhere('ed.status = :status', { status: 'enrolled' })
-      .getCount();
+    const MAX_COURSES_PER_TERM = 8; // Límite configurable
 
     const result: ValidationResult = {
-      isValid: true,
-      errors: [],
-      warnings: []
+      isValid: enrolledCount < MAX_COURSES_PER_TERM,
+      errors: enrolledCount >= MAX_COURSES_PER_TERM ? 
+        [`Límite de materias excedido: ${enrolledCount}/${MAX_COURSES_PER_TERM}`] : [],
+      warnings: enrolledCount >= MAX_COURSES_PER_TERM - 1 ? 
+        [`Cerca del límite de materias: ${enrolledCount}/${MAX_COURSES_PER_TERM}`] : []
     };
-
-    // Límites de carga académica
-    const MAX_COURSES_PER_TERM = 8;
-    const MIN_COURSES_FOR_FULLTIME = 4;
-
-    if (enrolledCount >= MAX_COURSES_PER_TERM) {
-      result.isValid = false;
-      result.errors.push(`Límite máximo de materias excedido (${MAX_COURSES_PER_TERM} materias por período)`);
-    }
-
-    if (enrolledCount === 0) {
-      result.warnings.push(`Se recomienda inscribir al menos ${MIN_COURSES_FOR_FULLTIME} materias para mantener estatus de estudiante tiempo completo`);
-    }
 
     return result;
   }
 
   /**
-   * Verifica que el estudiante no haya aprobado ya la materia
+   * FASE PRE-1D: Validación optimizada de materias ya aprobadas
+   * Usa índice compuesto para búsqueda eficiente
    */
   async validateCourseNotPassed(
     studentId: string,
     courseSectionId: string,
     manager?: EntityManager
   ): Promise<ValidationResult> {
-    const gradeRepo = manager ? manager.getRepository(Grade) : this.gradeRepository;
+    // Obtener información de la sección de curso
+    const courseSection = await this.courseSectionRepository.findOne({
+      where: { id: courseSectionId },
+      relations: ['course']
+    });
 
-    // Verificar si ya aprobó la materia
-    const passingGrade = await gradeRepo
-      .createQueryBuilder('g')
-      .innerJoin('g.course_section', 'cs')
-      .innerJoin('cs.course', 'c')
-      .innerJoin('course_section', 'current_cs', 'current_cs.id = :courseSectionId', { courseSectionId })
-      .innerJoin('current_cs.course', 'current_c')
-      .where('g.student_id = :studentId', { studentId })
-      .andWhere('c.id = current_c.id') // Misma materia
-      .andWhere('g.final_grade >= 60') // Nota aprobatoria
-      .getOne();
+    if (!courseSection) {
+      return {
+        isValid: false,
+        errors: ['Sección de curso no encontrada'],
+        warnings: []
+      };
+    }
 
-    const result: ValidationResult = {
-      isValid: !passingGrade,
-      errors: [],
+    // Usar consulta optimizada para verificar si ya aprobó la materia
+    const hasPassed = await this.optimizedQueryService.hasStudentPassedCourse(
+      studentId,
+      courseSection.course.id
+    );
+
+    return {
+      isValid: !hasPassed,
+      errors: hasPassed ? 
+        [`Ya aprobó la materia: ${courseSection.course.code} - ${courseSection.course.name}`] : [],
       warnings: []
     };
+  }
 
-    if (passingGrade) {
-      result.errors.push('El estudiante ya ha aprobado esta materia previamente');
+  /**
+   * Función auxiliar para detectar solapamiento de horarios
+   */
+  private hasTimeOverlap(schedule1: Schedule, schedule2: Schedule): boolean {
+    if (schedule1.weekday !== schedule2.weekday) {
+      return false;
     }
 
-    return result;
+    const start1 = this.timeToMinutes(schedule1.time_start);
+    const end1 = this.timeToMinutes(schedule1.time_end);
+    const start2 = this.timeToMinutes(schedule2.time_start);
+    const end2 = this.timeToMinutes(schedule2.time_end);
+
+    // Verificar solapamiento: (start1 < end2) && (start2 < end1)
+    return start1 < end2 && start2 < end1;
   }
 
   /**
-   * Utilidad para detectar overlap de tiempo
+   * Convierte tiempo HH:MM a minutos para comparación
    */
-  private hasTimeOverlap(
-    start1: string,
-    end1: string,
-    start2: string,
-    end2: string
-  ): boolean {
-    // Convertir strings de tiempo a minutos desde medianoche
-    const parseTime = (time: string): number => {
-      const [hours, minutes] = time.split(':').map(Number);
-      return hours * 60 + minutes;
-    };
-
-    const s1 = parseTime(start1);
-    const e1 = parseTime(end1);
-    const s2 = parseTime(start2);
-    const e2 = parseTime(end2);
-
-    // Verificar overlap: start1 < end2 AND start2 < end1
-    return s1 < e2 && s2 < e1;
+  private timeToMinutes(time: string): number {
+    const [hours, minutes] = time.split(':').map(Number);
+    return hours * 60 + minutes;
   }
 
   /**
-   * Validación rápida solo de prerequisitos (para UI)
+   * Método público para obtener prerrequisitos de una materia (optimizado)
    */
-  async quickPrerequisiteCheck(
+  async getPrerequisitesForCourse(courseId: string): Promise<Prerequisite[]> {
+    return this.optimizedQueryService.getPrerequisitesByCourse(courseId);
+  }
+
+  /**
+   * Método público para verificar prerrequisitos cumplidos (optimizado)
+   */
+  async checkPrerequisitesCompliance(
     studentId: string,
     courseId: string
-  ): Promise<{ canEnroll: boolean; missingPrerequisites: string[] }> {
-    const prerequisites = await this.prerequisiteRepository
-      .createQueryBuilder('p')
-      .innerJoin('p.required_course', 'rc')
-      .where('p.main_course_id = :courseId', { courseId })
-      .select(['rc.code', 'rc.name'])
-      .getMany();
+  ): Promise<{ courseId: string; hasPrerequisites: boolean; missingPrerequisites: string[] }> {
+    const prerequisiteChecks = await this.optimizedQueryService.batchCheckPrerequisites(
+      studentId,
+      [courseId]
+    );
+    
+    return prerequisiteChecks[0];
+  }
 
-    if (prerequisites.length === 0) {
-      return { canEnroll: true, missingPrerequisites: [] };
+  /**
+   * Método público para obtener horarios con posibles conflictos (optimizado)
+   */
+  async getScheduleConflictsForStudent(
+    studentId: string,
+    termId: string,
+    proposedSchedules: { weekday: string; timeStart: string; timeEnd: string }[]
+  ): Promise<ScheduleConflict[]> {
+    const enrolledDetails = await this.optimizedQueryService.getStudentEnrollmentDetails(
+      studentId,
+      termId
+    );
+
+    if (enrolledDetails.length === 0) {
+      return [];
     }
 
-    const missingPrerequisites: string[] = [];
+    const enrolledSectionIds = enrolledDetails.map(detail => detail.course_section.id);
+    const enrolledSchedules = await this.optimizedQueryService.getSchedulesBySections(enrolledSectionIds);
 
-    for (const prerequisite of prerequisites) {
-      const passingGrade = await this.gradeRepository
-        .createQueryBuilder('g')
-        .innerJoin('g.course_section', 'cs')
-        .innerJoin('cs.course', 'c')
-        .where('g.student_id = :studentId', { studentId })
-        .andWhere('c.id = :courseId', { courseId: prerequisite.required_course.id })
-        .andWhere('g.final_grade >= 60')
-        .getOne();
+    const conflicts: ScheduleConflict[] = [];
 
-      if (!passingGrade) {
-        missingPrerequisites.push(`${prerequisite.required_course.name} (${prerequisite.required_course.code})`);
+    for (const proposedSchedule of proposedSchedules) {
+      for (const existingSchedule of enrolledSchedules) {
+        if (
+          proposedSchedule.weekday === existingSchedule.weekday &&
+          this.timeToMinutes(proposedSchedule.timeStart) < this.timeToMinutes(existingSchedule.time_end) &&
+          this.timeToMinutes(proposedSchedule.timeEnd) > this.timeToMinutes(existingSchedule.time_start)
+        ) {
+          conflicts.push({
+            existingCourseSection: `${existingSchedule.course_section.course.code} - Grupo ${existingSchedule.course_section.group_label}`,
+            conflictingTime: `${proposedSchedule.timeStart} - ${proposedSchedule.timeEnd}`,
+            day: proposedSchedule.weekday
+          });
+        }
       }
     }
 
-    return {
-      canEnroll: missingPrerequisites.length === 0,
-      missingPrerequisites
-    };
+    return conflicts;
   }
 }

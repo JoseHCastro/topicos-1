@@ -22,7 +22,7 @@ export class AcademicValidationController {
     @Query('studentId') studentId: string,
     @Query('courseId') courseId: string,
   ) {
-    return await this.academicValidationService.quickPrerequisiteCheck(
+    return await this.academicValidationService.checkPrerequisitesCompliance(
       studentId,
       courseId,
     );

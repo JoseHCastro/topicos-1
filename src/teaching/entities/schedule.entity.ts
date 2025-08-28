@@ -1,8 +1,11 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn, Index } from 'typeorm';
 import { CourseSection } from './course-section.entity';
 import { Classroom } from '../../facilities/entities/classroom.entity';
 
 @Entity('schedule')
+@Index('IDX_schedule_course_section', ['course_section_id'])
+@Index('IDX_schedule_time_overlap', ['course_section_id', 'weekday', 'time_start', 'time_end'])
+@Index('IDX_schedule_weekday_time', ['weekday', 'time_start', 'time_end'])
 export class Schedule {
   @PrimaryGeneratedColumn('uuid')
   id: string;

@@ -1,9 +1,13 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn, Unique } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn, Unique, Index } from 'typeorm';
 import { Enrollment } from './enrollment.entity';
 import { CourseSection } from '../../teaching/entities/course-section.entity';
 
 @Entity('enrollment_detail')
 @Unique(['enrollment_id', 'course_section_id'])
+@Index('IDX_enrollment_detail_enrollment', ['enrollment_id'])
+@Index('IDX_enrollment_detail_course_section', ['course_section_id'])
+@Index('IDX_enrollment_detail_status', ['course_state'])
+@Index('IDX_enrollment_detail_student_term', ['enrollment_id', 'course_section_id', 'course_state'])
 export class EnrollmentDetail {
   @PrimaryGeneratedColumn('uuid')
   id: string;

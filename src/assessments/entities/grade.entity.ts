@@ -1,9 +1,13 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn, Unique } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn, Unique, Index } from 'typeorm';
 import { CourseSection } from '../../teaching/entities/course-section.entity';
 import { Student } from '../../auth/entities/student.entity';
 
 @Entity('grade')
 @Unique(['course_section_id', 'student_id'])
+@Index('IDX_grade_student', ['student_id'])
+@Index('IDX_grade_course_section', ['course_section_id'])
+@Index('IDX_grade_approved_courses', ['student_id', 'course_section_id', 'final_grade'])
+@Index('IDX_grade_final_grade', ['final_grade'])
 export class Grade {
   @PrimaryGeneratedColumn('uuid')
   id: string;

@@ -1,9 +1,13 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, JoinColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, JoinColumn, CreateDateColumn, UpdateDateColumn, Index } from 'typeorm';
 import { Student } from '../../auth/entities/student.entity';
 import { Term } from '../../calendar/entities/term.entity';
 import { EnrollmentDetail } from './enrollment-detail.entity';
 
 @Entity('enrollment')
+@Index('IDX_enrollment_student', ['student_id'])
+@Index('IDX_enrollment_term', ['term_id'])
+@Index('IDX_enrollment_student_term', ['student_id', 'term_id'])
+@Index('IDX_enrollment_state', ['state'])
 export class Enrollment {
   @PrimaryGeneratedColumn('uuid')
   id: string;

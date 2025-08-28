@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, JoinColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, JoinColumn, CreateDateColumn, UpdateDateColumn, Index } from 'typeorm';
 import { Course } from '../../programs/entities/course.entity';
 import { Term } from '../../calendar/entities/term.entity';
 import { Teacher } from '../../auth/entities/teacher.entity';
@@ -7,6 +7,11 @@ import { Grade } from '../../assessments/entities/grade.entity';
 import { EnrollmentDetail } from '../../enrollments/entities/enrollment-detail.entity';
 
 @Entity('course_section')
+@Index('IDX_course_section_course', ['course_id'])
+@Index('IDX_course_section_term', ['term_id'])
+@Index('IDX_course_section_teacher', ['teacher_id'])
+@Index('IDX_course_section_quota', ['quota_available'])
+@Index('IDX_course_section_course_term', ['course_id', 'term_id'])
 export class CourseSection {
   @PrimaryGeneratedColumn('uuid')
   id: string;

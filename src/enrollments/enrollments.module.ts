@@ -6,8 +6,20 @@ import { CourseSection } from '../teaching/entities';
 import { Prerequisite } from '../programs/entities';
 import { Schedule } from '../teaching/entities';
 import { Grade } from '../assessments/entities';
-import { EnrollmentService, EnrollmentDetailService, AtomicEnrollmentService, AcademicValidationService } from './services';
-import { EnrollmentController, EnrollmentDetailController, AtomicEnrollmentController, AcademicValidationController } from './controllers';
+import { 
+  EnrollmentService, 
+  EnrollmentDetailService, 
+  AtomicEnrollmentService, 
+  AcademicValidationService,
+  OptimizedQueryService
+} from './services';
+import { 
+  EnrollmentController, 
+  EnrollmentDetailController, 
+  AtomicEnrollmentController, 
+  AcademicValidationController,
+  DatabasePerformanceController
+} from './controllers';
 import { AuthModule } from '../auth/auth.module';
 import { CommonModule } from '../common/common.module';
 
@@ -25,8 +37,27 @@ import { CommonModule } from '../common/common.module';
     AuthModule,
     CommonModule,
   ],
-  controllers: [EnrollmentController, EnrollmentDetailController, AtomicEnrollmentController, AcademicValidationController],
-  providers: [EnrollmentService, EnrollmentDetailService, AtomicEnrollmentService, AcademicValidationService],
-  exports: [TypeOrmModule, EnrollmentService, EnrollmentDetailService, AtomicEnrollmentService, AcademicValidationService],
+  controllers: [
+    EnrollmentController, 
+    EnrollmentDetailController, 
+    AtomicEnrollmentController, 
+    AcademicValidationController,
+    DatabasePerformanceController
+  ],
+  providers: [
+    EnrollmentService, 
+    EnrollmentDetailService, 
+    AtomicEnrollmentService, 
+    AcademicValidationService,
+    OptimizedQueryService
+  ],
+  exports: [
+    TypeOrmModule, 
+    EnrollmentService, 
+    EnrollmentDetailService, 
+    AtomicEnrollmentService, 
+    AcademicValidationService,
+    OptimizedQueryService
+  ],
 })
 export class EnrollmentsModule {}
