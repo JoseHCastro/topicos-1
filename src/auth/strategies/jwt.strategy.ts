@@ -20,8 +20,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
   /**
    * Validación STATELESS del JWT
-   * ✅ Sin consultas a base de datos
-   * ✅ Verificación de blacklist en memoria
+   * Sin consultas a base de datos
+   * Verificación de blacklist en memoria
    */
   async validate(payload: JwtPayload): Promise<JwtPayload> {
     const { jti, exp, id } = payload;
@@ -29,14 +29,12 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     if (!id) {
       throw new UnauthorizedException('Token payload is invalid');
     }
-
-    // Verificación de expiración (doble check)
+    
     const now = Math.floor(Date.now() / 1000);
     if (exp < now) {
       throw new UnauthorizedException('Token expired');
     }
-
-    // Verificación de blacklist (tokens revocados)
+    
     if (!jti) {
       throw new UnauthorizedException('Invalid token format - missing JTI');
     }
@@ -44,9 +42,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     if (this.tokenCacheService.isTokenRevoked(jti)) {
       throw new UnauthorizedException('Token has been revoked');
     }
-
-    // ✅ RETORNAMOS EL PAYLOAD COMPLETO
-    // Sin consultas a BD - toda la información está en el token
+    
     return payload;
   }
 }

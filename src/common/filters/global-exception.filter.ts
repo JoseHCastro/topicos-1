@@ -21,8 +21,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest();
-
-    // Determinar el status code y mensaje
+    
     let status: number;
     let errorResponse: any;
 
@@ -71,7 +70,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
         path: request.url,
       };
     } else {
-      // Error no manejado
+      
       status = HttpStatus.INTERNAL_SERVER_ERROR;
       errorResponse = {
         success: false,
@@ -80,15 +79,13 @@ export class GlobalExceptionFilter implements ExceptionFilter {
         timestamp: new Date().toISOString(),
         path: request.url,
       };
-
-      // Log detallado para errores internos
+      
       this.logger.error(
         `Error interno: ${exception}`,
         exception instanceof Error ? exception.stack : 'No stack trace',
       );
     }
-
-    // Log del error (excepto errores 400-499 que son errores del cliente)
+    
     if (status >= 500) {
       this.logger.error(
         `HTTP ${status} Error: ${JSON.stringify(errorResponse)}`,

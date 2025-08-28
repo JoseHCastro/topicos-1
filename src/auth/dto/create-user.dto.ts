@@ -1,4 +1,4 @@
-// create-user.dto.ts
+
 import {
   IsEmail,
   IsEnum,
@@ -46,12 +46,10 @@ export class CreateUserDto {
   @IsNotEmpty()
   role: UserRole;
 
-  // Campo teléfono general para todos los tipos de usuario
   @IsString()
   @IsOptional()
   phone?: string;
 
-  // Campos específicos de Student
   @IsString()
   @IsOptional()
   @ValidateIf((o) => o.role === UserRole.STUDENT)
@@ -67,7 +65,6 @@ export class CreateUserDto {
   @ValidateIf((o) => o.role === UserRole.STUDENT)
   birthDate?: Date;
 
-  // Campos específicos de Teacher
   @IsString()
   @IsOptional()
   @ValidateIf((o) => o.role === UserRole.TEACHER)

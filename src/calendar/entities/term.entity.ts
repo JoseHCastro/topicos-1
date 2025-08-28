@@ -12,7 +12,7 @@ export class Term {
   academic_year_id: string;
 
   @Column('varchar', { length: 50 })
-  name: string; // e.g., "2025-I"
+  name: string;
 
   @Column('date')
   start_date: Date;

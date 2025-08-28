@@ -26,17 +26,14 @@ export const databaseConfig = (): TypeOrmModuleOptions => ({
   synchronize: true,
   logging: process.env.NODE_ENV === 'development' ? ['error', 'warn'] : false,
   dropSchema: false,
-  migrationsRun: false,
-  // Configuración optimizada para transacciones y concurrencia
-  extra: {
-    // Pool de conexiones optimizado para alta concurrencia
+  migrationsRun: false,  
+  extra: {    
     max: parseInt(process.env.DB_POOL_MAX || '10', 10),
     min: parseInt(process.env.DB_POOL_MIN || '2', 10),
     acquire: parseInt(process.env.DB_ACQUIRE_TIMEOUT || '30000', 10),
-    idle: parseInt(process.env.DB_IDLE_TIMEOUT || '10000', 10),
-    // Configuraciones específicas de PostgreSQL para concurrencia
-    statement_timeout: '5000', // 5 segundos max por query
-    idle_in_transaction_session_timeout: '10000', // 10 segundos max idle en transacción
-    lock_timeout: '3000', // 3 segundos max esperando locks
+    idle: parseInt(process.env.DB_IDLE_TIMEOUT || '10000', 10),    
+    statement_timeout: '5000',
+    idle_in_transaction_session_timeout: '10000',
+    lock_timeout: '3000',
   },
 });

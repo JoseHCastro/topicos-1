@@ -5,13 +5,13 @@ import { CourseSection } from '../../teaching/entities/course-section.entity';
 @ChildEntity()
 export class Teacher extends User {
   @Column('varchar', { length: 50 })
-  category: string; // e.g., Tenured
+  category: string;
 
   @Column('varchar', { length: 50 })
-  workload: string; // e.g., FullTime, PartTime
+  workload: string;
 
   @Column('varchar', { length: 30 })
-  contract_type: string; // e.g., Temporary
+  contract_type: string;
 
   @Column('date')
   hired_at: Date;

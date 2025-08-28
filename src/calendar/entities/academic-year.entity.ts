@@ -10,7 +10,7 @@ export class AcademicYear {
   year: number;
 
   @Column('varchar', { length: 50 })
-  name: string; // e.g., "AY 2025"
+  name: string;
 
   @Column('date')
   start_date: Date;

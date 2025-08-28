@@ -23,8 +23,7 @@ import { TokenCacheService } from './services/token-cache.service';
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => {
         return {
-          secret: configService.get<string>('JWT_SECRET'),
-          // Sin signOptions.expiresIn para JWT stateless (exp manual)
+          secret: configService.get<string>('JWT_SECRET'),          
         };
       },
     }),

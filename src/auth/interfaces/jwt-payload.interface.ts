@@ -1,23 +1,15 @@
 export interface JwtPayload {
-  // Identificación básica
+
   id: string;
   email: string;
-  
-  // Información del usuario (evita consulta a BD)
   first_name: string;
   last_name: string;
   phone?: string;
-  role: string; // ✅ CAMBIADO: usar 'role' en lugar de 'user_type'
-  
-  // Información de autorización
-  roles: string[]; // Para futuras expansiones de roles
-  
-  // Información específica por tipo de usuario
-  student_code?: string; // Solo para estudiantes
-  teacher_category?: string; // Solo para profesores
-  
-  // Metadatos de seguridad
-  iat: number; // Issued at
-  exp: number; // Expiration
-  jti: string; // JWT ID para revocación
+  role: string;
+  roles: string[];
+  student_code?: string;
+  teacher_category?: string;
+  iat: number;
+  exp: number;
+  jti: string;
 }

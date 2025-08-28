@@ -12,7 +12,7 @@ import { META_ROLES } from '../decorators/role-protected.decorator';
 
 @Injectable()
 export class UserRoleGuard implements CanActivate {
-  constructor(private readonly reflector: Reflector) {}
+  constructor(private readonly reflector: Reflector) { }
 
   canActivate(
     context: ExecutionContext,
@@ -31,18 +31,16 @@ export class UserRoleGuard implements CanActivate {
     }
 
     const req = context.switchToHttp().getRequest();
-    const user = req.user as JwtPayload; // Ahora es JwtPayload, no User
+    const user = req.user as JwtPayload;
 
     if (!user) {
       throw new BadRequestException('User not found');
     }
 
-    // Verificar rol principal
-    if (validRoles.includes(user.role)) { // ✅ CORREGIDO: usar 'role' en lugar de 'user_type'
+    if (validRoles.includes(user.role)) {
       return true;
     }
 
-    // Verificar roles adicionales (para futuras expansiones)
     if (user.roles && user.roles.some(role => validRoles.includes(role))) {
       return true;
     }

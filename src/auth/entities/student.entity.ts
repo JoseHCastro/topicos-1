@@ -15,7 +15,7 @@ export class Student extends User {
   birth_date: Date;
 
   @Column('char', { length: 1, nullable: true })
-  sex: string; // M, F, O
+  sex: string;
 
   @OneToMany(() => Enrollment, enrollment => enrollment.student)
   enrollments: Enrollment[];

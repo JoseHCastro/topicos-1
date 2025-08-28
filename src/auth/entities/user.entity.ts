@@ -29,10 +29,10 @@ export class User {
   phone: string;
 
   @Column('varchar', { length: 20 })
-  user_type: string; // Student, Teacher, Admin
+  user_type: string;
 
   @Column('varchar', { length: 20, default: 'Active' })
-  status: string; // Active, Inactive
+  status: string;
 
   @CreateDateColumn({
     type: 'timestamptz',

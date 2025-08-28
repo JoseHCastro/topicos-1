@@ -7,12 +7,12 @@ import { JwtPayload } from '../interfaces';
  */
 @Injectable()
 export class TokenCacheService implements OnModuleDestroy {
-  private blacklistedTokens = new Map<string, number>(); // jti -> expiration
-  private userTokens = new Map<string, Set<string>>(); // userId -> Set<jti>
+  private blacklistedTokens = new Map<string, number>();
+  private userTokens = new Map<string, Set<string>>();
   private cleanupInterval: NodeJS.Timeout;
 
   constructor() {
-    // Limpieza automática cada 15 minutos
+
     this.cleanupInterval = setInterval(() => {
       this.cleanupExpiredTokens();
     }, 15 * 60 * 1000);
@@ -32,14 +32,14 @@ export class TokenCacheService implements OnModuleDestroy {
   revokeAllUserTokens(userId: string): void {
     const userJtis = this.userTokens.get(userId);
     if (userJtis) {
-      // Obtener tiempo de expiración actual + buffer
-      const expTime = Math.floor(Date.now() / 1000) + (24 * 60 * 60); // +24h buffer
-      
+
+      const expTime = Math.floor(Date.now() / 1000) + (24 * 60 * 60);
+
       userJtis.forEach(jti => {
         this.blacklistedTokens.set(jti, expTime);
       });
-      
-      // Limpiar registros del usuario
+
+
       this.userTokens.delete(userId);
     }
   }
@@ -56,11 +56,11 @@ export class TokenCacheService implements OnModuleDestroy {
    */
   registerToken(payload: JwtPayload): void {
     const { id: userId, jti } = payload;
-    
+
     if (!this.userTokens.has(userId)) {
       this.userTokens.set(userId, new Set());
     }
-    
+
     this.userTokens.get(userId)!.add(jti);
   }
 
@@ -69,13 +69,13 @@ export class TokenCacheService implements OnModuleDestroy {
    */
   private cleanupExpiredTokens(): void {
     const now = Math.floor(Date.now() / 1000);
-    
+
     for (const [jti, exp] of this.blacklistedTokens.entries()) {
       if (exp < now) {
         this.blacklistedTokens.delete(jti);
       }
     }
-    
+
     console.log(`[TokenCache] Limpieza completada. Tokens en blacklist: ${this.blacklistedTokens.size}`);
   }
 

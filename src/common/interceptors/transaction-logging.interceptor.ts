@@ -17,10 +17,10 @@ export class TransactionLoggingInterceptor implements NestInterceptor {
     const { method, url, body } = request;
     const startTime = Date.now();
 
-    // Log de inicio de transacción para endpoints de inscripción
+    
     if (url.includes('atomic-enrollment') || url.includes('enroll')) {
       this.logger.log(
-        `🔄 Iniciando transacción: ${method} ${url}`,
+        `Iniciando transacción: ${method} ${url}`,
         {
           timestamp: new Date().toISOString(),
           method,
@@ -36,7 +36,7 @@ export class TransactionLoggingInterceptor implements NestInterceptor {
         
         if (url.includes('atomic-enrollment') || url.includes('enroll')) {
           this.logger.log(
-            `✅ Transacción exitosa: ${method} ${url} - ${duration}ms`,
+            `Transacción exitosa: ${method} ${url} - ${duration}ms`,
             {
               timestamp: new Date().toISOString(),
               method,
@@ -52,7 +52,7 @@ export class TransactionLoggingInterceptor implements NestInterceptor {
         
         if (url.includes('atomic-enrollment') || url.includes('enroll')) {
           this.logger.error(
-            `❌ Transacción fallida: ${method} ${url} - ${duration}ms`,
+            ` Transacción fallida: ${method} ${url} - ${duration}ms`,
             {
               timestamp: new Date().toISOString(),
               method,

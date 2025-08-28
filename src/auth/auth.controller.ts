@@ -32,15 +32,15 @@ export class AuthController {
   @Get('check-status')
   @Auth()
   checkAuthStatus(@GetUser() user: JwtPayload) {
-    // Ahora user es el payload del JWT, no el User de BD
+    
     return {
       id: user.id,
       email: user.email,
       firstName: user.first_name,
       lastName: user.last_name,
-      role: user.role, // ✅ CORREGIDO: usar 'role' en lugar de 'user_type'
+      role: user.role,
       roles: user.roles,
-      phone: user.phone, // ✅ AGREGADO: incluir teléfono
+      phone: user.phone,
     };
   }
 
