@@ -1,17 +1,14 @@
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
-import { User } from '../entities/user.entity';
 import { JwtPayload } from '../interfaces/jwt-payload.interface';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import { ConfigService } from '@nestjs/config';
 import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { TokenCacheService } from '../services/token-cache.service';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(
-    @InjectRepository(User)
-    private readonly userRepository: Repository<User>,
+    private readonly tokenCacheService: TokenCacheService,
     private readonly configService: ConfigService,
   ) {
     super({
@@ -20,26 +17,36 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       ignoreExpiration: false,
     });
   }
-  async validate(payload: JwtPayload): Promise<User> {
-    const { id } = payload;
+
+  /**
+   * Validación STATELESS del JWT
+   * ✅ Sin consultas a base de datos
+   * ✅ Verificación de blacklist en memoria
+   */
+  async validate(payload: JwtPayload): Promise<JwtPayload> {
+    const { jti, exp, id } = payload;
 
     if (!id) {
       throw new UnauthorizedException('Token payload is invalid');
     }
 
-    const user = await this.userRepository.findOne({ 
-      where: { id },
-      select: ['id', 'email', 'first_name', 'last_name', 'user_type']
-    });
-
-    if (!user) {
-      throw new UnauthorizedException('Token not valid');
+    // Verificación de expiración (doble check)
+    const now = Math.floor(Date.now() / 1000);
+    if (exp < now) {
+      throw new UnauthorizedException('Token expired');
     }
 
-    if (!user.id) {
-      throw new UnauthorizedException('User data is incomplete');
+    // Verificación de blacklist (tokens revocados)
+    if (!jti) {
+      throw new UnauthorizedException('Invalid token format - missing JTI');
     }
 
-    return user;
+    if (this.tokenCacheService.isTokenRevoked(jti)) {
+      throw new UnauthorizedException('Token has been revoked');
+    }
+
+    // ✅ RETORNAMOS EL PAYLOAD COMPLETO
+    // Sin consultas a BD - toda la información está en el token
+    return payload;
   }
 }

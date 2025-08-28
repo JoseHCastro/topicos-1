@@ -17,6 +17,8 @@ import {
 import { JwtPayload } from './interfaces';
 import { JwtService } from '@nestjs/jwt';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { TokenCacheService } from './services/token-cache.service';
+import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
 export class AuthService {
@@ -30,6 +32,7 @@ export class AuthService {
     @InjectRepository(Admin)
     private readonly adminRepository: Repository<Admin>,
     private readonly jwtService: JwtService,
+    private readonly tokenCacheService: TokenCacheService,
   ) {}
   
   async create(createUserDto: CreateUserDto) {
@@ -61,7 +64,7 @@ export class AuthService {
       const student = await this.createStudent(createUserDto, hashedPassword);
       return {
         user: this.parseUser(student),
-        token: this.getJwtToken({ email: student.email, id: student.id, rol: student.user_type }),
+        token: this.getJwtToken(student),
       };
     }
 
@@ -70,7 +73,7 @@ export class AuthService {
       const teacher = await this.createTeacher(createUserDto, hashedPassword);
       return {
         user: this.parseUser(teacher),
-        token: this.getJwtToken({ email: teacher.email, id: teacher.id, rol: teacher.user_type }),
+        token: this.getJwtToken(teacher),
       };
     }
 
@@ -79,7 +82,7 @@ export class AuthService {
       const admin = await this.createAdmin(createUserDto, hashedPassword);
       return {
         user: this.parseUser(admin),
-        token: this.getJwtToken({ email: admin.email, id: admin.id, rol: admin.user_type }),
+        token: this.getJwtToken(admin),
       };
     }
 
@@ -91,7 +94,7 @@ export class AuthService {
 
     const user = await this.userRepository.findOne({
       where: { email },
-      select: { email: true, password: true, id: true, first_name: true, user_type: true },
+      select: { email: true, password: true, id: true, first_name: true, last_name: true, user_type: true },
     });
 
     if (!user) {
@@ -102,11 +105,14 @@ export class AuthService {
       throw new UnauthorizedException('Credentials are not valid (password)');
     }
 
+    // Cargar información específica del tipo de usuario
+    const fullUser = await this.loadFullUserInfo(user);
+
     return {
       id: user.id,
       email: user.email,
       firstName: user.first_name,
-      token: this.getJwtToken({ email: user.email, id: user.id, rol: user.user_type }),
+      token: this.getJwtToken(fullUser),
     };
   }
 
@@ -130,7 +136,7 @@ export class AuthService {
   checkAuthStatus(user: User) {
     return {
       ...this.parseUser(user),
-      token: this.getJwtToken({ email: user.email, id: user.id, rol: user.user_type }),
+      token: this.getJwtToken(user),
     };
   }
 
@@ -148,9 +154,74 @@ export class AuthService {
     return savedUser;
   }
 
-  private getJwtToken(payload: JwtPayload) {
+  /**
+   * Genera un JWT STATELESS con toda la información del usuario
+   */
+  private getJwtToken(user: User | Student | Teacher | Admin): string {
+    const now = Math.floor(Date.now() / 1000);
+    const exp = now + (24 * 60 * 60); // 24 horas
+    const jti = uuidv4(); // ID único del token para revocación
+
+    // Payload base
+    const payload: JwtPayload = {
+      id: user.id,
+      email: user.email,
+      first_name: user.first_name,
+      last_name: user.last_name,
+      user_type: user.user_type,
+      roles: [user.user_type], // Array para futura expansión
+      iat: now,
+      exp: exp,
+      jti: jti,
+    };
+
+    // Agregar información específica por tipo de usuario
+    if (user.user_type === 'Student' && 'code' in user) {
+      payload.student_code = (user as Student).code;
+    }
+
+    if (user.user_type === 'Teacher' && 'category' in user) {
+      payload.teacher_category = (user as Teacher).category;
+    }
+
+    // Registrar el token en el cache
+    this.tokenCacheService.registerToken(payload);
+
     const token = this.jwtService.sign(payload);
     return token;
+  }
+
+  /**
+   * Carga información completa del usuario basada en su tipo
+   */
+  private async loadFullUserInfo(user: User): Promise<User | Student | Teacher | Admin> {
+    switch (user.user_type) {
+      case 'Student':
+        const student = await this.studentRepository.findOne({ where: { id: user.id } });
+        return student || user;
+      case 'Teacher':
+        const teacher = await this.teacherRepository.findOne({ where: { id: user.id } });
+        return teacher || user;
+      case 'Admin':
+        const admin = await this.adminRepository.findOne({ where: { id: user.id } });
+        return admin || user;
+      default:
+        return user;
+    }
+  }
+
+  /**
+   * Revoca un token específico (logout)
+   */
+  async logout(jti: string, exp: number): Promise<void> {
+    this.tokenCacheService.revokeToken(jti, exp);
+  }
+
+  /**
+   * Revoca todos los tokens de un usuario (logout de todas las sesiones)
+   */
+  async logoutAll(userId: string): Promise<void> {
+    this.tokenCacheService.revokeAllUserTokens(userId);
   }
 
   private parseUser(user: User) {

@@ -11,6 +11,7 @@ import { CreateUserDto, LoginUserDto, UpdateUserDto } from './dto';
 import { Auth, GetUser } from './decorators';
 import { User } from './entities';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { JwtPayload } from './interfaces';
 
 @Controller('auth')
 export class AuthController {
@@ -30,22 +31,50 @@ export class AuthController {
 
   @Get('check-status')
   @Auth()
-  checkAuthStatus(@GetUser() user: User) {
-    return this.authService.checkAuthStatus(user);
+  checkAuthStatus(@GetUser() user: JwtPayload) {
+    // Ahora user es el payload del JWT, no el User de BD
+    return {
+      id: user.id,
+      email: user.email,
+      firstName: user.first_name,
+      lastName: user.last_name,
+      userType: user.user_type,
+      roles: user.roles,
+    };
   }
 
   @Patch('update-user')
   @Auth()
-  update(@GetUser() user: User, @Body() updateUserDto: UpdateUserDto) {
+  update(@GetUser() user: JwtPayload, @Body() updateUserDto: UpdateUserDto) {
     return this.authService.update(user.id, updateUserDto);
   }
 
   @Put('change-password')
   @Auth()
   changePassword(
-    @GetUser() user: User,
+    @GetUser() user: JwtPayload,
     @Body() changePasswordDto: ChangePasswordDto,
   ) {
     return this.authService.changePassword(user.id, changePasswordDto);
+  }
+
+  /**
+   * Logout específico - revoca el token actual
+   */
+  @Post('logout')
+  @Auth()
+  async logout(@GetUser() user: JwtPayload) {
+    await this.authService.logout(user.jti, user.exp);
+    return { message: 'Logout successful' };
+  }
+
+  /**
+   * Logout de todas las sesiones - revoca todos los tokens del usuario
+   */
+  @Post('logout-all')
+  @Auth()
+  async logoutAll(@GetUser() user: JwtPayload) {
+    await this.authService.logoutAll(user.id);
+    return { message: 'All sessions logged out successfully' };
   }
 }

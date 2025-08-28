@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Observable } from 'rxjs';
-import { User } from '../entities/user.entity';
+import { JwtPayload } from '../interfaces/jwt-payload.interface';
 import { META_ROLES } from '../decorators/role-protected.decorator';
 
 @Injectable()
@@ -31,13 +31,19 @@ export class UserRoleGuard implements CanActivate {
     }
 
     const req = context.switchToHttp().getRequest();
-    const user = req.user as User;
+    const user = req.user as JwtPayload; // Ahora es JwtPayload, no User
 
     if (!user) {
       throw new BadRequestException('User not found');
     }
 
+    // Verificar rol principal
     if (validRoles.includes(user.user_type)) {
+      return true;
+    }
+
+    // Verificar roles adicionales (para futuras expansiones)
+    if (user.roles && user.roles.some(role => validRoles.includes(role))) {
       return true;
     }
 

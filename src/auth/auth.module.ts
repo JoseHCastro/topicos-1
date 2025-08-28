@@ -7,10 +7,11 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
 import { JwtStrategy } from './strategies/jwt.strategy';
+import { TokenCacheService } from './services/token-cache.service';
 
 @Module({
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy],
+  providers: [AuthService, JwtStrategy, TokenCacheService],
   imports: [
     ConfigModule,
     TypeOrmModule.forFeature([User, Student, Teacher, Admin]),
@@ -23,11 +24,11 @@ import { JwtStrategy } from './strategies/jwt.strategy';
       useFactory: (configService: ConfigService) => {
         return {
           secret: configService.get<string>('JWT_SECRET'),
-          signOptions: { expiresIn: '2h' },
+          signOptions: { expiresIn: '24h' }, // Expandido para JWT stateless
         };
       },
     }),
   ],
-  exports: [TypeOrmModule, JwtStrategy, PassportModule, JwtModule],
+  exports: [TypeOrmModule, JwtStrategy, PassportModule, JwtModule, TokenCacheService],
 })
 export class AuthModule {}
