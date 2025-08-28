@@ -4,6 +4,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { databaseConfig } from './config/database.config';
+import { CommonModule } from './common';
 import { AuthModule } from './auth/auth.module';
 import { ProgramsModule } from './programs/programs.module';
 import { CalendarModule } from './calendar/calendar.module';
@@ -19,6 +20,7 @@ import { AssessmentsModule } from './assessments/assessments.module';
       envFilePath: '.env',
     }),
     TypeOrmModule.forRoot(databaseConfig()),
+    CommonModule,
     AuthModule,
     ProgramsModule,
     CalendarModule,
