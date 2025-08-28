@@ -23,7 +23,6 @@ export class CourseSectionSeeder implements SeederInterface {
   async run(): Promise<void> {
     console.log('Seeding course sections...');
 
-    // Obtener entidades necesarias
     const courses = await this.courseRepository.find();
     const currentTerm = await this.termRepository.findOne({ 
       where: { name: '2025-I' } 
@@ -37,13 +36,11 @@ export class CourseSectionSeeder implements SeederInterface {
       return;
     }
 
-    // Crear secciones de curso para materias de primer semestre
     const firstSemesterCourses = courses.filter(course => 
       ['UNI100', 'FIS100', 'INF110', 'INF119', 'MAT101'].includes(course.code)
     );
 
     const courseSectionsData = [
-      // Primer semestre - Grupo A (Mañana)
       ...firstSemesterCourses.map(course => ({
         course_id: course.id,
         term_id: currentTerm.id,
@@ -54,7 +51,7 @@ export class CourseSectionSeeder implements SeederInterface {
         quota_max: 35,
         quota_available: 35,
       })),
-      // Primer semestre - Grupo B (Tarde)  
+
       ...firstSemesterCourses.map(course => ({
         course_id: course.id,
         term_id: currentTerm.id,
@@ -67,7 +64,6 @@ export class CourseSectionSeeder implements SeederInterface {
       })),
     ];
 
-    // Agregar algunas materias de semestres superiores
     const advancedCourses = courses.filter(course => 
       ['INF120', 'MAT102', 'INF210', 'INF220', 'INF312'].includes(course.code)
     );
@@ -81,7 +77,7 @@ export class CourseSectionSeeder implements SeederInterface {
         modality: 'Presencial',
         shift: 'Mañana',
         quota_max: 30,
-        quota_available: 25, // Algunas ya tienen estudiantes inscritos
+        quota_available: 25,
       }))
     );
 

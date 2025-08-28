@@ -18,7 +18,7 @@ export class Prerequisite {
   required_course_id: string;
 
   @Column('varchar', { length: 20 })
-  kind: string; // Prerequisite, Corequisite
+  kind: string;
 
   @CreateDateColumn({
     type: 'timestamptz',

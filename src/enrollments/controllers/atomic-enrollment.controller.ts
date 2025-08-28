@@ -34,17 +34,15 @@ export class AtomicEnrollmentController {
     @Body() createEnrollmentDetailDto: CreateEnrollmentDetailDto,
     @IdempotencyKey() idempotencyKey: string | null,
   ) {
-    // Validar header de idempotencia
+
     if (!idempotencyKey) {
       throw new BadRequestException(
         'X-Idempotency-Key header is required for enrollment operations',
       );
     }
 
-    // Generar clave única combinando idempotencyKey con datos críticos
     const operationKey = `enroll:${idempotencyKey}:${createEnrollmentDetailDto.enrollment_id}:${createEnrollmentDetailDto.course_section_id}`;
 
-    // Ejecutar con control de idempotencia
     const result = await this.idempotencyService.executeWithIdempotency(
       operationKey,
       async () => {

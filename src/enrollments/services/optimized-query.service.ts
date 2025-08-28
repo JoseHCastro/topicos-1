@@ -6,13 +6,6 @@ import { Prerequisite } from '../../programs/entities/prerequisite.entity';
 import { Schedule } from '../../teaching/entities/schedule.entity';
 import { EnrollmentDetail } from '../entities/enrollment-detail.entity';
 
-/**
- * FASE PRE-1D: Servicio de Consultas Optimizadas
- * 
- * Servicio especializado que aprovecha los índices definidos para
- * ejecutar consultas de alta concurrencia de manera eficiente.
- */
-
 @Injectable()
 export class OptimizedQueryService {
   constructor(
@@ -198,7 +191,7 @@ export class OptimizedQueryService {
     studentId: string,
     courseIds: string[]
   ): Promise<{ courseId: string; hasPrerequisites: boolean; missingPrerequisites: string[] }[]> {
-    // Obtener todos los prerrequisitos de las materias en una sola consulta
+
     const prerequisites = await this.prerequisiteRepository
       .createQueryBuilder('p')
       .select([
@@ -210,14 +203,12 @@ export class OptimizedQueryService {
       .where('p.main_course_id IN (:...courseIds)', { courseIds })
       .getMany();
 
-    // Obtener todas las materias aprobadas del estudiante en una sola consulta
     const allRequiredCourseIds = prerequisites.map(p => p.required_course_id);
     const approvedGrades = await this.getApprovedCoursesByStudent(studentId, allRequiredCourseIds);
     const approvedCourseIds = new Set(
       approvedGrades.map(g => g.course_section.course.id)
     );
 
-    // Procesar resultados por materia
     return courseIds.map(courseId => {
       const coursePrerequisites = prerequisites.filter(p => p.main_course_id === courseId);
       

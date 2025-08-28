@@ -19,5 +19,5 @@ export class CreateClassroomDto {
 
   @IsString()
   @MaxLength(20)
-  room_type: string; // Lecture, Lab
+  room_type: string;
 }

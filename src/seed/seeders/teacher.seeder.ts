@@ -19,10 +19,9 @@ export class TeacherSeeder implements SeederInterface {
   async run(): Promise<void> {
     this.logger.log('Seeding teachers...');
 
-    // Create teacher directly in the teacher repository (this will create the user as well due to inheritance)
     const teacherData = {
       email: 'docente@uagrm.edu.bo',
-      password: '$2b$10$6jOTgVnlS99Z/LJ1n8a/n.0rkwHWgR6VYf/9xPBxgQdE.7s6cQjri', // bcrypt hash for '123456'
+      password: '$2b$10$6jOTgVnlS99Z/LJ1n8a/n.0rkwHWgR6VYf/9xPBxgQdE.7s6cQjri',
       first_name: 'Juan',
       last_name: 'Pérez Docente',
       user_type: 'TEACHER',

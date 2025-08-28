@@ -26,13 +26,13 @@ export class CourseSection {
   teacher_id: string;
 
   @Column('varchar', { length: 10 })
-  group_label: string; // A, B, ...
+  group_label: string; 
 
   @Column('varchar', { length: 20 })
-  modality: string; // Onsite, Online
+  modality: string;
 
   @Column('varchar', { length: 20 })
-  shift: string; // Morning, Afternoon, Evening
+  shift: string;
 
   @Column('smallint')
   quota_max: number;

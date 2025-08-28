@@ -21,15 +21,12 @@ export class GradeSeeder implements SeederInterface {
   ) {}
 
   async run(): Promise<void> {
-    console.log('Seeding grades...');
 
-    // Obtener detalles de inscripción completados (semestre anterior)
     const completedDetails = await this.enrollmentDetailRepository.find({
       where: { course_state: 'Approved' },
       relations: ['enrollment', 'course_section', 'enrollment.student', 'course_section.course'],
     });
 
-    // Obtener detalles de inscripción con reprobados también
     const failedDetails = await this.enrollmentDetailRepository.find({
       where: { course_state: 'Failed' },
       relations: ['enrollment', 'course_section', 'enrollment.student', 'course_section.course'],
@@ -56,8 +53,7 @@ export class GradeSeeder implements SeederInterface {
       });
 
       if (!existingGrade) {
-        // Usar la nota final del detalle de inscripción
-        const finalGrade = detail.final_grade || Math.floor(Math.random() * 30) + 51; // 51-80
+        const finalGrade = detail.final_grade || Math.floor(Math.random() * 30) + 51;
         
         const grade = {
           course_section_id: courseSection.id,
@@ -72,11 +68,10 @@ export class GradeSeeder implements SeederInterface {
       }
     }
 
-    // Crear algunas calificaciones para inscripciones actuales (parciales)
     const currentDetails = await this.enrollmentDetailRepository.find({
       where: { course_state: 'Enrolled' },
       relations: ['enrollment', 'course_section', 'enrollment.student', 'course_section.course'],
-      take: 3, // Solo algunas para simular evaluaciones parciales
+      take: 3,
     });
 
     for (const detail of currentDetails) {
@@ -93,8 +88,7 @@ export class GradeSeeder implements SeederInterface {
       });
 
       if (!existingGrade) {
-        // Crear nota parcial (sin cerrar el curso aún)
-        const partialGrade = Math.floor(Math.random() * 40) + 40; // 40-80 (evaluación parcial)
+        const partialGrade = Math.floor(Math.random() * 40) + 40;
         
         const grade = {
           course_section_id: courseSection.id,

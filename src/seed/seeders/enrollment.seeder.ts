@@ -18,9 +18,7 @@ export class EnrollmentSeeder implements SeederInterface {
   ) {}
 
   async run(): Promise<void> {
-    console.log('Seeding enrollments...');
 
-    // Obtener estudiantes y términos
     const students = await this.studentRepository.find();
     const currentTerm = await this.termRepository.findOne({ 
       where: { name: '2025-I' } 
@@ -36,7 +34,6 @@ export class EnrollmentSeeder implements SeederInterface {
 
     const enrollmentsData: any[] = [];
 
-    // Crear inscripción actual para cada estudiante
     for (const student of students) {
       enrollmentsData.push({
         student_id: student.id,
@@ -47,7 +44,6 @@ export class EnrollmentSeeder implements SeederInterface {
         note: 'Inscripción regular para el semestre actual',
       });
 
-      // Crear inscripción anterior si existe el término
       if (previousTerm) {
         enrollmentsData.push({
           student_id: student.id,

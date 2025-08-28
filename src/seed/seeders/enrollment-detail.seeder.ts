@@ -20,18 +20,15 @@ export class EnrollmentDetailSeeder implements SeederInterface {
   async run(): Promise<void> {
     console.log('Seeding enrollment details...');
 
-    // Obtener inscripciones activas
     const enrollments = await this.enrollmentRepository.find({
       where: { state: 'Active' },
       relations: ['student', 'term'],
     });
 
-    // Obtener secciones de curso para primer semestre
     const courseSections = await this.courseSectionRepository.find({
       relations: ['course'],
     });
 
-    // Filtrar secciones de primer semestre
     const firstSemesterSections = courseSections.filter(section => 
       ['UNI100', 'FIS100', 'INF110', 'INF119', 'MAT101'].includes(section.course?.code || '')
     );
@@ -41,7 +38,6 @@ export class EnrollmentDetailSeeder implements SeederInterface {
       return;
     }
 
-    // Crear detalles de inscripción para cada estudiante
     for (const enrollment of enrollments) {
       // Inscribir en materias de primer semestre (grupo A por defecto)
       const groupASections = firstSemesterSections.filter(section => section.group_label === 'A');
@@ -67,7 +63,6 @@ export class EnrollmentDetailSeeder implements SeederInterface {
 
           const savedDetail = await this.enrollmentDetailRepository.save(enrollmentDetail);
           
-          // Actualizar cupo disponible de la sección
           courseSection.quota_available = Math.max(0, courseSection.quota_available - 1);
           await this.courseSectionRepository.save(courseSection);
 
@@ -78,14 +73,13 @@ export class EnrollmentDetailSeeder implements SeederInterface {
       }
     }
 
-    // Crear algunos detalles con calificaciones para semestre anterior
     const previousEnrollments = await this.enrollmentRepository.find({
       where: { state: 'Completed' },
       relations: ['student', 'term'],
     });
 
-    for (const enrollment of previousEnrollments.slice(0, 2)) { // Solo algunos estudiantes
-      const sampleSections = firstSemesterSections.slice(0, 3); // Solo 3 materias
+    for (const enrollment of previousEnrollments.slice(0, 2)) {
+      const sampleSections = firstSemesterSections.slice(0, 3);
       
       for (const courseSection of sampleSections) {
         const existingDetail = await this.enrollmentDetailRepository.findOne({
@@ -96,7 +90,7 @@ export class EnrollmentDetailSeeder implements SeederInterface {
         });
 
         if (!existingDetail) {
-          const finalGrade = Math.floor(Math.random() * 30) + 51; // Notas entre 51-80
+          const finalGrade = Math.floor(Math.random() * 30) + 51;
           const enrollmentDetail = {
             enrollment_id: enrollment.id,
             course_section_id: courseSection.id,

@@ -9,7 +9,7 @@ export class CreateScheduleDto {
 
   @IsString()
   @MaxLength(10)
-  weekday: string; // MON, TUE, ...
+  weekday: string;
 
   @IsString()
   time_start: string;

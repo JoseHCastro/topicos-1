@@ -44,7 +44,6 @@ export class SeedService {
   async runAllSeeders(): Promise<void> {
     this.logger.log('Starting database seeding...');
 
-    // Order is important due to foreign key constraints
     const seeders = [
       this.adminSeeder,
       this.teacherSeeder,
@@ -80,30 +79,27 @@ export class SeedService {
     this.logger.log('🧹 Clearing database...');
 
     try {
-      // For PostgreSQL - disable constraints temporarily
+
       await this.dataSource.query('SET session_replication_role = replica;');
       
-      // Get all table names from the current database schema
       const tables = await this.dataSource.query(`
         SELECT tablename 
         FROM pg_tables 
         WHERE schemaname = 'public'
       `);
 
-      // Truncate all tables with CASCADE to handle foreign keys
       for (const table of tables) {
         await this.dataSource.query(`TRUNCATE TABLE "${table.tablename}" RESTART IDENTITY CASCADE;`);
-        this.logger.log(`✅ Cleared table: ${table.tablename}`);
+        this.logger.log(` Cleared table: ${table.tablename}`);
       }
 
       // Re-enable constraints
       await this.dataSource.query('SET session_replication_role = DEFAULT;');
 
-      this.logger.log('✅ Database cleared successfully!');
+      this.logger.log('Database cleared successfully!');
     } catch (error) {
-      this.logger.error('❌ Error clearing database:', error.message);
-      
-      // Fallback: Try clearing tables individually in reverse dependency order
+      this.logger.error(' Error clearing database:', error.message);
+
       this.logger.log('🔄 Attempting fallback clearing method...');
       
       const seeders = [
@@ -132,11 +128,10 @@ export class SeedService {
           }
         } catch (error) {
           this.logger.warn(`⚠️ Clearing failed for ${seeder.constructor.name}:`, error.message);
-          // Continue with other seeders even if one fails
         }
       }
 
-      this.logger.log('✅ Fallback database clearing completed!');
+      this.logger.log('Fallback database clearing completed!');
     }
   }
 }

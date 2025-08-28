@@ -26,7 +26,6 @@ export class PrerequisiteSeeder implements SeederInterface {
       return;
     }
 
-    // Define prerequisites based on UAGRM curriculum arrows in the image
     const prerequisiteRules = [
       // 2° SEMESTRE PREREQUISITES
       { course_code: 'UNI101', prerequisite_code: 'UNI100' }, // Inglés Técnico II requires Inglés Técnico I

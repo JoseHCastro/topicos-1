@@ -5,10 +5,6 @@ import { UserRoleGuard } from '../../auth/guards/user-role.guard';
 import { ValidRoles } from '../../auth/interfaces/valid-roles.interface';
 import { OptimizedQueryService } from '../services/optimized-query.service';
 
-/**
- * FASE PRE-1D: Controlador para monitoreo de rendimiento de consultas optimizadas
- * Endpoints para verificar eficiencia de índices y consultas de alta concurrencia
- */
 @Controller('database-performance')
 @UseGuards(AuthGuard(), UserRoleGuard)
 export class DatabasePerformanceController {

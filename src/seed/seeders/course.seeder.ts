@@ -32,7 +32,6 @@ export class CourseSeeder implements SeederInterface {
 
     const currentPlan = studyPlans[0];
 
-    // Todas las materias de la malla curricular de Ingeniería Informática UAGRM
     const courses = [
       // 1° SEMESTRE
       {

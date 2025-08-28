@@ -21,11 +21,6 @@ export interface ScheduleConflict {
   day: string;
 }
 
-/**
- * FASE PRE-1D: Servicio de validaciones académicas optimizado
- * Utiliza OptimizedQueryService para consultas de alta concurrencia
- * Versión unificada que combina validaciones tradicionales con optimizaciones
- */
 @Injectable()
 export class AcademicValidationService {
   constructor(
@@ -74,7 +69,6 @@ export class AcademicValidationService {
   }
 
   /**
-   * FASE PRE-1D: Validación optimizada de prerrequisitos
    * Utiliza consultas indexadas para alta concurrencia
    */
   async validatePrerequisites(
@@ -82,7 +76,6 @@ export class AcademicValidationService {
     courseSectionId: string,
     manager?: EntityManager
   ): Promise<ValidationResult> {
-    // Obtener la información de la sección de curso
     const courseSection = await this.courseSectionRepository.findOne({
       where: { id: courseSectionId },
       relations: ['course']
@@ -96,7 +89,6 @@ export class AcademicValidationService {
       };
     }
 
-    // Usar consulta optimizada para obtener prerrequisitos
     const prerequisites = await this.optimizedQueryService.getPrerequisitesByCourse(
       courseSection.course.id
     );
@@ -105,7 +97,6 @@ export class AcademicValidationService {
       return { isValid: true, errors: [], warnings: [] };
     }
 
-    // Verificar prerrequisitos en lote usando consulta optimizada
     const prerequisiteChecks = await this.optimizedQueryService.batchCheckPrerequisites(
       studentId,
       [courseSection.course.id]
@@ -124,7 +115,6 @@ export class AcademicValidationService {
   }
 
   /**
-   * FASE PRE-1D: Detección optimizada de conflictos de horario
    * Utiliza índices para consultas eficientes
    */
   async validateScheduleConflicts(
@@ -133,14 +123,13 @@ export class AcademicValidationService {
     termId: string,
     manager?: EntityManager
   ): Promise<ValidationResult> {
-    // Obtener horarios de la nueva materia usando consulta optimizada
+
     const newSchedules = await this.optimizedQueryService.getSchedulesBySections([courseSectionId]);
 
     if (newSchedules.length === 0) {
       return { isValid: true, errors: [], warnings: [] };
     }
 
-    // Obtener detalles de inscripción del estudiante usando consulta optimizada
     const enrolledDetails = await this.optimizedQueryService.getStudentEnrollmentDetails(
       studentId,
       termId
@@ -150,13 +139,11 @@ export class AcademicValidationService {
       return { isValid: true, errors: [], warnings: [] };
     }
 
-    // Obtener horarios de las materias ya inscritas
     const enrolledSectionIds = enrolledDetails.map(detail => detail.course_section.id);
     const enrolledSchedules = await this.optimizedQueryService.getSchedulesBySections(enrolledSectionIds);
 
     const conflicts: ScheduleConflict[] = [];
 
-    // Detectar conflictos usando algoritmo optimizado
     for (const newSchedule of newSchedules) {
       for (const existingSchedule of enrolledSchedules) {
         if (this.hasTimeOverlap(newSchedule, existingSchedule)) {
@@ -179,7 +166,6 @@ export class AcademicValidationService {
   }
 
   /**
-   * FASE PRE-1D: Validación optimizada de límites académicos
    * Usa conteo eficiente con índices
    */
   async validateAcademicLimits(
@@ -187,13 +173,13 @@ export class AcademicValidationService {
     termId: string,
     manager?: EntityManager
   ): Promise<ValidationResult> {
-    // Usar consulta optimizada para contar materias inscritas
+
     const enrolledCount = await this.optimizedQueryService.getEnrolledCoursesCount(
       studentId,
       termId
     );
 
-    const MAX_COURSES_PER_TERM = 8; // Límite configurable
+    const MAX_COURSES_PER_TERM = 8;
 
     const result: ValidationResult = {
       isValid: enrolledCount < MAX_COURSES_PER_TERM,
@@ -207,7 +193,6 @@ export class AcademicValidationService {
   }
 
   /**
-   * FASE PRE-1D: Validación optimizada de materias ya aprobadas
    * Usa índice compuesto para búsqueda eficiente
    */
   async validateCourseNotPassed(
@@ -215,7 +200,7 @@ export class AcademicValidationService {
     courseSectionId: string,
     manager?: EntityManager
   ): Promise<ValidationResult> {
-    // Obtener información de la sección de curso
+
     const courseSection = await this.courseSectionRepository.findOne({
       where: { id: courseSectionId },
       relations: ['course']
@@ -229,7 +214,6 @@ export class AcademicValidationService {
       };
     }
 
-    // Usar consulta optimizada para verificar si ya aprobó la materia
     const hasPassed = await this.optimizedQueryService.hasStudentPassedCourse(
       studentId,
       courseSection.course.id
@@ -256,7 +240,6 @@ export class AcademicValidationService {
     const start2 = this.timeToMinutes(schedule2.time_start);
     const end2 = this.timeToMinutes(schedule2.time_end);
 
-    // Verificar solapamiento: (start1 < end2) && (start2 < end1)
     return start1 < end2 && start2 < end1;
   }
 
@@ -269,14 +252,14 @@ export class AcademicValidationService {
   }
 
   /**
-   * Método público para obtener prerrequisitos de una materia (optimizado)
+   *  Obtiene prerrequisitos de una materia
    */
   async getPrerequisitesForCourse(courseId: string): Promise<Prerequisite[]> {
     return this.optimizedQueryService.getPrerequisitesByCourse(courseId);
   }
 
   /**
-   * Método público para verificar prerrequisitos cumplidos (optimizado)
+   * Verifica prerrequisitos cumplidos
    */
   async checkPrerequisitesCompliance(
     studentId: string,
@@ -291,7 +274,7 @@ export class AcademicValidationService {
   }
 
   /**
-   * Método público para obtener horarios con posibles conflictos (optimizado)
+   * Obtiene horarios con posibles conflictos
    */
   async getScheduleConflictsForStudent(
     studentId: string,

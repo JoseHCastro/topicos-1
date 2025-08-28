@@ -2,7 +2,6 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
 
-// Entities
 import { User } from '../auth/entities/user.entity';
 import { Admin } from '../auth/entities/admin.entity';
 import { Teacher } from '../auth/entities/teacher.entity';
@@ -21,7 +20,6 @@ import { Enrollment } from '../enrollments/entities/enrollment.entity';
 import { EnrollmentDetail } from '../enrollments/entities/enrollment-detail.entity';
 import { Grade } from '../assessments/entities/grade.entity';
 
-// Seeders
 import { SeedService } from './seed.service';
 import { AdminSeeder } from './seeders/admin.seeder';
 import { TeacherSeeder } from './seeders/teacher.seeder';
@@ -40,7 +38,6 @@ import { EnrollmentSeeder } from './seeders/enrollment.seeder';
 import { EnrollmentDetailSeeder } from './seeders/enrollment-detail.seeder';
 import { GradeSeeder } from './seeders/grade.seeder';
 
-// Database configuration
 import { databaseConfig } from '../config/database.config';
 
 @Module({

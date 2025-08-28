@@ -20,7 +20,6 @@ export class ScheduleSeeder implements SeederInterface {
   async run(): Promise<void> {
     console.log('Seeding schedules...');
 
-    // Obtener secciones de curso existentes
     const courseSections = await this.courseSectionRepository.find({
       relations: ['course'],
     });
@@ -32,7 +31,6 @@ export class ScheduleSeeder implements SeederInterface {
       return;
     }
 
-    // Horarios típicos para diferentes turnos
     const morningSchedules = [
       { weekday: 'LUN', time_start: '07:00', time_end: '09:00' },
       { weekday: 'MIE', time_start: '07:00', time_end: '09:00' },
@@ -53,7 +51,6 @@ export class ScheduleSeeder implements SeederInterface {
     let classroomIndex = 0;
 
     for (const courseSection of courseSections) {
-      // Determinar horarios según el turno
       let scheduleTemplate = morningSchedules;
       if (courseSection.shift === 'Tarde') {
         scheduleTemplate = afternoonSchedules;
@@ -61,11 +58,9 @@ export class ScheduleSeeder implements SeederInterface {
         scheduleTemplate = eveningSchedules;
       }
 
-      // Asignar aula (rotar entre aulas disponibles)
       const classroom = classrooms[classroomIndex % classrooms.length];
       classroomIndex++;
 
-      // Crear horarios para la sección
       for (const scheduleData of scheduleTemplate) {
         const existingSchedule = await this.scheduleRepository.findOne({
           where: {
@@ -82,8 +77,8 @@ export class ScheduleSeeder implements SeederInterface {
             weekday: scheduleData.weekday,
             time_start: scheduleData.time_start,
             time_end: scheduleData.time_end,
-            date_start: new Date('2025-02-01'), // Inicio del semestre
-            date_end: new Date('2025-06-30'),   // Fin del semestre
+            date_start: new Date('2025-02-01'),
+            date_end: new Date('2025-06-30'),
           });
 
           await this.scheduleRepository.save(schedule);

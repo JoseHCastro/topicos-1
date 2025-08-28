@@ -19,7 +19,6 @@ export class AdminSeeder implements SeederInterface {
   async run(): Promise<void> {
     this.logger.log('Seeding admins...');
 
-    // Create admin directly in the admin repository (this will create the user as well due to inheritance)
     const adminData = {
       email: 'admin@uagrm.edu.bo',
       password: '$2b$10$6jOTgVnlS99Z/LJ1n8a/n.0rkwHWgR6VYf/9xPBxgQdE.7s6cQjri', // bcrypt hash for '123456'

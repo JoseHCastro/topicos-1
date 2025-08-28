@@ -52,42 +52,36 @@ export class AtomicEnrollmentService {
 
     return await this.transactionService.executeWithRetry(
       async (manager: EntityManager) => {
-        // 1. Verificar que la inscripción (enrollment) existe
+
         const enrollment = await this.validateEnrollmentExists(
           manager,
           createEnrollmentDetailDto.enrollment_id,
         );
 
-        // 2. Obtener la sección del curso con lock pesimista
         const courseSection = await this.getCourseSectionWithLock(
           manager,
           createEnrollmentDetailDto.course_section_id,
         );
 
-        // 3. Verificar que no existe inscripción duplicada
         await this.validateNoDuplicateEnrollment(
           manager,
           createEnrollmentDetailDto.enrollment_id,
           createEnrollmentDetailDto.course_section_id,
         );
 
-        // 4. ✅ NUEVAS VALIDACIONES ACADÉMICAS
         await this.performAcademicValidations(
           manager,
           enrollment,
           courseSection,
         );
 
-        // 5. Verificar cupos disponibles
         this.validateQuotaAvailable(courseSection);
 
-        // 6. Crear el detalle de inscripción
         const enrollmentDetail = await this.createEnrollmentDetail(
           manager,
           createEnrollmentDetailDto,
         );
 
-        // 7. Reducir cupo disponible
         const updatedCourseSection = await this.decrementQuota(
           manager,
           courseSection,
@@ -103,8 +97,8 @@ export class AtomicEnrollmentService {
           wasCreated: true,
         };
       },
-      3, // máximo 3 reintentos
-      10000, // timeout de 10 segundos
+      3,
+      10000,
     );
   }
 
@@ -217,7 +211,7 @@ export class AtomicEnrollmentService {
     manager: EntityManager,
     courseSection: CourseSection,
   ): Promise<CourseSection> {
-    // Actualizamos de forma atómica usando query builder
+
     const result = await manager
       .createQueryBuilder()
       .update(CourseSection)
@@ -226,7 +220,7 @@ export class AtomicEnrollmentService {
         updated_at: new Date(),
       })
       .where('id = :id', { id: courseSection.id })
-      .andWhere('quota_available > 0') // Verificación adicional de seguridad
+      .andWhere('quota_available > 0')
       .execute();
 
     if (result.affected === 0) {
@@ -237,7 +231,6 @@ export class AtomicEnrollmentService {
       );
     }
 
-    // Retornar la versión actualizada
     const updatedCourseSection = await manager.findOne(CourseSection, {
       where: { id: courseSection.id },
     });
@@ -275,7 +268,6 @@ export class AtomicEnrollmentService {
   }
 
   /**
-   * ✅ NUEVAS VALIDACIONES ACADÉMICAS
    * Realiza todas las validaciones académicas antes de la inscripción
    */
   private async performAcademicValidations(
@@ -287,7 +279,6 @@ export class AtomicEnrollmentService {
       `Iniciando validaciones académicas para Student ${enrollment.student.id} en CourseSection ${courseSection.id}`,
     );
 
-    // Realizar validación académica completa
     const validationResult = await this.academicValidationService.validateEnrollment(
       enrollment.student.id,
       courseSection.id,
@@ -295,7 +286,6 @@ export class AtomicEnrollmentService {
       manager,
     );
 
-    // Si hay errores de validación, lanzar excepción con todos los detalles
     if (!validationResult.isValid) {
       this.logger.warn(
         `Validaciones académicas fallidas para Student ${enrollment.student.id}: ${validationResult.errors.join('; ')}`,
@@ -307,7 +297,6 @@ export class AtomicEnrollmentService {
       );
     }
 
-    // Log de advertencias si existen
     if (validationResult.warnings.length > 0) {
       this.logger.warn(
         `Advertencias académicas para Student ${enrollment.student.id}: ${validationResult.warnings.join('; ')}`,
