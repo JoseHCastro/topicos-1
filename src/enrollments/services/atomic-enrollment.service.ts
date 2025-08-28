@@ -15,6 +15,8 @@ import {
   DuplicateEnrollmentException,
   EnrollmentNotActiveException,
 } from '../exceptions';
+import { AcademicValidationService } from './academic-validation.service';
+import { MultipleValidationException } from '../exceptions/academic-validation.exceptions';
 
 export interface EnrollmentResult {
   enrollmentDetail: EnrollmentDetail;
@@ -34,6 +36,7 @@ export class AtomicEnrollmentService {
     @InjectRepository(CourseSection)
     private readonly courseSectionRepository: Repository<CourseSection>,
     private readonly transactionService: TransactionService,
+    private readonly academicValidationService: AcademicValidationService,
   ) {}
 
   /**
@@ -68,16 +71,23 @@ export class AtomicEnrollmentService {
           createEnrollmentDetailDto.course_section_id,
         );
 
-        // 4. Verificar cupos disponibles
+        // 4. ✅ NUEVAS VALIDACIONES ACADÉMICAS
+        await this.performAcademicValidations(
+          manager,
+          enrollment,
+          courseSection,
+        );
+
+        // 5. Verificar cupos disponibles
         this.validateQuotaAvailable(courseSection);
 
-        // 5. Crear el detalle de inscripción
+        // 6. Crear el detalle de inscripción
         const enrollmentDetail = await this.createEnrollmentDetail(
           manager,
           createEnrollmentDetailDto,
         );
 
-        // 6. Reducir cupo disponible
+        // 7. Reducir cupo disponible
         const updatedCourseSection = await this.decrementQuota(
           manager,
           courseSection,
@@ -262,5 +272,50 @@ export class AtomicEnrollmentService {
       quota_used,
       is_full: courseSection.quota_available <= 0,
     };
+  }
+
+  /**
+   * ✅ NUEVAS VALIDACIONES ACADÉMICAS
+   * Realiza todas las validaciones académicas antes de la inscripción
+   */
+  private async performAcademicValidations(
+    manager: EntityManager,
+    enrollment: Enrollment,
+    courseSection: CourseSection,
+  ): Promise<void> {
+    this.logger.log(
+      `Iniciando validaciones académicas para Student ${enrollment.student.id} en CourseSection ${courseSection.id}`,
+    );
+
+    // Realizar validación académica completa
+    const validationResult = await this.academicValidationService.validateEnrollment(
+      enrollment.student.id,
+      courseSection.id,
+      courseSection.term_id,
+      manager,
+    );
+
+    // Si hay errores de validación, lanzar excepción con todos los detalles
+    if (!validationResult.isValid) {
+      this.logger.warn(
+        `Validaciones académicas fallidas para Student ${enrollment.student.id}: ${validationResult.errors.join('; ')}`,
+      );
+      
+      throw new MultipleValidationException(
+        validationResult.errors,
+        validationResult.warnings,
+      );
+    }
+
+    // Log de advertencias si existen
+    if (validationResult.warnings.length > 0) {
+      this.logger.warn(
+        `Advertencias académicas para Student ${enrollment.student.id}: ${validationResult.warnings.join('; ')}`,
+      );
+    }
+
+    this.logger.log(
+      `Validaciones académicas exitosas para Student ${enrollment.student.id}`,
+    );
   }
 }
