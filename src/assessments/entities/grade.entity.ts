@@ -3,7 +3,7 @@ import { CourseSection } from '../../teaching/entities/course-section.entity';
 import { Student } from '../../auth/entities/student.entity';
 
 @Entity('grade')
-@Unique(['course_section_id', 'student_id', 'assessment'])
+@Unique(['course_section_id', 'student_id'])
 export class Grade {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -14,17 +14,8 @@ export class Grade {
   @Column('uuid')
   student_id: string;
 
-  @Column('varchar', { length: 50 })
-  assessment: string; // Midterm1, Final, ...
-
   @Column('numeric', { precision: 5, scale: 2, nullable: true })
-  weight: number; // percentage
-
-  @Column('numeric', { precision: 5, scale: 2 })
-  score: number;
-
-  @Column('timestamptz')
-  recorded_at: Date;
+  final_grade: number;
 
   @CreateDateColumn({
     type: 'timestamptz',
