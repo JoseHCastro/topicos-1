@@ -4,6 +4,7 @@ import { Term } from '../../calendar/entities/term.entity';
 import { Teacher } from '../../auth/entities/teacher.entity';
 import { Schedule } from './schedule.entity';
 import { Grade } from '../../assessments/entities/grade.entity';
+import { EnrollmentDetail } from '../../enrollments/entities/enrollment-detail.entity';
 
 @Entity('course_section')
 export class CourseSection {
@@ -63,4 +64,7 @@ export class CourseSection {
 
   @OneToMany(() => Grade, grade => grade.course_section)
   grades: Grade[];
+
+  @OneToMany(() => EnrollmentDetail, detail => detail.course_section)
+  enrollment_details: EnrollmentDetail[];
 }
