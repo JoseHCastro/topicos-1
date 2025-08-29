@@ -1,89 +1,118 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { Repository } from 'typeorm';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { EnrollmentDetail } from '../../enrollments/entities/enrollment-detail.entity';
 import { Enrollment } from '../../enrollments/entities/enrollment.entity';
-import { SubjectGroup } from '../../courses/entities/subject-group.entity';
+import { CourseSection } from '../../teaching/entities/course-section.entity';
 import { SeederInterface } from '../interfaces/seeder.interface';
 
 @Injectable()
 export class EnrollmentDetailSeeder implements SeederInterface {
-  private readonly logger = new Logger(EnrollmentDetailSeeder.name);
-
   constructor(
     @InjectRepository(EnrollmentDetail)
     private readonly enrollmentDetailRepository: Repository<EnrollmentDetail>,
     @InjectRepository(Enrollment)
     private readonly enrollmentRepository: Repository<Enrollment>,
-    @InjectRepository(SubjectGroup)
-    private readonly subjectGroupRepository: Repository<SubjectGroup>,
+    @InjectRepository(CourseSection)
+    private readonly courseSectionRepository: Repository<CourseSection>,
   ) {}
 
   async run(): Promise<void> {
-    this.logger.log('🌱 Seeding enrollment details...');
+    console.log('Seeding enrollment details...');
 
     const enrollments = await this.enrollmentRepository.find({
-      where: { estado: 'activa' }
-    });
-    const subjectGroups = await this.subjectGroupRepository.find({
-      where: { estado: 'abierto' }
+      where: { state: 'Active' },
+      relations: ['student', 'term'],
     });
 
-    if (enrollments.length === 0 || subjectGroups.length === 0) {
-      this.logger.warn('⚠️ Missing required data (active enrollments or open subject groups), skipping enrollment details seeding');
+    const courseSections = await this.courseSectionRepository.find({
+      relations: ['course'],
+    });
+
+    const firstSemesterSections = courseSections.filter(section => 
+      ['UNI100', 'FIS100', 'INF110', 'INF119', 'MAT101'].includes(section.course?.code || '')
+    );
+
+    if (enrollments.length === 0 || firstSemesterSections.length === 0) {
+      console.log('Prerequisites not found for enrollment detail seeding');
       return;
     }
 
-    const detailStates = ['inscrito', 'aprobado', 'reprobado'];
-
-    // Crear detalles para cada inscripción activa
     for (const enrollment of enrollments) {
-      // Cada estudiante se inscribe en 3-5 materias
-      const numSubjects = Math.floor(Math.random() * 3) + 3; // 3 a 5 materias
-      const selectedGroups = this.getRandomSubjects(subjectGroups, numSubjects);
-
-      for (const subjectGroup of selectedGroups) {
-        const stateIndex = Math.floor(Math.random() * detailStates.length);
-
-        const detailData = {
-          id_inscripcion: enrollment.id_inscripcion,
-          id_grupo_materia: subjectGroup.id_grupo_materia,
-          fecha_inscripcion_materia: new Date(),
-          estado_materia: detailStates[stateIndex] as any,
-        };
-
+      // Inscribir en materias de primer semestre (grupo A por defecto)
+      const groupASections = firstSemesterSections.filter(section => section.group_label === 'A');
+      
+      for (const courseSection of groupASections) {
         const existingDetail = await this.enrollmentDetailRepository.findOne({
           where: {
-            id_inscripcion: detailData.id_inscripcion,
-            id_grupo_materia: detailData.id_grupo_materia,
+            enrollment_id: enrollment.id,
+            course_section_id: courseSection.id,
           },
         });
 
         if (!existingDetail) {
-          const enrollmentDetail = this.enrollmentDetailRepository.create(detailData);
-          await this.enrollmentDetailRepository.save(enrollmentDetail);
-          this.logger.log(`✅ Created enrollment detail: Enrollment ${enrollment.id_inscripcion} - Group ${subjectGroup.numero_grupo}`);
+          const enrollmentDetail = {
+            enrollment_id: enrollment.id,
+            course_section_id: courseSection.id,
+            course_state: 'Enrolled',
+            final_grade: undefined,
+            attempts: 1,
+            closed_on: undefined,
+            remark: `Inscrito en ${courseSection.course?.name}`,
+          };
 
-          // Actualizar cupo actual del grupo
-          subjectGroup.cupo_actual += 1;
-          await this.subjectGroupRepository.save(subjectGroup);
+          const savedDetail = await this.enrollmentDetailRepository.save(enrollmentDetail);
+          
+          courseSection.quota_available = Math.max(0, courseSection.quota_available - 1);
+          await this.courseSectionRepository.save(courseSection);
+
+          console.log(`Created enrollment detail: ${enrollment.student?.code} -> ${courseSection.course?.code}-${courseSection.group_label}`);
         } else {
-          this.logger.log(`⚠️ Enrollment detail already exists: Enrollment ${enrollment.id_inscripcion} - Group ${subjectGroup.numero_grupo}`);
+          console.log(`Enrollment detail already exists: ${enrollment.student?.code} -> ${courseSection.course?.code}-${courseSection.group_label}`);
         }
       }
     }
 
-    this.logger.log('✅ Enrollment details seeding completed');
-  }
+    const previousEnrollments = await this.enrollmentRepository.find({
+      where: { state: 'Completed' },
+      relations: ['student', 'term'],
+    });
 
-  private getRandomSubjects(subjectGroups: SubjectGroup[], count: number): SubjectGroup[] {
-    const shuffled = [...subjectGroups].sort(() => 0.5 - Math.random());
-    return shuffled.slice(0, count);
+    for (const enrollment of previousEnrollments.slice(0, 2)) {
+      const sampleSections = firstSemesterSections.slice(0, 3);
+      
+      for (const courseSection of sampleSections) {
+        const existingDetail = await this.enrollmentDetailRepository.findOne({
+          where: {
+            enrollment_id: enrollment.id,
+            course_section_id: courseSection.id,
+          },
+        });
+
+        if (!existingDetail) {
+          const finalGrade = Math.floor(Math.random() * 30) + 51;
+          const enrollmentDetail = {
+            enrollment_id: enrollment.id,
+            course_section_id: courseSection.id,
+            course_state: finalGrade >= 60 ? 'Approved' : 'Failed',
+            final_grade: finalGrade,
+            attempts: 1,
+            closed_on: new Date('2024-12-15'),
+            remark: `Semestre anterior - ${finalGrade >= 60 ? 'Aprobado' : 'Reprobado'}`,
+          };
+
+          await this.enrollmentDetailRepository.save(enrollmentDetail);
+          console.log(`Created completed enrollment detail: ${enrollment.student?.code} -> ${courseSection.course?.code} (${finalGrade})`);
+        }
+      }
+    }
+
+    console.log('Enrollment details seeding completed');
   }
 
   async clear(): Promise<void> {
-    this.logger.log('🧹 Clearing enrollment details...');
-    await this.enrollmentDetailRepository.createQueryBuilder().delete().execute();
-    this.logger.log('✅ Enrollment details cleared');
+    console.log('Clearing enrollment details...');
+    await this.enrollmentDetailRepository.delete({});
+    console.log('Enrollment details cleared');
   }
 }

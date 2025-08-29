@@ -1,110 +1,112 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { Repository } from 'typeorm';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Grade } from '../../grades/entities/grade.entity';
+import { Repository } from 'typeorm';
+import { Grade } from '../../assessments/entities/grade.entity';
+import { CourseSection } from '../../teaching/entities/course-section.entity';
+import { Student } from '../../auth/entities/student.entity';
 import { EnrollmentDetail } from '../../enrollments/entities/enrollment-detail.entity';
 import { SeederInterface } from '../interfaces/seeder.interface';
 
 @Injectable()
 export class GradeSeeder implements SeederInterface {
-  private readonly logger = new Logger(GradeSeeder.name);
-
   constructor(
     @InjectRepository(Grade)
     private readonly gradeRepository: Repository<Grade>,
+    @InjectRepository(CourseSection)
+    private readonly courseSectionRepository: Repository<CourseSection>,
+    @InjectRepository(Student)
+    private readonly studentRepository: Repository<Student>,
     @InjectRepository(EnrollmentDetail)
     private readonly enrollmentDetailRepository: Repository<EnrollmentDetail>,
   ) {}
 
   async run(): Promise<void> {
-    this.logger.log('🌱 Seeding grades...');
 
-    const enrollmentDetails = await this.enrollmentDetailRepository.find({
-      where: { estado_materia: 'inscrito' }
+    const completedDetails = await this.enrollmentDetailRepository.find({
+      where: { course_state: 'Approved' },
+      relations: ['enrollment', 'course_section', 'enrollment.student', 'course_section.course'],
     });
 
-    if (enrollmentDetails.length === 0) {
-      this.logger.warn('⚠️ No enrolled subjects found, skipping grades seeding');
+    const failedDetails = await this.enrollmentDetailRepository.find({
+      where: { course_state: 'Failed' },
+      relations: ['enrollment', 'course_section', 'enrollment.student', 'course_section.course'],
+    });
+
+    const allCompletedDetails = [...completedDetails, ...failedDetails];
+
+    if (allCompletedDetails.length === 0) {
+      console.log('No completed enrollment details found for grade seeding');
       return;
     }
 
-    for (const enrollmentDetail of enrollmentDetails) {
+    for (const detail of allCompletedDetails) {
+      const student = detail.enrollment?.student;
+      const courseSection = detail.course_section;
+
+      if (!student || !courseSection) continue;
+
       const existingGrade = await this.gradeRepository.findOne({
-        where: { detalle: { id_detalle: enrollmentDetail.id_detalle } },
-        relations: ['detalle']
+        where: {
+          course_section_id: courseSection.id,
+          student_id: student.id,
+        },
       });
 
       if (!existingGrade) {
-        // Generar notas aleatorias realistas
-        const primerParcial = this.generateRandomGrade();
-        const segundoParcial = this.generateRandomGrade();
-        const examenFinal = this.generateRandomGrade();
-        const trabajosPracticos = this.generateRandomGrade();
-
-        // Calcular nota final (promedio ponderado)
-        const notaFinal = this.calculateFinalGrade(
-          primerParcial,
-          segundoParcial,
-          examenFinal,
-          trabajosPracticos
-        );
-
-        const gradeData = {
-          primer_parcial: primerParcial,
-          segundo_parcial: segundoParcial,
-          examen_final: examenFinal,
-          trabajos_practicos: trabajosPracticos,
-          nota_final: notaFinal,
-          observaciones: notaFinal >= 51 ? 'Aprobado' : 'Reprobado',
-          fecha_registro: new Date(),
-          detalle: enrollmentDetail,
+        const finalGrade = detail.final_grade || Math.floor(Math.random() * 30) + 51;
+        
+        const grade = {
+          course_section_id: courseSection.id,
+          student_id: student.id,
+          final_grade: finalGrade,
         };
 
-        const grade = this.gradeRepository.create(gradeData);
         await this.gradeRepository.save(grade);
-
-        // Actualizar estado del detalle de inscripción
-        enrollmentDetail.estado_materia = notaFinal >= 51 ? 'aprobado' : 'reprobado';
-        await this.enrollmentDetailRepository.save(enrollmentDetail);
-
-        this.logger.log(`✅ Created grade for enrollment detail ${enrollmentDetail.id_detalle}: ${notaFinal.toFixed(2)}`);
+        console.log(`Created grade: ${student.code} -> ${courseSection.course?.code}: ${finalGrade}`);
       } else {
-        this.logger.log(`⚠️ Grade already exists for enrollment detail ${enrollmentDetail.id_detalle}`);
+        console.log(`Grade already exists: ${student.code} -> ${courseSection.course?.code}`);
       }
     }
 
-    this.logger.log('✅ Grades seeding completed');
-  }
+    const currentDetails = await this.enrollmentDetailRepository.find({
+      where: { course_state: 'Enrolled' },
+      relations: ['enrollment', 'course_section', 'enrollment.student', 'course_section.course'],
+      take: 3,
+    });
 
-  private generateRandomGrade(): number {
-    // Generar notas entre 0 y 100, con tendencia hacia valores medios
-    const random = Math.random();
-    if (random < 0.1) return Math.floor(Math.random() * 30); // 10% notas bajas (0-29)
-    if (random < 0.3) return Math.floor(Math.random() * 21) + 30; // 20% notas regulares (30-50)
-    if (random < 0.7) return Math.floor(Math.random() * 25) + 51; // 40% notas buenas (51-75)
-    return Math.floor(Math.random() * 25) + 76; // 30% notas altas (76-100)
-  }
+    for (const detail of currentDetails) {
+      const student = detail.enrollment?.student;
+      const courseSection = detail.course_section;
 
-  private calculateFinalGrade(
-    primerParcial: number,
-    segundoParcial: number,
-    examenFinal: number,
-    trabajosPracticos: number
-  ): number {
-    // Ponderación: 25% primer parcial, 25% segundo parcial, 30% examen final, 20% trabajos prácticos
-    const finalGrade = (
-      primerParcial * 0.25 +
-      segundoParcial * 0.25 +
-      examenFinal * 0.30 +
-      trabajosPracticos * 0.20
-    );
-    
-    return Math.round(finalGrade * 100) / 100; // Redondear a 2 decimales
+      if (!student || !courseSection) continue;
+
+      const existingGrade = await this.gradeRepository.findOne({
+        where: {
+          course_section_id: courseSection.id,
+          student_id: student.id,
+        },
+      });
+
+      if (!existingGrade) {
+        const partialGrade = Math.floor(Math.random() * 40) + 40;
+        
+        const grade = {
+          course_section_id: courseSection.id,
+          student_id: student.id,
+          final_grade: partialGrade,
+        };
+
+        await this.gradeRepository.save(grade);
+        console.log(`Created partial grade: ${student.code} -> ${courseSection.course?.code}: ${partialGrade} (partial)`);
+      }
+    }
+
+    console.log('Grades seeding completed');
   }
 
   async clear(): Promise<void> {
-    this.logger.log('🧹 Clearing grades...');
-    await this.gradeRepository.createQueryBuilder().delete().execute();
-    this.logger.log('✅ Grades cleared');
+    console.log('Clearing grades...');
+    await this.gradeRepository.delete({});
+    console.log('Grades cleared');
   }
 }

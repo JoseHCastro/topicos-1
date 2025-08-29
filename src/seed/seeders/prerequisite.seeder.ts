@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Prerequisite } from '../../programs/entities/prerequisite.entity';
-import { Subject } from '../../programs/entities/subject.entity';
+import { Course } from '../../programs/entities/course.entity';
 import { SeederInterface } from '../interfaces/seeder.interface';
 
 @Injectable()
@@ -12,118 +12,115 @@ export class PrerequisiteSeeder implements SeederInterface {
   constructor(
     @InjectRepository(Prerequisite)
     private readonly prerequisiteRepository: Repository<Prerequisite>,
-    @InjectRepository(Subject)
-    private readonly subjectRepository: Repository<Subject>,
+    @InjectRepository(Course)
+    private readonly courseRepository: Repository<Course>,
   ) {}
 
   async run(): Promise<void> {
-    this.logger.log('🌱 Seeding prerequisites...');
+    this.logger.log('Seeding prerequisites...');
 
-    // Mapeo de prerequisitos según la malla curricular
-    const prerequisites = [
-      // SEGUNDO SEMESTRE
-      { materia: 'LIN101', prerequisito: 'LIN100' }, // Inglés Técnico II -> Inglés Técnico I
-      { materia: 'FIS102', prerequisito: 'FIS100' }, // Física II -> Física I
-      { materia: 'INF120', prerequisito: 'INF110' }, // Programación I -> Introducción a la Informática
-      { materia: 'MAT102', prerequisito: 'MAT101' }, // Cálculo II -> Cálculo I
+    const courses = await this.courseRepository.find();
 
-      // TERCER SEMESTRE
-      { materia: 'FISICA200', prerequisito: 'FIS102' }, // Física III -> Física II
-      { materia: 'INF211', prerequisito: 'INF110' }, // Arquitectura de Computadoras -> Introducción a la Informática
-      { materia: 'INF210', prerequisito: 'INF120' }, // Programación II -> Programación I
-      { materia: 'MAT207', prerequisito: 'MAT102' }, // Ecuaciones Diferenciales -> Cálculo II
+    if (courses.length === 0) {
+      this.logger.warn('No courses found, skipping prerequisites seeding');
+      return;
+    }
 
-      // CUARTO SEMESTRE
-      { materia: 'INF221', prerequisito: 'INF211' }, // Programación Ensamblador -> Arquitectura de Computadoras
-      { materia: 'INF220', prerequisito: 'INF210' }, // Estructura de Datos I -> Programación II
-      { materia: 'MAT205', prerequisito: 'MAT102' }, // Métodos Numéricos -> Cálculo II
+    const prerequisiteRules = [
+      // 2° SEMESTRE PREREQUISITES
+      { course_code: 'UNI101', prerequisite_code: 'UNI100' }, // Inglés Técnico II requires Inglés Técnico I
+      { course_code: 'FIS102', prerequisite_code: 'FIS100' }, // Física II requires Física I
+      { course_code: 'INF120', prerequisite_code: 'INF110' }, // Programación I requires Introducción a la Informática
+      { course_code: 'MAT102', prerequisite_code: 'MAT101' }, // Cálculo II requires Cálculo I
+      { course_code: 'MAT103', prerequisite_code: 'MAT101' }, // Álgebra Lineal requires Cálculo I
 
-      // QUINTO SEMESTRE
-      { materia: 'INF318', prerequisito: 'INF210' }, // Programación Lógica y Funcional -> Programación II
-      { materia: 'INF310', prerequisito: 'INF220' }, // Estructura de Datos II -> Estructura de Datos I
-      { materia: 'INF319', prerequisito: 'INF119' }, // Lenguaje Formales -> Estructuras Discretas
-      { materia: 'INF312', prerequisito: 'INF220' }, // Base de Datos I -> Estructura de Datos I
-      { materia: 'MAT302', prerequisito: 'MAT202' }, // Probabilidades y Estadísticas II -> Probabilidades y Estadísticas I
+      // 3° SEMESTRE PREREQUISITES
+      { course_code: 'FISICAOO', prerequisite_code: 'FIS102' }, // Física III requires Física II
+      { course_code: 'INF210', prerequisite_code: 'INF120' }, // Programación II requires Programación I
+      { course_code: 'INF211', prerequisite_code: 'INF120' }, // Arquitectura de Computadoras requires Programación I
+      { course_code: 'MAT207', prerequisite_code: 'MAT102' }, // Ecuaciones Diferenciales requires Cálculo II
 
-      // SEXTO SEMESTRE
-      { materia: 'INF329', prerequisito: 'INF319' }, // Compiladores -> Lenguaje Formales
-      { materia: 'INF323', prerequisito: 'INF310' }, // Sistemas Operativos I -> Estructura de Datos II
-      { materia: 'INF322', prerequisito: 'INF312' }, // Base de Datos II -> Base de Datos I
-      { materia: 'INF342', prerequisito: 'INF312' }, // Sistema de Información I -> Base de Datos I
-      { materia: 'MAT329', prerequisito: 'MAT302' }, // Investigación Operativa I -> Probabilidades y Estadísticas II
+      // 4° SEMESTRE PREREQUISITES
+      { course_code: 'INF220', prerequisite_code: 'INF210' }, // Estructura de Datos I requires Programación II
+      { course_code: 'INF220', prerequisite_code: 'INF119' }, // Estructura de Datos I requires Estructuras Discretas
+      { course_code: 'INF221', prerequisite_code: 'INF211' }, // Programación en Ensamblador requires Arquitectura de Computadoras
+      { course_code: 'MAT202', prerequisite_code: 'MAT103' }, // Probabilidades y Estadística requires Álgebra Lineal
+      { course_code: 'MAT205', prerequisite_code: 'MAT102' }, // Métodos Numéricos requires Cálculo II
 
-      // SÉPTIMO SEMESTRE
-      { materia: 'INF418', prerequisito: 'INF310' }, // Inteligencia Artificial -> Estructura de Datos II
-      { materia: 'INF433', prerequisito: 'INF323' }, // Redes I -> Sistemas Operativos I
-      { materia: 'INF413', prerequisito: 'INF323' }, // Sistemas Operativos II -> Sistemas Operativos I
-      { materia: 'INF412', prerequisito: 'INF342' }, // Sistema de Información II -> Sistema de Información I
-      { materia: 'MAT419', prerequisito: 'MAT329' }, // Investigación Operativa II -> Investigación Operativa I
+      // 5° SEMESTRE PREREQUISITES
+      { course_code: 'INF310', prerequisite_code: 'INF220' }, // Estructura de Datos II requires Estructura de Datos I
+      { course_code: 'INF312', prerequisite_code: 'INF220' }, // Base de Datos I requires Estructura de Datos I
+      { course_code: 'INF318', prerequisite_code: 'INF220' }, // Programación Lógica y Funcional requires Estructura de Datos I
+      { course_code: 'INF319', prerequisite_code: 'INF220' }, // Lenguajes Formales requires Estructura de Datos I
+      { course_code: 'MAT302', prerequisite_code: 'MAT202' }, // Probabilidades y Estadística II requires Probabilidades y Estadística
 
-      // OCTAVO SEMESTRE
-      { materia: 'INF423', prerequisito: 'INF433' }, // Redes II -> Redes I
-      { materia: 'INF428', prerequisito: 'INF418' }, // Sistemas Expertos -> Inteligencia Artificial
-      { materia: 'INF422', prerequisito: 'INF412' }, // Ingeniería de Software -> Sistema de Información II
-      { materia: 'INF442', prerequisito: 'INF412' }, // Sistema de Información Geográfica -> Sistema de Información II
+      // 6° SEMESTRE PREREQUISITES
+      { course_code: 'INF322', prerequisite_code: 'INF312' }, // Base de Datos II requires Base de Datos I
+      { course_code: 'INF323', prerequisite_code: 'INF310' }, // Sistemas Operativos I requires Estructura de Datos II
+      { course_code: 'INF329', prerequisite_code: 'INF319' }, // Compiladores requires Lenguajes Formales
+      { course_code: 'INF342', prerequisite_code: 'INF312' }, // Sistema de Información I requires Base de Datos I
+      { course_code: 'MAT329', prerequisite_code: 'MAT302' }, // Investigación Operativa requires Probabilidades y Estadística II
 
-      // NOVENO SEMESTRE
-      { materia: 'INF512', prerequisito: 'INF422' }, // Ingeniería de Software II -> Ingeniería de Software
-      { materia: 'INF513', prerequisito: 'INF322' }, // Tecnología Web -> Base de Datos II
-      { materia: 'INF552', prerequisito: 'INF422' }, // Arquitectura de Software II -> Ingeniería de Software
+      // 7° SEMESTRE PREREQUISITES
+      { course_code: 'INF412', prerequisite_code: 'INF342' }, // Sistema de Información II requires Sistema de Información I
+      { course_code: 'INF413', prerequisite_code: 'INF323' }, // Sistemas Operativos II requires Sistemas Operativos I
+      { course_code: 'INF418', prerequisite_code: 'INF310' }, // Inteligencia Artificial requires Estructura de Datos II
+      { course_code: 'INF433', prerequisite_code: 'INF323' }, // Redes I requires Sistemas Operativos I
+      { course_code: 'MAT419', prerequisite_code: 'MAT329' }, // Investigación Operativa II requires Investigación Operativa
 
-      // Prerequisites adicionales basados en las flechas del diagrama
-      { materia: 'INF310', prerequisito: 'INF119' }, // Estructura de Datos II también depende de Estructuras Discretas
-      { materia: 'MAT205', prerequisito: 'MAT103' }, // Métodos Numéricos también depende de Álgebra Lineal
-      { materia: 'INF342', prerequisito: 'ADM100' }, // Sistema de Información I depende de Administración
+      // 8° SEMESTRE PREREQUISITES
+      { course_code: 'INF422', prerequisite_code: 'INF412' }, // Ingeniería de Software I requires Sistema de Información II
+      { course_code: 'INF423', prerequisite_code: 'INF433' }, // Redes II requires Redes I
+      { course_code: 'INF428', prerequisite_code: 'INF418' }, // Sistemas Expertos requires Inteligencia Artificial
+      { course_code: 'INF442', prerequisite_code: 'INF322' }, // Sistema de Información Geográfica requires Base de Datos II
+
+      // 9° SEMESTRE PREREQUISITES
+      { course_code: 'INF512', prerequisite_code: 'INF422' }, // Ingeniería de Software II requires Ingeniería de Software I
+      { course_code: 'INF513', prerequisite_code: 'INF423' }, // Tecnología Web requires Redes II
+      { course_code: 'INF552', prerequisite_code: 'INF512' }, // Arquitectura de Software II requires Ingeniería de Software II
+
+      // 10° SEMESTRE PREREQUISITES
+      { course_code: 'GDI001', prerequisite_code: 'INF511' }, // Graduación Directa requires Taller de Grado I
+      { course_code: 'GRL001', prerequisite_code: 'INF511' }, // Modalidad de Graduación requires Taller de Grado I
     ];
 
-    for (const prereq of prerequisites) {
-      // Buscar las materias
-      const materia = await this.subjectRepository.findOne({
-        where: { codigo_materia: prereq.materia },
-      });
+    for (const rule of prerequisiteRules) {
+      const course = courses.find(c => c.code === rule.course_code);
+      const prerequisiteCourse = courses.find(c => c.code === rule.prerequisite_code);
 
-      const materiaPrerequisito = await this.subjectRepository.findOne({
-        where: { codigo_materia: prereq.prerequisito },
-      });
-
-      if (!materia) {
-        this.logger.warn(`⚠️ Subject not found: ${prereq.materia}`);
+      if (!course || !prerequisiteCourse) {
+        this.logger.warn(`Course not found for prerequisite rule: ${rule.prerequisite_code} -> ${rule.course_code}`);
         continue;
       }
 
-      if (!materiaPrerequisito) {
-        this.logger.warn(`⚠️ Prerequisite subject not found: ${prereq.prerequisito}`);
-        continue;
-      }
-
-      // Verificar si el prerequisito ya existe
       const existingPrerequisite = await this.prerequisiteRepository.findOne({
         where: {
-          id_materia: materia.id_materia,
-          id_materia_prerequisito: materiaPrerequisito.id_materia,
+          main_course_id: course.id,
+          required_course_id: prerequisiteCourse.id,
         },
       });
 
       if (!existingPrerequisite) {
-        const prerequisite = this.prerequisiteRepository.create({
-          id_materia: materia.id_materia,
-          id_materia_prerequisito: materiaPrerequisito.id_materia,
-          tipo_prerequisito: 'obligatorio',
-        });
+        const prerequisiteData = {
+          main_course_id: course.id,
+          required_course_id: prerequisiteCourse.id,
+          kind: 'Prerequisite',
+        };
 
+        const prerequisite = this.prerequisiteRepository.create(prerequisiteData);
         await this.prerequisiteRepository.save(prerequisite);
-        this.logger.log(`✅ Created prerequisite: ${prereq.materia} requires ${prereq.prerequisito}`);
+        this.logger.log(`Created prerequisite: ${rule.prerequisite_code} -> ${rule.course_code}`);
       } else {
-        this.logger.log(`⚠️ Prerequisite already exists: ${prereq.materia} -> ${prereq.prerequisito}`);
+        this.logger.log(`Prerequisite already exists: ${rule.prerequisite_code} -> ${rule.course_code}`);
       }
     }
 
-    this.logger.log('✅ Prerequisites seeding completed');
+    this.logger.log('Prerequisites seeding completed');
   }
 
   async clear(): Promise<void> {
-    this.logger.log('🗑️ Clearing prerequisites...');
+    this.logger.log('Clearing prerequisites...');
     await this.prerequisiteRepository.createQueryBuilder().delete().execute();
-    this.logger.log('✅ Prerequisites cleared');
+    this.logger.log('Prerequisites cleared');
   }
 }

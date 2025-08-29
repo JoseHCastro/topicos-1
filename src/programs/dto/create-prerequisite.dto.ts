@@ -1,20 +1,17 @@
 import {
-  IsNumber,
+  IsUUID,
   IsEnum,
   IsOptional,
-  Min,
 } from 'class-validator';
 
 export class CreatePrerequisiteDto {
-  @IsNumber()
-  @Min(1)
-  id_materia: number;
+  @IsUUID()
+  main_course_id: string;
 
-  @IsNumber()
-  @Min(1)
-  id_materia_prerequisito: number;
+  @IsUUID()
+  required_course_id: string;
 
-  @IsEnum(['obligatorio', 'opcional'])
+  @IsEnum(['required', 'optional'])
   @IsOptional()
-  tipo_prerequisito?: string = 'obligatorio';
+  kind?: string = 'required';
 }

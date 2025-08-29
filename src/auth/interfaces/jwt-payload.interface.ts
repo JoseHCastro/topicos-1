@@ -1,5 +1,15 @@
 export interface JwtPayload {
-  email: string;
+
   id: string;
-  rol: string; // Mantengo 'rol' para consistencia con el JWT
+  email: string;
+  first_name: string;
+  last_name: string;
+  phone?: string;
+  role: string;
+  roles: string[];
+  student_code?: string;
+  teacher_category?: string;
+  iat: number;
+  exp: number;
+  jti: string;
 }

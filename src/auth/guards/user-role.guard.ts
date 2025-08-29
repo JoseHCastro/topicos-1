@@ -7,12 +7,12 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Observable } from 'rxjs';
-import { User } from '../entities/user.entity';
+import { JwtPayload } from '../interfaces/jwt-payload.interface';
 import { META_ROLES } from '../decorators/role-protected.decorator';
 
 @Injectable()
 export class UserRoleGuard implements CanActivate {
-  constructor(private readonly reflector: Reflector) {}
+  constructor(private readonly reflector: Reflector) { }
 
   canActivate(
     context: ExecutionContext,
@@ -31,7 +31,7 @@ export class UserRoleGuard implements CanActivate {
     }
 
     const req = context.switchToHttp().getRequest();
-    const user = req.user as User;
+    const user = req.user as JwtPayload;
 
     if (!user) {
       throw new BadRequestException('User not found');
@@ -41,8 +41,12 @@ export class UserRoleGuard implements CanActivate {
       return true;
     }
 
+    if (user.roles && user.roles.some(role => validRoles.includes(role))) {
+      return true;
+    }
+
     throw new ForbiddenException(
-      `User ${user.firstName} need a valid role: [${validRoles}]`,
+      `User ${user.first_name} need a valid role: [${validRoles}]`,
     );
   }
 }

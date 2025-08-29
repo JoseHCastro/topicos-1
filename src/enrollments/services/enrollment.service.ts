@@ -3,12 +3,14 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Enrollment } from '../entities';
 import { CreateEnrollmentDto, UpdateEnrollmentDto } from '../dto';
+import { PaginationDto, PaginatedResultDto, PaginationService } from '../../common';
 
 @Injectable()
 export class EnrollmentService {
   constructor(
     @InjectRepository(Enrollment)
     private readonly enrollmentRepository: Repository<Enrollment>,
+    private readonly paginationService: PaginationService,
   ) {}
 
   async create(createEnrollmentDto: CreateEnrollmentDto) {
@@ -16,17 +18,21 @@ export class EnrollmentService {
     return await this.enrollmentRepository.save(enrollment);
   }
 
-  async findAll() {
-    return await this.enrollmentRepository.find({
-      relations: ['estudiante', 'periodo', 'detalles'],
-      order: { fecha_inscripcion: 'DESC' },
-    });
+  async findAll(paginationDto: PaginationDto): Promise<PaginatedResultDto<Enrollment>> {
+    return this.paginationService.paginateRepository(
+      this.enrollmentRepository,
+      paginationDto,
+      {
+        relations: ['student', 'term', 'enrollment_details'],
+        order: { enrolled_on: 'DESC' },
+      }
+    );
   }
 
-  async findOne(id: number) {
+  async findOne(id: string) {
     const enrollment = await this.enrollmentRepository.findOne({
-      where: { id_inscripcion: id },
-      relations: ['estudiante', 'periodo', 'detalles'],
+      where: { id: id },
+      relations: ['student', 'term', 'enrollment_details'],
     });
 
     if (!enrollment) {
@@ -36,9 +42,9 @@ export class EnrollmentService {
     return enrollment;
   }
 
-  async update(id: number, updateEnrollmentDto: UpdateEnrollmentDto) {
+  async update(id: string, updateEnrollmentDto: UpdateEnrollmentDto) {
     const enrollment = await this.enrollmentRepository.preload({
-      id_inscripcion: id,
+      id: id,
       ...updateEnrollmentDto,
     });
 

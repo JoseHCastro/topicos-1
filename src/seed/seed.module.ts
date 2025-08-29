@@ -1,84 +1,89 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { ConfigModule } from '@nestjs/config';
 
 import { User } from '../auth/entities/user.entity';
 import { Admin } from '../auth/entities/admin.entity';
-import { Professor } from '../auth/entities/professor.entity';
+import { Teacher } from '../auth/entities/teacher.entity';
 import { Student } from '../auth/entities/student.entity';
-import { Career } from '../programs/entities/career.entity';
+import { AcademicYear } from '../calendar/entities/academic-year.entity';
+import { Term } from '../calendar/entities/term.entity';
+import { Classroom } from '../facilities/entities/classroom.entity';
+import { Level } from '../programs/entities/level.entity';
+import { DegreeProgram } from '../programs/entities/degree-program.entity';
 import { StudyPlan } from '../programs/entities/study-plan.entity';
-import { Subject } from '../programs/entities/subject.entity';
+import { Course } from '../programs/entities/course.entity';
 import { Prerequisite } from '../programs/entities/prerequisite.entity';
-import { Level } from '../catalogs/entities/level.entity';
-import { Term } from '../catalogs/entities/term.entity';
-import { Classroom } from '../courses/entities/classroom.entity';
-import { SubjectGroup } from '../courses/entities/subject-group.entity';
-import { Schedule } from '../courses/entities/schedule.entity';
-import { Management } from '../academic-calendar/entities/management.entity';
-import { Period } from '../academic-calendar/entities/period.entity';
+import { CourseSection } from '../teaching/entities/course-section.entity';
+import { Schedule } from '../teaching/entities/schedule.entity';
 import { Enrollment } from '../enrollments/entities/enrollment.entity';
 import { EnrollmentDetail } from '../enrollments/entities/enrollment-detail.entity';
-import { Grade } from '../grades/entities/grade.entity';
+import { Grade } from '../assessments/entities/grade.entity';
 
 import { SeedService } from './seed.service';
-import { UserSeeder } from './seeders/user.seeder';
 import { AdminSeeder } from './seeders/admin.seeder';
-import { ProfessorSeeder } from './seeders/professor.seeder';
+import { TeacherSeeder } from './seeders/teacher.seeder';
 import { StudentSeeder } from './seeders/student.seeder';
-import { CareerSeeder } from './seeders/career.seeder';
-import { LevelSeeder } from './seeders/level.seeder';
+import { AcademicYearSeeder } from './seeders/academic-year.seeder';
 import { TermSeeder } from './seeders/term.seeder';
-import { StudyPlanSeeder } from './seeders/study-plan.seeder';
-import { SubjectSeeder } from './seeders/subject.seeder';
-import { PrerequisiteSeeder } from './seeders/prerequisite.seeder';
 import { ClassroomSeeder } from './seeders/classroom.seeder';
-import { ManagementSeeder } from './seeders/management.seeder';
-import { PeriodSeeder } from './seeders/period.seeder';
-import { SubjectGroupSeeder } from './seeders/subject-group.seeder';
+import { LevelSeeder } from './seeders/level.seeder';
+import { DegreeProgramSeeder } from './seeders/degree-program.seeder';
+import { StudyPlanSeeder } from './seeders/study-plan.seeder';
+import { CourseSeeder } from './seeders/course.seeder';
+import { PrerequisiteSeeder } from './seeders/prerequisite.seeder';
+import { CourseSectionSeeder } from './seeders/course-section.seeder';
 import { ScheduleSeeder } from './seeders/schedule.seeder';
 import { EnrollmentSeeder } from './seeders/enrollment.seeder';
 import { EnrollmentDetailSeeder } from './seeders/enrollment-detail.seeder';
 import { GradeSeeder } from './seeders/grade.seeder';
 
+import { databaseConfig } from '../config/database.config';
+
 @Module({
   imports: [
+    ConfigModule.forRoot({
+      envFilePath: '.env',
+      load: [databaseConfig],
+    }),
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: () => databaseConfig(),
+    }),
     TypeOrmModule.forFeature([
-      User, 
-      Admin, 
-      Professor, 
+      User,
+      Admin,
+      Teacher,
       Student,
-      Career,
-      StudyPlan,
-      Subject,
-      Prerequisite,
-      Level,
+      AcademicYear,
       Term,
       Classroom,
-      SubjectGroup,
+      Level,
+      DegreeProgram,
+      StudyPlan,
+      Course,
+      Prerequisite,
+      CourseSection,
       Schedule,
-      Management,
-      Period,
       Enrollment,
       EnrollmentDetail,
       Grade,
-    ])
+    ]),
   ],
   providers: [
     SeedService,
-    UserSeeder,
     AdminSeeder,
-    ProfessorSeeder,
+    TeacherSeeder,
     StudentSeeder,
-    CareerSeeder,
-    LevelSeeder,
+    AcademicYearSeeder,
     TermSeeder,
-    StudyPlanSeeder,
-    SubjectSeeder,
-    PrerequisiteSeeder,
     ClassroomSeeder,
-    ManagementSeeder,
-    PeriodSeeder,
-    SubjectGroupSeeder,
+    LevelSeeder,
+    DegreeProgramSeeder,
+    StudyPlanSeeder,
+    CourseSeeder,
+    PrerequisiteSeeder,
+    CourseSectionSeeder,
     ScheduleSeeder,
     EnrollmentSeeder,
     EnrollmentDetailSeeder,

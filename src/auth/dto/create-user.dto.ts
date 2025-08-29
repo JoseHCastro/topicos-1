@@ -1,4 +1,4 @@
-// create-user.dto.ts
+
 import {
   IsEmail,
   IsEnum,
@@ -11,13 +11,11 @@ import {
   MinLength,
   ValidateIf,
 } from 'class-validator';
-import { StudentStatus } from '../entities/student.entity';
-import { ProfessorStatus } from '../entities/professor.entity';
 
 export enum UserRole {
   ADMIN = 'ADMIN',
   STUDENT = 'STUDENT',
-  PROFESSOR = 'PROFESSOR',
+  TEACHER = 'TEACHER',
 }
 
 export class CreateUserDto {
@@ -48,7 +46,10 @@ export class CreateUserDto {
   @IsNotEmpty()
   role: UserRole;
 
-  // Campos específicos de Student
+  @IsString()
+  @IsOptional()
+  phone?: string;
+
   @IsString()
   @IsOptional()
   @ValidateIf((o) => o.role === UserRole.STUDENT)
@@ -66,42 +67,21 @@ export class CreateUserDto {
 
   @IsString()
   @IsOptional()
-  @ValidateIf((o) => o.role === UserRole.STUDENT)
-  phone?: string;
-
-  @IsEnum(StudentStatus)
-  @IsOptional()
-  @ValidateIf((o) => o.role === UserRole.STUDENT)
-  studentStatus?: StudentStatus;
-
-  // Campos específicos de Professor
-  @IsString()
-  @IsOptional()
-  @ValidateIf((o) => o.role === UserRole.PROFESSOR)
-  professorCode?: string;
+  @ValidateIf((o) => o.role === UserRole.TEACHER)
+  teacherCode?: string;
 
   @IsString()
   @IsOptional()
-  @ValidateIf((o) => o.role === UserRole.PROFESSOR)
-  professorNationalId?: string;
+  @ValidateIf((o) => o.role === UserRole.TEACHER)
+  teacherNationalId?: string;
 
   @IsDateString()
   @IsOptional()
-  @ValidateIf((o) => o.role === UserRole.PROFESSOR)
-  professorBirthDate?: Date;
+  @ValidateIf((o) => o.role === UserRole.TEACHER)
+  teacherBirthDate?: Date;
 
   @IsString()
   @IsOptional()
-  @ValidateIf((o) => o.role === UserRole.PROFESSOR)
-  professorPhone?: string;
-
-  @IsString()
-  @IsOptional()
-  @ValidateIf((o) => o.role === UserRole.PROFESSOR)
+  @ValidateIf((o) => o.role === UserRole.TEACHER)
   department?: string;
-
-  @IsEnum(ProfessorStatus)
-  @IsOptional()
-  @ValidateIf((o) => o.role === UserRole.PROFESSOR)
-  professorStatus?: ProfessorStatus;
 }

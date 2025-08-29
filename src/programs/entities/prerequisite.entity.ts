@@ -1,28 +1,42 @@
-import { Entity, PrimaryGeneratedColumn, ManyToOne, JoinColumn, Column } from 'typeorm';
-import { Subject } from './subject.entity';
+import { Entity, PrimaryGeneratedColumn, ManyToOne, JoinColumn, Column, CreateDateColumn, UpdateDateColumn, Unique, Check, Index } from 'typeorm';
+import { Course } from './course.entity';
 
-@Entity('prerequisito')
+@Entity('prerequisite')
+@Unique(['main_course_id', 'required_course_id'])
+@Check('"main_course_id" <> "required_course_id"')
+@Index('IDX_prerequisite_main_course', ['main_course_id'])
+@Index('IDX_prerequisite_required_course', ['required_course_id'])
+@Index('IDX_prerequisite_validation', ['main_course_id', 'required_course_id', 'kind'])
 export class Prerequisite {
-  @PrimaryGeneratedColumn('increment')
-  id_prerequisito: number;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
-  @Column('int')
-  id_materia: number;
+  @Column('uuid')
+  main_course_id: string;
 
-  @Column('int')
-  id_materia_prerequisito: number;
+  @Column('uuid')
+  required_course_id: string;
 
-  @Column({ type: 'enum', enum: ['obligatorio', 'opcional'], default: 'obligatorio' })
-  tipo_prerequisito: string;
+  @Column('varchar', { length: 20 })
+  kind: string;
 
-  @Column('timestamp', { default: () => 'CURRENT_TIMESTAMP' })
-  fecha_creacion: Date;
+  @CreateDateColumn({
+    type: 'timestamptz',
+    name: 'created_at'
+  })
+  created_at: Date;
 
-  @ManyToOne(() => Subject, subject => subject.prerequisitos)
-  @JoinColumn({ name: 'id_materia' })
-  materia: Subject;
+  @UpdateDateColumn({
+    type: 'timestamptz',
+    name: 'updated_at'
+  })
+  updated_at: Date;
 
-  @ManyToOne(() => Subject)
-  @JoinColumn({ name: 'id_materia_prerequisito' })
-  materiaPrerequisito: Subject;
+  @ManyToOne(() => Course, course => course.prerequisites_as_main)
+  @JoinColumn({ name: 'main_course_id' })
+  main_course: Course;
+
+  @ManyToOne(() => Course, course => course.prerequisites_as_required)
+  @JoinColumn({ name: 'required_course_id' })
+  required_course: Course;
 }

@@ -1,18 +1,17 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { UserSeeder } from './seeders/user.seeder';
+import { DataSource } from 'typeorm';
 import { AdminSeeder } from './seeders/admin.seeder';
-import { ProfessorSeeder } from './seeders/professor.seeder';
+import { TeacherSeeder } from './seeders/teacher.seeder';
 import { StudentSeeder } from './seeders/student.seeder';
-import { CareerSeeder } from './seeders/career.seeder';
-import { LevelSeeder } from './seeders/level.seeder';
-import { StudyPlanSeeder } from './seeders/study-plan.seeder';
-import { SubjectSeeder } from './seeders/subject.seeder';
-import { PrerequisiteSeeder } from './seeders/prerequisite.seeder';
-import { ClassroomSeeder } from './seeders/classroom.seeder';
+import { AcademicYearSeeder } from './seeders/academic-year.seeder';
 import { TermSeeder } from './seeders/term.seeder';
-import { ManagementSeeder } from './seeders/management.seeder';
-import { PeriodSeeder } from './seeders/period.seeder';
-import { SubjectGroupSeeder } from './seeders/subject-group.seeder';
+import { ClassroomSeeder } from './seeders/classroom.seeder';
+import { LevelSeeder } from './seeders/level.seeder';
+import { DegreeProgramSeeder } from './seeders/degree-program.seeder';
+import { StudyPlanSeeder } from './seeders/study-plan.seeder';
+import { CourseSeeder } from './seeders/course.seeder';
+import { PrerequisiteSeeder } from './seeders/prerequisite.seeder';
+import { CourseSectionSeeder } from './seeders/course-section.seeder';
 import { ScheduleSeeder } from './seeders/schedule.seeder';
 import { EnrollmentSeeder } from './seeders/enrollment.seeder';
 import { EnrollmentDetailSeeder } from './seeders/enrollment-detail.seeder';
@@ -23,20 +22,19 @@ export class SeedService {
   private readonly logger = new Logger(SeedService.name);
 
   constructor(
-    private readonly userSeeder: UserSeeder,
+    private readonly dataSource: DataSource,
     private readonly adminSeeder: AdminSeeder,
-    private readonly professorSeeder: ProfessorSeeder,
+    private readonly teacherSeeder: TeacherSeeder,
     private readonly studentSeeder: StudentSeeder,
-    private readonly careerSeeder: CareerSeeder,
-    private readonly levelSeeder: LevelSeeder,
-    private readonly studyPlanSeeder: StudyPlanSeeder,
-    private readonly subjectSeeder: SubjectSeeder,
-    private readonly prerequisiteSeeder: PrerequisiteSeeder,
-    private readonly classroomSeeder: ClassroomSeeder,
+    private readonly academicYearSeeder: AcademicYearSeeder,
     private readonly termSeeder: TermSeeder,
-    private readonly managementSeeder: ManagementSeeder,
-    private readonly periodSeeder: PeriodSeeder,
-    private readonly subjectGroupSeeder: SubjectGroupSeeder,
+    private readonly classroomSeeder: ClassroomSeeder,
+    private readonly levelSeeder: LevelSeeder,
+    private readonly degreeProgramSeeder: DegreeProgramSeeder,
+    private readonly studyPlanSeeder: StudyPlanSeeder,
+    private readonly courseSeeder: CourseSeeder,
+    private readonly prerequisiteSeeder: PrerequisiteSeeder,
+    private readonly courseSectionSeeder: CourseSectionSeeder,
     private readonly scheduleSeeder: ScheduleSeeder,
     private readonly enrollmentSeeder: EnrollmentSeeder,
     private readonly enrollmentDetailSeeder: EnrollmentDetailSeeder,
@@ -44,158 +42,96 @@ export class SeedService {
   ) {}
 
   async runAllSeeders(): Promise<void> {
-    this.logger.log('🌱 Starting database seeding...');
+    this.logger.log('Starting database seeding...');
 
-    try {
-      // Ejecutar seeders en orden específico (dependencias primero)
-      
-      // 1. Estructuras básicas
-      await this.careerSeeder.run();
-      await this.levelSeeder.run();
-      await this.termSeeder.run();
-      
-      // 2. Estructura académica
-      await this.studyPlanSeeder.run();
-      await this.subjectSeeder.run();
-      await this.prerequisiteSeeder.run(); // Después de subjects
-      await this.classroomSeeder.run();
-      
-      // 3. Usuarios después de tener las estructuras básicas
-      await this.userSeeder.run();
-      await this.adminSeeder.run();
-      await this.professorSeeder.run();
-      await this.studentSeeder.run();
+    const seeders = [
+      this.adminSeeder,
+      this.teacherSeeder,
+      this.studentSeeder,
+      this.academicYearSeeder,
+      this.termSeeder,
+      this.classroomSeeder,
+      this.levelSeeder,
+      this.degreeProgramSeeder,
+      this.studyPlanSeeder,
+      this.courseSeeder,
+      this.prerequisiteSeeder,
+      this.courseSectionSeeder,
+      this.scheduleSeeder,
+      this.enrollmentSeeder,
+      this.enrollmentDetailSeeder,
+      this.gradeSeeder,
+    ];
 
-      // 4. Gestión académica
-      await this.managementSeeder.run();
-      await this.periodSeeder.run();
-      
-      // 5. Grupos de materias y horarios
-      await this.subjectGroupSeeder.run();
-      await this.scheduleSeeder.run();
-      
-      // 6. Inscripciones y notas
-      await this.enrollmentSeeder.run();
-      await this.enrollmentDetailSeeder.run();
-      await this.gradeSeeder.run();
-
-      this.logger.log('✅ Database seeding completed successfully!');
-    } catch (error) {
-      this.logger.error('❌ Database seeding failed:', error);
-      throw error;
+    for (const seeder of seeders) {
+      try {
+        await seeder.run();
+      } catch (error) {
+        this.logger.error(`Database seeding failed:`, error);
+        throw error;
+      }
     }
+
+    this.logger.log('✅ Database seeding completed successfully!');
   }
 
-  async runSpecificSeeder(seederName: string): Promise<void> {
-    this.logger.log(`🌱 Running ${seederName} seeder...`);
+  async clearAllData(): Promise<void> {
+    this.logger.log('🧹 Clearing database...');
 
     try {
-      switch (seederName.toLowerCase()) {
-        case 'career':
-          await this.careerSeeder.run();
-          break;
-        case 'level':
-          await this.levelSeeder.run();
-          break;
-        case 'term':
-          await this.termSeeder.run();
-          break;
-        case 'study-plan':
-          await this.studyPlanSeeder.run();
-          break;
-        case 'subject':
-          await this.subjectSeeder.run();
-          break;
-        case 'prerequisite':
-          await this.prerequisiteSeeder.run();
-          break;
-        case 'classroom':
-          await this.classroomSeeder.run();
-          break;
-        case 'user':
-          await this.userSeeder.run();
-          break;
-        case 'admin':
-          await this.adminSeeder.run();
-          break;
-        case 'professor':
-          await this.professorSeeder.run();
-          break;
-        case 'student':
-          await this.studentSeeder.run();
-          break;
-        case 'management':
-          await this.managementSeeder.run();
-          break;
-        case 'period':
-          await this.periodSeeder.run();
-          break;
-        case 'subject-group':
-          await this.subjectGroupSeeder.run();
-          break;
-        case 'schedule':
-          await this.scheduleSeeder.run();
-          break;
-        case 'enrollment':
-          await this.enrollmentSeeder.run();
-          break;
-        case 'enrollment-detail':
-          await this.enrollmentDetailSeeder.run();
-          break;
-        case 'grade':
-          await this.gradeSeeder.run();
-          break;
-        default:
-          throw new Error(`Seeder "${seederName}" not found`);
+
+      await this.dataSource.query('SET session_replication_role = replica;');
+      
+      const tables = await this.dataSource.query(`
+        SELECT tablename 
+        FROM pg_tables 
+        WHERE schemaname = 'public'
+      `);
+
+      for (const table of tables) {
+        await this.dataSource.query(`TRUNCATE TABLE "${table.tablename}" RESTART IDENTITY CASCADE;`);
+        this.logger.log(` Cleared table: ${table.tablename}`);
       }
 
-      this.logger.log(`✅ ${seederName} seeder completed successfully!`);
+      // Re-enable constraints
+      await this.dataSource.query('SET session_replication_role = DEFAULT;');
+
+      this.logger.log('Database cleared successfully!');
     } catch (error) {
-      this.logger.error(`❌ ${seederName} seeder failed:`, error);
-      throw error;
-    }
-  }
+      this.logger.error(' Error clearing database:', error.message);
 
-  async clearDatabase(): Promise<void> {
-    this.logger.log('🗑️ Clearing database...');
+      this.logger.log('🔄 Attempting fallback clearing method...');
+      
+      const seeders = [
+        this.gradeSeeder,
+        this.enrollmentDetailSeeder,
+        this.enrollmentSeeder,
+        this.scheduleSeeder,
+        this.courseSectionSeeder,
+        this.prerequisiteSeeder,
+        this.courseSeeder,
+        this.studyPlanSeeder,
+        this.degreeProgramSeeder,
+        this.levelSeeder,
+        this.classroomSeeder,
+        this.termSeeder,
+        this.academicYearSeeder,
+        this.studentSeeder,
+        this.teacherSeeder,
+        this.adminSeeder,
+      ];
 
-    try {
-      // Limpiar en orden inverso para mantener integridad referencial
-      
-      // 1. Limpiar notas e inscripciones primero
-      await this.gradeSeeder.clear();
-      await this.enrollmentDetailSeeder.clear();
-      await this.enrollmentSeeder.clear();
-      
-      // 2. Limpiar horarios y grupos de materias
-      await this.scheduleSeeder.clear();
-      await this.subjectGroupSeeder.clear();
-      
-      // 3. Limpiar períodos y gestiones
-      await this.periodSeeder.clear();
-      await this.managementSeeder.clear();
-      
-      // 4. Limpiar usuarios
-      await this.studentSeeder.clear();
-      await this.professorSeeder.clear();
-      await this.adminSeeder.clear();
-      await this.userSeeder.clear();
-      
-      // 5. Limpiar estructura académica
-      await this.prerequisiteSeeder.clear(); // Limpiar prerequisitos antes que subjects
-      await this.subjectSeeder.clear();
-      await this.studyPlanSeeder.clear();
-      await this.classroomSeeder.clear();
-      
-      // 6. Limpiar estructuras básicas
-      await this.termSeeder.clear();
-      await this.levelSeeder.clear();
-      await this.careerSeeder.clear();
+      for (const seeder of seeders) {
+        try {
+          if (seeder.clear) {
+            await seeder.clear();
+          }
+        } catch (error) {
+          this.logger.warn(`⚠️ Clearing failed for ${seeder.constructor.name}:`, error.message);
+        }
+      }
 
-      this.logger.log('✅ Database cleared successfully!');
-    } catch (error) {
-      this.logger.error('❌ Database clearing failed:', error);
-      throw error;
+      this.logger.log('Fallback database clearing completed!');
     }
   }
 }

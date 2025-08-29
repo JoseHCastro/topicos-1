@@ -1,39 +1,34 @@
 import {
   IsNotEmpty,
   IsString,
-  IsNumber,
   IsDateString,
-  IsEnum,
+  IsBoolean,
   IsOptional,
+  IsUUID,
   MinLength,
-  Min,
 } from 'class-validator';
 
 export class CreateStudyPlanDto {
-  @IsNumber()
-  @Min(1)
-  id_carrera: number;
+  @IsUUID()
+  degree_program_id: string;
 
   @IsString()
   @IsNotEmpty()
   @MinLength(3)
   version: string;
 
-  @IsNumber()
-  @Min(2000)
-  año_aprobacion: number;
-
-  @IsNumber()
-  @Min(1)
-  creditos_totales: number;
-
-  @IsDateString()
-  fecha_inicio_vigencia: Date;
-
-  @IsDateString()
-  fecha_fin_vigencia: Date;
-
-  @IsEnum(['vigente', 'obsoleto'])
+  @IsBoolean()
   @IsOptional()
-  estado?: string = 'vigente';
+  is_current?: boolean = false;
+
+  @IsDateString()
+  valid_from: Date;
+
+  @IsDateString()
+  @IsOptional()
+  valid_to?: Date;
+
+  @IsString()
+  @IsOptional()
+  resolution?: string;
 }

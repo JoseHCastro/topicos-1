@@ -3,12 +3,14 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { StudyPlan } from '../entities';
 import { CreateStudyPlanDto, UpdateStudyPlanDto } from '../dto';
+import { PaginationDto, PaginatedResultDto, PaginationService } from '../../common';
 
 @Injectable()
 export class StudyPlanService {
   constructor(
     @InjectRepository(StudyPlan)
     private readonly studyPlanRepository: Repository<StudyPlan>,
+    private readonly paginationService: PaginationService,
   ) {}
 
   async create(createStudyPlanDto: CreateStudyPlanDto) {
@@ -16,34 +18,38 @@ export class StudyPlanService {
     return await this.studyPlanRepository.save(studyPlan);
   }
 
-  async findAll() {
-    return await this.studyPlanRepository.find({
-      relations: ['carrera', 'materias'],
-      order: { año_aprobacion: 'DESC' },
-    });
+  async findAll(paginationDto: PaginationDto): Promise<PaginatedResultDto<StudyPlan>> {
+    return await this.paginationService.paginateRepository<StudyPlan>(
+      this.studyPlanRepository,
+      paginationDto,
+      {
+        relations: ['degree_program'],
+        order: { created_at: 'DESC' }
+      }
+    );
   }
 
-  async findOne(id: number) {
+  async findOne(id: string) {
     const studyPlan = await this.studyPlanRepository.findOne({
-      where: { id_plan_estudio: id },
-      relations: ['carrera', 'materias'],
+      where: { id: id },
+      relations: ['degree_program', 'study_plan_courses'],
     });
 
     if (!studyPlan) {
-      throw new NotFoundException(`Plan de estudio con ID ${id} no encontrado`);
+      throw new NotFoundException(`Plan de estudios con ID ${id} no encontrado`);
     }
 
     return studyPlan;
   }
 
-  async update(id: number, updateStudyPlanDto: UpdateStudyPlanDto) {
+  async update(id: string, updateStudyPlanDto: UpdateStudyPlanDto) {
     const studyPlan = await this.studyPlanRepository.preload({
-      id_plan_estudio: id,
+      id: id,
       ...updateStudyPlanDto,
     });
 
     if (!studyPlan) {
-      throw new NotFoundException(`Plan de estudio con ID ${id} no encontrado`);
+      throw new NotFoundException(`Plan de estudios con ID ${id} no encontrado`);
     }
 
     return await this.studyPlanRepository.save(studyPlan);

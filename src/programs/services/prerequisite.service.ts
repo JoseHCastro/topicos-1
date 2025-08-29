@@ -3,12 +3,14 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Prerequisite } from '../entities';
 import { CreatePrerequisiteDto, UpdatePrerequisiteDto } from '../dto';
+import { PaginationDto, PaginatedResultDto, PaginationService } from '../../common';
 
 @Injectable()
 export class PrerequisiteService {
   constructor(
     @InjectRepository(Prerequisite)
     private readonly prerequisiteRepository: Repository<Prerequisite>,
+    private readonly paginationService: PaginationService,
   ) {}
 
   async create(createPrerequisiteDto: CreatePrerequisiteDto) {
@@ -16,17 +18,21 @@ export class PrerequisiteService {
     return await this.prerequisiteRepository.save(prerequisite);
   }
 
-  async findAll() {
-    return await this.prerequisiteRepository.find({
-      relations: ['materia', 'materiaPrerequisito'],
-      order: { fecha_creacion: 'DESC' },
-    });
+  async findAll(paginationDto: PaginationDto): Promise<PaginatedResultDto<Prerequisite>> {
+    return await this.paginationService.paginateRepository<Prerequisite>(
+      this.prerequisiteRepository,
+      paginationDto,
+      {
+        relations: ['main_course', 'required_course'],
+        order: { created_at: 'DESC' }
+      }
+    );
   }
 
-  async findOne(id: number) {
+  async findOne(id: string) {
     const prerequisite = await this.prerequisiteRepository.findOne({
-      where: { id_prerequisito: id },
-      relations: ['materia', 'materiaPrerequisito'],
+      where: { id: id },
+      relations: ['main_course', 'required_course'],
     });
 
     if (!prerequisite) {
@@ -36,9 +42,9 @@ export class PrerequisiteService {
     return prerequisite;
   }
 
-  async update(id: number, updatePrerequisiteDto: UpdatePrerequisiteDto) {
+  async update(id: string, updatePrerequisiteDto: UpdatePrerequisiteDto) {
     const prerequisite = await this.prerequisiteRepository.preload({
-      id_prerequisito: id,
+      id: id,
       ...updatePrerequisiteDto,
     });
 

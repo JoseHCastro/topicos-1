@@ -1,79 +1,89 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { Repository } from 'typeorm';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { Enrollment } from '../../enrollments/entities/enrollment.entity';
 import { Student } from '../../auth/entities/student.entity';
-import { Period } from '../../academic-calendar/entities/period.entity';
+import { Term } from '../../calendar/entities/term.entity';
 import { SeederInterface } from '../interfaces/seeder.interface';
 
 @Injectable()
 export class EnrollmentSeeder implements SeederInterface {
-  private readonly logger = new Logger(EnrollmentSeeder.name);
-
   constructor(
     @InjectRepository(Enrollment)
     private readonly enrollmentRepository: Repository<Enrollment>,
     @InjectRepository(Student)
     private readonly studentRepository: Repository<Student>,
-    @InjectRepository(Period)
-    private readonly periodRepository: Repository<Period>,
+    @InjectRepository(Term)
+    private readonly termRepository: Repository<Term>,
   ) {}
 
   async run(): Promise<void> {
-    this.logger.log('🌱 Seeding enrollments...');
 
     const students = await this.studentRepository.find();
-    const periods = await this.periodRepository.find({
-      where: { estado: 'activo' }
+    const currentTerm = await this.termRepository.findOne({ 
+      where: { name: '2025-I' } 
+    });
+    const previousTerm = await this.termRepository.findOne({ 
+      where: { name: '2024-II' } 
     });
 
-    if (students.length === 0 || periods.length === 0) {
-      this.logger.warn('⚠️ Missing required data (students or active periods), skipping enrollments seeding');
+    if (students.length === 0 || !currentTerm) {
+      console.log('Prerequisites not found for enrollment seeding');
       return;
     }
 
-    const activePeriod = periods[0];
-    const enrollmentTypes = ['regular', 'segunda', 'final'];
-    const enrollmentStates = ['activa', 'cancelada', 'finalizada'];
+    const enrollmentsData: any[] = [];
 
-    // Crear inscripciones para cada estudiante
     for (const student of students) {
-      const enrollmentTypeIndex = Math.floor(Math.random() * enrollmentTypes.length);
-      const stateIndex = Math.floor(Math.random() * enrollmentStates.length);
-
-      const enrollmentData = {
-        fecha_inscripcion: new Date(),
-        tipo_inscripcion: enrollmentTypes[enrollmentTypeIndex] as any,
-        estado: enrollmentStates[stateIndex] as any,
-      };
-
-      const existingEnrollment = await this.enrollmentRepository.findOne({
-        where: {
-          estudiante: { id: student.id },
-          periodo: { id_periodo: activePeriod.id_periodo }
-        },
-        relations: ['estudiante', 'periodo']
+      enrollmentsData.push({
+        student_id: student.id,
+        term_id: currentTerm.id,
+        enrolled_on: new Date('2025-01-15'),
+        state: 'Active',
+        origin: 'Regular',
+        note: 'Inscripción regular para el semestre actual',
       });
 
-      if (!existingEnrollment) {
-        const enrollment = this.enrollmentRepository.create({
-          ...enrollmentData,
-          estudiante: student,
-          periodo: activePeriod,
+      if (previousTerm) {
+        enrollmentsData.push({
+          student_id: student.id,
+          term_id: previousTerm.id,
+          enrolled_on: new Date('2024-08-15'),
+          state: 'Completed',
+          origin: 'Regular',
+          note: 'Semestre anterior completado',
         });
-        await this.enrollmentRepository.save(enrollment);
-        this.logger.log(`✅ Created enrollment for student: ${student.firstName} ${student.lastName}`);
-      } else {
-        this.logger.log(`⚠️ Enrollment already exists for student: ${student.firstName} ${student.lastName}`);
       }
     }
 
-    this.logger.log('✅ Enrollments seeding completed');
+    for (const enrollmentData of enrollmentsData) {
+      const existingEnrollment = await this.enrollmentRepository.findOne({
+        where: {
+          student_id: enrollmentData.student_id,
+          term_id: enrollmentData.term_id,
+        },
+      });
+
+      if (!existingEnrollment) {
+        const enrollment = this.enrollmentRepository.create(enrollmentData);
+        await this.enrollmentRepository.save(enrollment);
+        
+        const student = students.find(s => s.id === enrollmentData.student_id);
+        const term = enrollmentData.term_id === currentTerm.id ? currentTerm : previousTerm;
+        console.log(`Created enrollment: ${student?.code} for term ${term?.name}`);
+      } else {
+        const student = students.find(s => s.id === enrollmentData.student_id);
+        const term = enrollmentData.term_id === currentTerm.id ? currentTerm : previousTerm;
+        console.log(`Enrollment already exists: ${student?.code} for term ${term?.name}`);
+      }
+    }
+
+    console.log('Enrollments seeding completed');
   }
 
   async clear(): Promise<void> {
-    this.logger.log('🧹 Clearing enrollments...');
-    await this.enrollmentRepository.createQueryBuilder().delete().execute();
-    this.logger.log('✅ Enrollments cleared');
+    console.log('Clearing enrollments...');
+    await this.enrollmentRepository.delete({});
+    console.log('Enrollments cleared');
   }
 }
