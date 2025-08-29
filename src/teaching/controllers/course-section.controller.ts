@@ -1,6 +1,8 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
 import { CourseSectionService } from '../services';
 import { CreateCourseSectionDto, UpdateCourseSectionDto } from '../dto';
+import { PaginationDto, PaginatedResultDto } from '../../common';
+import { CourseSection } from '../entities';
 
 @Controller('course-sections')
 export class CourseSectionController {
@@ -12,8 +14,8 @@ export class CourseSectionController {
   }
 
   @Get()
-  findAll() {
-    return this.courseSectionService.findAll();
+  findAll(@Query() paginationDto: PaginationDto): Promise<PaginatedResultDto<CourseSection>> {
+    return this.courseSectionService.findAll(paginationDto);
   }
 
   @Get(':id')

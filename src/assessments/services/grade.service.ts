@@ -3,12 +3,14 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Grade } from '../entities';
 import { CreateGradeDto, UpdateGradeDto } from '../dto';
+import { PaginationDto, PaginatedResultDto, PaginationService } from '../../common';
 
 @Injectable()
 export class GradeService {
   constructor(
     @InjectRepository(Grade)
     private readonly gradeRepository: Repository<Grade>,
+    private readonly paginationService: PaginationService,
   ) {}
 
   async create(createGradeDto: CreateGradeDto): Promise<Grade> {
@@ -16,10 +18,14 @@ export class GradeService {
     return await this.gradeRepository.save(grade);
   }
 
-  async findAll(): Promise<Grade[]> {
-    return await this.gradeRepository.find({
-      relations: ['course_section', 'student'],
-    });
+  async findAll(paginationDto: PaginationDto): Promise<PaginatedResultDto<Grade>> {
+    return this.paginationService.paginateRepository(
+      this.gradeRepository,
+      paginationDto,
+      {
+        relations: ['course_section', 'student'],
+      }
+    );
   }
 
   async findOne(id: string): Promise<Grade> {
@@ -33,18 +39,26 @@ export class GradeService {
     return grade;
   }
 
-  async findByStudent(studentId: string): Promise<Grade[]> {
-    return await this.gradeRepository.find({
-      where: { student_id: studentId },
-      relations: ['course_section', 'student'],
-    });
+  async findByStudent(studentId: string, paginationDto: PaginationDto): Promise<PaginatedResultDto<Grade>> {
+    return this.paginationService.paginateRepository(
+      this.gradeRepository,
+      paginationDto,
+      {
+        where: { student_id: studentId },
+        relations: ['course_section', 'student'],
+      }
+    );
   }
 
-  async findByCourseSection(courseSectionId: string): Promise<Grade[]> {
-    return await this.gradeRepository.find({
-      where: { course_section_id: courseSectionId },
-      relations: ['course_section', 'student'],
-    });
+  async findByCourseSection(courseSectionId: string, paginationDto: PaginationDto): Promise<PaginatedResultDto<Grade>> {
+    return this.paginationService.paginateRepository(
+      this.gradeRepository,
+      paginationDto,
+      {
+        where: { course_section_id: courseSectionId },
+        relations: ['course_section', 'student'],
+      }
+    );
   }
 
   async update(id: string, updateGradeDto: UpdateGradeDto): Promise<Grade> {

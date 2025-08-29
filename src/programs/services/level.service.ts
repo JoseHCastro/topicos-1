@@ -2,12 +2,14 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Level } from '../entities/level.entity';
+import { PaginationDto, PaginatedResultDto, PaginationService } from '../../common';
 
 @Injectable()
 export class LevelService {
   constructor(
     @InjectRepository(Level)
     private readonly levelRepository: Repository<Level>,
+    private readonly paginationService: PaginationService,
   ) {}
 
   async create(createLevelDto: any) {
@@ -15,10 +17,14 @@ export class LevelService {
     return await this.levelRepository.save(level);
   }
 
-  async findAll() {
-    return await this.levelRepository.find({
-      order: { order: 'ASC' },
-    });
+  async findAll(paginationDto: PaginationDto): Promise<PaginatedResultDto<Level>> {
+    return this.paginationService.paginateRepository(
+      this.levelRepository,
+      paginationDto,
+      {
+        order: { order: 'ASC' },
+      }
+    );
   }
 
   async findOne(id: string) {

@@ -3,12 +3,14 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CourseSection } from '../entities';
 import { CreateCourseSectionDto, UpdateCourseSectionDto } from '../dto';
+import { PaginationDto, PaginatedResultDto, PaginationService } from '../../common';
 
 @Injectable()
 export class CourseSectionService {
   constructor(
     @InjectRepository(CourseSection)
     private readonly courseSectionRepository: Repository<CourseSection>,
+    private readonly paginationService: PaginationService,
   ) {}
 
   async create(createCourseSectionDto: CreateCourseSectionDto): Promise<CourseSection> {
@@ -16,10 +18,14 @@ export class CourseSectionService {
     return await this.courseSectionRepository.save(courseSection);
   }
 
-  async findAll(): Promise<CourseSection[]> {
-    return await this.courseSectionRepository.find({
-      relations: ['course', 'term', 'teacher', 'schedules'],
-    });
+  async findAll(paginationDto: PaginationDto): Promise<PaginatedResultDto<CourseSection>> {
+    return this.paginationService.paginateRepository(
+      this.courseSectionRepository,
+      paginationDto,
+      {
+        relations: ['course', 'term', 'teacher', 'schedules'],
+      }
+    );
   }
 
   async findOne(id: string): Promise<CourseSection> {

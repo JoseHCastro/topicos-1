@@ -6,11 +6,14 @@ import {
   Patch,
   Param,
   ParseUUIDPipe,
+  Query,
 } from '@nestjs/common';
 import { PeriodService } from '../services';
 import { CreatePeriodDto, UpdatePeriodDto } from '../dto';
 import { Auth } from '../../auth/decorators';
 import { ValidRoles } from '../../auth/interfaces';
+import { PaginationDto, PaginatedResultDto } from '../../common';
+import { Term } from '../entities';
 
 @Controller('periods')
 export class PeriodController {
@@ -24,8 +27,8 @@ export class PeriodController {
 
   @Get()
   @Auth(ValidRoles.ADMIN, ValidRoles.STUDENT, ValidRoles.TEACHER)
-  findAll() {
-    return this.periodService.findAll();
+  findAll(@Query() paginationDto: PaginationDto): Promise<PaginatedResultDto<Term>> {
+    return this.periodService.findAll(paginationDto);
   }
 
   @Get(':id')

@@ -6,11 +6,14 @@ import {
   Patch,
   Param,
   ParseUUIDPipe,
+  Query,
 } from '@nestjs/common';
 import { PrerequisiteService } from '../services';
 import { CreatePrerequisiteDto, UpdatePrerequisiteDto } from '../dto';
 import { Auth } from '../../auth/decorators';
 import { ValidRoles } from '../../auth/interfaces';
+import { PaginationDto, PaginatedResultDto } from '../../common';
+import { Prerequisite } from '../entities';
 
 @Controller('prerequisites')
 export class PrerequisiteController {
@@ -24,8 +27,8 @@ export class PrerequisiteController {
 
   @Get()
   @Auth(ValidRoles.ADMIN, ValidRoles.STUDENT, ValidRoles.TEACHER)
-  findAll() {
-    return this.prerequisiteService.findAll();
+  findAll(@Query() paginationDto: PaginationDto): Promise<PaginatedResultDto<Prerequisite>> {
+    return this.prerequisiteService.findAll(paginationDto);
   }
 
   @Get(':id')

@@ -1,6 +1,8 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
 import { ScheduleService } from '../services';
 import { CreateScheduleDto, UpdateScheduleDto } from '../dto';
+import { PaginationDto, PaginatedResultDto } from '../../common';
+import { Schedule } from '../entities';
 
 @Controller('schedules')
 export class ScheduleController {
@@ -12,8 +14,8 @@ export class ScheduleController {
   }
 
   @Get()
-  findAll() {
-    return this.scheduleService.findAll();
+  findAll(@Query() paginationDto: PaginationDto): Promise<PaginatedResultDto<Schedule>> {
+    return this.scheduleService.findAll(paginationDto);
   }
 
   @Get(':id')

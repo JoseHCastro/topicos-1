@@ -6,11 +6,14 @@ import {
   Patch,
   Param,
   ParseUUIDPipe,
+  Query,
 } from '@nestjs/common';
 import { EnrollmentService } from '../services';
 import { CreateEnrollmentDto, UpdateEnrollmentDto } from '../dto';
 import { Auth } from '../../auth/decorators';
 import { ValidRoles } from '../../auth/interfaces';
+import { PaginationDto, PaginatedResultDto } from '../../common';
+import { Enrollment } from '../entities';
 
 @Controller('enrollments')
 export class EnrollmentController {
@@ -24,8 +27,8 @@ export class EnrollmentController {
 
   @Get()
   @Auth(ValidRoles.ADMIN, ValidRoles.STUDENT, ValidRoles.TEACHER)
-  findAll() {
-    return this.enrollmentService.findAll();
+  findAll(@Query() paginationDto: PaginationDto): Promise<PaginatedResultDto<Enrollment>> {
+    return this.enrollmentService.findAll(paginationDto);
   }
 
   @Get(':id')

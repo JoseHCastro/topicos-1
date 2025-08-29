@@ -1,2 +1,3 @@
 export { CommonModule } from './common.module';
-export { TransactionService } from './services';
+export { TransactionService, PaginationService } from './services';
+export { PaginationDto, PaginatedResultDto } from './dto';

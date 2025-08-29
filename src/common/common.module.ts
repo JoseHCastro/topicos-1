@@ -1,9 +1,9 @@
 import { Global, Module } from '@nestjs/common';
-import { TransactionService } from './services';
+import { TransactionService, PaginationService } from './services';
 
 @Global()
 @Module({
-  providers: [TransactionService],
-  exports: [TransactionService],
+  providers: [TransactionService, PaginationService],
+  exports: [TransactionService, PaginationService],
 })
 export class CommonModule {}

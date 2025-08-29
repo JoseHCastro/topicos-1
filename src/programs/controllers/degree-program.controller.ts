@@ -1,7 +1,9 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, ParseUUIDPipe } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, ParseUUIDPipe, Query } from '@nestjs/common';
 import { DegreeProgramService } from '../services';
 import { Auth } from '../../auth/decorators';
 import { ValidRoles } from '../../auth/interfaces';
+import { PaginationDto, PaginatedResultDto } from '../../common';
+import { DegreeProgram } from '../entities';
 
 @Controller('degree-programs')
 export class DegreeProgramController {
@@ -15,8 +17,8 @@ export class DegreeProgramController {
 
   @Get()
   @Auth(ValidRoles.ADMIN, ValidRoles.STUDENT, ValidRoles.TEACHER)
-  findAll() {
-    return this.degreeProgramService.findAll();
+  findAll(@Query() paginationDto: PaginationDto): Promise<PaginatedResultDto<DegreeProgram>> {
+    return this.degreeProgramService.findAll(paginationDto);
   }
 
   @Get(':id')

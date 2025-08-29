@@ -1,6 +1,8 @@
 import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
 import { GradeService } from '../services';
 import { CreateGradeDto, UpdateGradeDto } from '../dto';
+import { PaginationDto, PaginatedResultDto } from '../../common';
+import { Grade } from '../entities';
 
 @Controller('grades')
 export class GradeController {
@@ -13,16 +15,17 @@ export class GradeController {
 
   @Get()
   findAll(
+    @Query() paginationDto: PaginationDto,
     @Query('student_id') studentId?: string,
     @Query('course_section_id') courseSectionId?: string,
-  ) {
+  ): Promise<PaginatedResultDto<Grade>> {
     if (studentId) {
-      return this.gradeService.findByStudent(studentId);
+      return this.gradeService.findByStudent(studentId, paginationDto);
     }
     if (courseSectionId) {
-      return this.gradeService.findByCourseSection(courseSectionId);
+      return this.gradeService.findByCourseSection(courseSectionId, paginationDto);
     }
-    return this.gradeService.findAll();
+    return this.gradeService.findAll(paginationDto);
   }
 
   @Get(':id')
