@@ -7,6 +7,7 @@ import {
   QUEUE_NAMES,
   QUEUE_TIMEOUTS 
 } from './queue.config';
+import { RedisService } from '../redis/redis.service';
 
 export interface JobData {
   id: string;
@@ -32,6 +33,8 @@ export class QueueService implements OnModuleInit, OnModuleDestroy {
   private criticalQueue: Queue;
   private standardQueue: Queue;
   private backgroundQueue: Queue;
+
+  constructor(private readonly redisService: RedisService) {}
 
   async onModuleInit() {
     try {
@@ -124,11 +127,32 @@ export class QueueService implements OnModuleInit, OnModuleDestroy {
 
     const state = await job.getState();
     
+    // Si el job está completado, buscar el resultado en Redis
+    let result = null;
+    let error = null;
+    
+    if (state === 'completed' || state === 'failed') {
+      try {
+        const resultKey = `job:result:${jobId}`;
+        const resultData = await this.redisService.get(resultKey);
+        
+        if (resultData) {
+          const parsed = JSON.parse(resultData);
+          result = parsed.result;
+          error = parsed.error;
+        }
+      } catch (err) {
+        this.logger.error(`Error fetching job result from Redis: ${err.message}`);
+      }
+    }
+    
     return {
       id: job.id,
       status: state,
       progress: job.progress,
       data: job.data,
+      result: result,
+      error: error,
       returnvalue: job.returnvalue,
       failedReason: job.failedReason,
       processedOn: job.processedOn,

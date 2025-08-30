@@ -5,7 +5,7 @@ import {
   CallHandler,
   Logger,
 } from '@nestjs/common';
-import { Observable } from 'rxjs';
+import { Observable, EMPTY } from 'rxjs';
 import { Request, Response } from 'express';
 import { QueueService } from '../queues/queue.service';
 import { QueueConfigService } from './queue-config.service';
@@ -90,11 +90,12 @@ export class QueueInterceptor implements NestInterceptor {
         timestamp: new Date().toISOString(),
       };
 
+      // Enviar respuesta y terminar la petición
       response.status(202).json(queueResponse);
-      return new Observable((subscriber) => {
-        subscriber.next(queueResponse);
-        subscriber.complete();
-      });
+      response.end();
+      
+      // Retornar un Observable que no emite nada para evitar doble respuesta
+      return EMPTY;
 
     } catch (error) {
       this.logger.error(`❌ Error intercepting request ${method} ${url}:`, error);

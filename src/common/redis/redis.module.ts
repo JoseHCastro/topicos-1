@@ -20,17 +20,24 @@ import { RedisService } from './redis.service';
 
         const redis = new Redis(redisOptions);
 
-        // Log de conexión para debugging
+        // Log de conexión para debugging (solo una vez)
+        let connected = false;
         redis.on('connect', () => {
-          console.log('✅ Redis connected successfully');
+          if (!connected) {
+            console.log('✅ Redis connected successfully');
+            connected = true;
+          }
         });
 
         redis.on('error', (err) => {
           console.error('❌ Redis connection error:', err);
+          connected = false;
         });
 
         redis.on('ready', () => {
-          console.log('🚀 Redis ready to accept commands');
+          if (!connected) {
+            console.log('🚀 Redis ready to accept commands');
+          }
         });
 
         return redis;
