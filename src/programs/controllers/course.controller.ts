@@ -1,4 +1,14 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, ParseUUIDPipe, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  ParseUUIDPipe,
+  Query,
+} from '@nestjs/common';
 import { CourseService } from '../services';
 import { Auth } from '../../auth/decorators';
 import { ValidRoles } from '../../auth/interfaces';
@@ -16,8 +26,10 @@ export class CourseController {
   }
 
   @Get()
-  @Auth(ValidRoles.ADMIN, ValidRoles.STUDENT, ValidRoles.TEACHER)
-  findAll(@Query() paginationDto: PaginationDto): Promise<PaginatedResultDto<Course>> {
+  //  @Auth(ValidRoles.ADMIN, ValidRoles.STUDENT, ValidRoles.TEACHER)
+  findAll(
+    @Query() paginationDto: PaginationDto,
+  ): Promise<PaginatedResultDto<Course>> {
     return this.courseService.findAll(paginationDto);
   }
 

@@ -1,8 +1,4 @@
-import {
-  IsUUID,
-  IsEnum,
-  IsOptional,
-} from 'class-validator';
+import { IsUUID, IsEnum, IsOptional } from 'class-validator';
 
 export class CreatePrerequisiteDto {
   @IsUUID()

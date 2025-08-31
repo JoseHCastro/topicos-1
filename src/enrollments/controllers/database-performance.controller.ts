@@ -8,41 +8,38 @@ import { OptimizedQueryService } from '../services/optimized-query.service';
 @Controller('database-performance')
 @UseGuards(AuthGuard(), UserRoleGuard)
 export class DatabasePerformanceController {
-  constructor(
-    private readonly optimizedQueryService: OptimizedQueryService,
-  ) {}
+  constructor(private readonly optimizedQueryService: OptimizedQueryService) {}
 
   /**
    * Verificar prerrequisitos de una materia con consulta optimizada
    */
   @Get('prerequisites')
   @RoleProtected(ValidRoles.ADMIN)
-  async getPrerequisitesPerformance(
-    @Query('courseId') courseId: string
-  ) {
+  async getPrerequisitesPerformance(@Query('courseId') courseId: string) {
     const startTime = Date.now();
-    
-    const prerequisites = await this.optimizedQueryService.getPrerequisitesByCourse(courseId);
-    
+
+    const prerequisites =
+      await this.optimizedQueryService.getPrerequisitesByCourse(courseId);
+
     const endTime = Date.now();
     const executionTime = endTime - startTime;
 
     return {
       courseId,
-      prerequisites: prerequisites.map(p => ({
+      prerequisites: prerequisites.map((p) => ({
         id: p.id,
         kind: p.kind,
         requiredCourse: {
           id: p.required_course.id,
           code: p.required_course.code,
-          name: p.required_course.name
-        }
+          name: p.required_course.name,
+        },
       })),
       performance: {
         executionTimeMs: executionTime,
         resultCount: prerequisites.length,
-        indexUsed: 'IDX_prerequisite_main_course'
-      }
+        indexUsed: 'IDX_prerequisite_main_course',
+      },
     };
   }
 
@@ -53,38 +50,39 @@ export class DatabasePerformanceController {
   @RoleProtected(ValidRoles.ADMIN)
   async getApprovedCoursesPerformance(
     @Query('studentId') studentId: string,
-    @Query('courseIds') courseIds: string
+    @Query('courseIds') courseIds: string,
   ) {
     const startTime = Date.now();
-    
+
     const courseIdArray = courseIds.split(',');
-    const approvedCourses = await this.optimizedQueryService.getApprovedCoursesByStudent(
-      studentId,
-      courseIdArray
-    );
-    
+    const approvedCourses =
+      await this.optimizedQueryService.getApprovedCoursesByStudent(
+        studentId,
+        courseIdArray,
+      );
+
     const endTime = Date.now();
     const executionTime = endTime - startTime;
 
     return {
       studentId,
       courseIds: courseIdArray,
-      approvedCourses: approvedCourses.map(grade => ({
+      approvedCourses: approvedCourses.map((grade) => ({
         gradeId: grade.id,
         finalGrade: grade.final_grade,
         courseSection: {
           id: grade.course_section.id,
           course: {
             id: grade.course_section.course.id,
-            code: grade.course_section.course.code
-          }
-        }
+            code: grade.course_section.course.code,
+          },
+        },
       })),
       performance: {
         executionTimeMs: executionTime,
         resultCount: approvedCourses.length,
-        indexUsed: 'IDX_grade_approved_courses'
-      }
+        indexUsed: 'IDX_grade_approved_courses',
+      },
     };
   }
 
@@ -94,19 +92,20 @@ export class DatabasePerformanceController {
   @Get('schedules')
   @RoleProtected(ValidRoles.ADMIN)
   async getSchedulesPerformance(
-    @Query('courseSectionIds') courseSectionIds: string
+    @Query('courseSectionIds') courseSectionIds: string,
   ) {
     const startTime = Date.now();
-    
+
     const sectionIdArray = courseSectionIds.split(',');
-    const schedules = await this.optimizedQueryService.getSchedulesBySections(sectionIdArray);
-    
+    const schedules =
+      await this.optimizedQueryService.getSchedulesBySections(sectionIdArray);
+
     const endTime = Date.now();
     const executionTime = endTime - startTime;
 
     return {
       courseSectionIds: sectionIdArray,
-      schedules: schedules.map(schedule => ({
+      schedules: schedules.map((schedule) => ({
         id: schedule.id,
         courseSectionId: schedule.course_section_id,
         weekday: schedule.weekday,
@@ -116,15 +115,15 @@ export class DatabasePerformanceController {
           groupLabel: schedule.course_section.group_label,
           course: {
             code: schedule.course_section.course.code,
-            name: schedule.course_section.course.name
-          }
-        }
+            name: schedule.course_section.course.name,
+          },
+        },
       })),
       performance: {
         executionTimeMs: executionTime,
         resultCount: schedules.length,
-        indexUsed: 'IDX_schedule_course_section'
-      }
+        indexUsed: 'IDX_schedule_course_section',
+      },
     };
   }
 
@@ -135,15 +134,16 @@ export class DatabasePerformanceController {
   @RoleProtected(ValidRoles.ADMIN)
   async getEnrolledCountPerformance(
     @Query('studentId') studentId: string,
-    @Query('termId') termId: string
+    @Query('termId') termId: string,
   ) {
     const startTime = Date.now();
-    
-    const enrolledCount = await this.optimizedQueryService.getEnrolledCoursesCount(
-      studentId,
-      termId
-    );
-    
+
+    const enrolledCount =
+      await this.optimizedQueryService.getEnrolledCoursesCount(
+        studentId,
+        termId,
+      );
+
     const endTime = Date.now();
     const executionTime = endTime - startTime;
 
@@ -153,8 +153,8 @@ export class DatabasePerformanceController {
       enrolledCount,
       performance: {
         executionTimeMs: executionTime,
-        indexUsed: 'IDX_enrollment_detail_student_term'
-      }
+        indexUsed: 'IDX_enrollment_detail_student_term',
+      },
     };
   }
 
@@ -165,16 +165,17 @@ export class DatabasePerformanceController {
   @RoleProtected(ValidRoles.ADMIN)
   async getBatchPrerequisitesPerformance(
     @Query('studentId') studentId: string,
-    @Query('courseIds') courseIds: string
+    @Query('courseIds') courseIds: string,
   ) {
     const startTime = Date.now();
-    
+
     const courseIdArray = courseIds.split(',');
-    const prerequisiteChecks = await this.optimizedQueryService.batchCheckPrerequisites(
-      studentId,
-      courseIdArray
-    );
-    
+    const prerequisiteChecks =
+      await this.optimizedQueryService.batchCheckPrerequisites(
+        studentId,
+        courseIdArray,
+      );
+
     const endTime = Date.now();
     const executionTime = endTime - startTime;
 
@@ -187,9 +188,9 @@ export class DatabasePerformanceController {
         resultCount: prerequisiteChecks.length,
         indexesUsed: [
           'IDX_prerequisite_main_course',
-          'IDX_grade_approved_courses'
-        ]
-      }
+          'IDX_grade_approved_courses',
+        ],
+      },
     };
   }
 
@@ -200,15 +201,15 @@ export class DatabasePerformanceController {
   @RoleProtected(ValidRoles.ADMIN)
   async getHasPassedPerformance(
     @Query('studentId') studentId: string,
-    @Query('courseId') courseId: string
+    @Query('courseId') courseId: string,
   ) {
     const startTime = Date.now();
-    
+
     const hasPassed = await this.optimizedQueryService.hasStudentPassedCourse(
       studentId,
-      courseId
+      courseId,
     );
-    
+
     const endTime = Date.now();
     const executionTime = endTime - startTime;
 
@@ -218,8 +219,8 @@ export class DatabasePerformanceController {
       hasPassed,
       performance: {
         executionTimeMs: executionTime,
-        indexUsed: 'IDX_grade_approved_courses'
-      }
+        indexUsed: 'IDX_grade_approved_courses',
+      },
     };
   }
 
@@ -230,22 +231,23 @@ export class DatabasePerformanceController {
   @RoleProtected(ValidRoles.ADMIN)
   async getStudentEnrollmentDetailsPerformance(
     @Query('studentId') studentId: string,
-    @Query('termId') termId: string
+    @Query('termId') termId: string,
   ) {
     const startTime = Date.now();
-    
-    const enrollmentDetails = await this.optimizedQueryService.getStudentEnrollmentDetails(
-      studentId,
-      termId
-    );
-    
+
+    const enrollmentDetails =
+      await this.optimizedQueryService.getStudentEnrollmentDetails(
+        studentId,
+        termId,
+      );
+
     const endTime = Date.now();
     const executionTime = endTime - startTime;
 
     return {
       studentId,
       termId,
-      enrollmentDetails: enrollmentDetails.map(detail => ({
+      enrollmentDetails: enrollmentDetails.map((detail) => ({
         id: detail.id,
         courseState: detail.course_state,
         courseSection: {
@@ -255,15 +257,15 @@ export class DatabasePerformanceController {
             id: detail.course_section.course.id,
             code: detail.course_section.course.code,
             name: detail.course_section.course.name,
-            credits: detail.course_section.course.credits
-          }
-        }
+            credits: detail.course_section.course.credits,
+          },
+        },
       })),
       performance: {
         executionTimeMs: executionTime,
         resultCount: enrollmentDetails.length,
-        indexUsed: 'IDX_enrollment_detail_student_term'
-      }
+        indexUsed: 'IDX_enrollment_detail_student_term',
+      },
     };
   }
 }

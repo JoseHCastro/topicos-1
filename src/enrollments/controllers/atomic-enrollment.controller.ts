@@ -34,7 +34,6 @@ export class AtomicEnrollmentController {
     @Body() createEnrollmentDetailDto: CreateEnrollmentDetailDto,
     @IdempotencyKey() idempotencyKey: string | null,
   ) {
-
     if (!idempotencyKey) {
       throw new BadRequestException(
         'X-Idempotency-Key header is required for enrollment operations',
@@ -71,9 +70,10 @@ export class AtomicEnrollmentController {
   @Get('course-section/:id/quota-status')
   @Auth(ValidRoles.ADMIN, ValidRoles.STUDENT, ValidRoles.TEACHER)
   async getQuotaStatus(@Param('id', ParseUUIDPipe) courseSectionId: string) {
-    const status = await this.atomicEnrollmentService.getCourseSectionQuotaStatus(
-      courseSectionId,
-    );
+    const status =
+      await this.atomicEnrollmentService.getCourseSectionQuotaStatus(
+        courseSectionId,
+      );
 
     return {
       success: true,

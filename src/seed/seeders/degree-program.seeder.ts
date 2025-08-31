@@ -32,11 +32,16 @@ export class DegreeProgramSeeder implements SeederInterface {
       });
 
       if (!existingDegreeProgram) {
-        const degreeProgram = this.degreeProgramRepository.create(degreeProgramData);
+        const degreeProgram =
+          this.degreeProgramRepository.create(degreeProgramData);
         await this.degreeProgramRepository.save(degreeProgram);
-        this.logger.log(`Created degree program: ${degreeProgramData.name} (${degreeProgramData.code})`);
+        this.logger.log(
+          `Created degree program: ${degreeProgramData.name} (${degreeProgramData.code})`,
+        );
       } else {
-        this.logger.log(`Degree program already exists: ${degreeProgramData.code}`);
+        this.logger.log(
+          `Degree program already exists: ${degreeProgramData.code}`,
+        );
       }
     }
 

@@ -2,7 +2,11 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Level } from '../entities/level.entity';
-import { PaginationDto, PaginatedResultDto, PaginationService } from '../../common';
+import {
+  PaginationDto,
+  PaginatedResultDto,
+  PaginationService,
+} from '../../common';
 
 @Injectable()
 export class LevelService {
@@ -17,13 +21,15 @@ export class LevelService {
     return await this.levelRepository.save(level);
   }
 
-  async findAll(paginationDto: PaginationDto): Promise<PaginatedResultDto<Level>> {
+  async findAll(
+    paginationDto: PaginationDto,
+  ): Promise<PaginatedResultDto<Level>> {
     return this.paginationService.paginateRepository(
       this.levelRepository,
       paginationDto,
       {
         order: { order: 'ASC' },
-      }
+      },
     );
   }
 
@@ -32,11 +38,11 @@ export class LevelService {
       where: { id },
       relations: ['courses'],
     });
-    
+
     if (!level) {
       throw new NotFoundException(`Level with ID ${id} not found`);
     }
-    
+
     return level;
   }
 
@@ -45,11 +51,11 @@ export class LevelService {
       id,
       ...updateLevelDto,
     });
-    
+
     if (!level) {
       throw new NotFoundException(`Level with ID ${id} not found`);
     }
-    
+
     return await this.levelRepository.save(level);
   }
 

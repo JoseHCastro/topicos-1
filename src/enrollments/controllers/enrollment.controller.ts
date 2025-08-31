@@ -27,7 +27,9 @@ export class EnrollmentController {
 
   @Get()
   @Auth(ValidRoles.ADMIN, ValidRoles.STUDENT, ValidRoles.TEACHER)
-  findAll(@Query() paginationDto: PaginationDto): Promise<PaginatedResultDto<Enrollment>> {
+  findAll(
+    @Query() paginationDto: PaginationDto,
+  ): Promise<PaginatedResultDto<Enrollment>> {
     return this.enrollmentService.findAll(paginationDto);
   }
 

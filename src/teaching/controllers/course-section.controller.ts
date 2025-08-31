@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  Query,
+} from '@nestjs/common';
 import { CourseSectionService } from '../services';
 import { CreateCourseSectionDto, UpdateCourseSectionDto } from '../dto';
 import { PaginationDto, PaginatedResultDto } from '../../common';
@@ -18,7 +27,9 @@ export class CourseSectionController {
 
   @Get()
   @Auth(ValidRoles.ADMIN, ValidRoles.TEACHER, ValidRoles.STUDENT)
-  findAll(@Query() paginationDto: PaginationDto): Promise<PaginatedResultDto<CourseSection>> {
+  findAll(
+    @Query() paginationDto: PaginationDto,
+  ): Promise<PaginatedResultDto<CourseSection>> {
     return this.courseSectionService.findAll(paginationDto);
   }
 
@@ -30,7 +41,10 @@ export class CourseSectionController {
 
   @Patch(':id')
   @Auth(ValidRoles.ADMIN)
-  update(@Param('id') id: string, @Body() updateCourseSectionDto: UpdateCourseSectionDto) {
+  update(
+    @Param('id') id: string,
+    @Body() updateCourseSectionDto: UpdateCourseSectionDto,
+  ) {
     return this.courseSectionService.update(id, updateCourseSectionDto);
   }
 

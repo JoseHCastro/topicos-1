@@ -2,7 +2,11 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Course } from '../entities';
-import { PaginationDto, PaginatedResultDto, PaginationService } from '../../common';
+import {
+  PaginationDto,
+  PaginatedResultDto,
+  PaginationService,
+} from '../../common';
 
 @Injectable()
 export class CourseService {
@@ -17,21 +21,35 @@ export class CourseService {
     return await this.courseRepository.save(course);
   }
 
-  async findAll(paginationDto: PaginationDto): Promise<PaginatedResultDto<Course>> {
+  async findAll(
+    paginationDto: PaginationDto,
+  ): Promise<PaginatedResultDto<Course>> {
     return this.paginationService.paginateRepository(
       this.courseRepository,
       paginationDto,
       {
-        relations: ['study_plan', 'level', 'prerequisites_as_main', 'prerequisites_as_required', 'course_sections'],
+        relations: [
+          'study_plan',
+          'level',
+          'prerequisites_as_main',
+          'prerequisites_as_required',
+          'course_sections',
+        ],
         order: { name: 'ASC' },
-      }
+      },
     );
   }
 
   async findOne(id: string) {
     const course = await this.courseRepository.findOne({
       where: { id: id },
-      relations: ['study_plan', 'level', 'prerequisites_as_main', 'prerequisites_as_required', 'course_sections'],
+      relations: [
+        'study_plan',
+        'level',
+        'prerequisites_as_main',
+        'prerequisites_as_required',
+        'course_sections',
+      ],
     });
 
     if (!course) {

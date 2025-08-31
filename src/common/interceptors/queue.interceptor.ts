@@ -5,7 +5,7 @@ import {
   CallHandler,
   Logger,
 } from '@nestjs/common';
-import { Observable, EMPTY } from 'rxjs';
+import { Observable, of } from 'rxjs';
 import { Request, Response } from 'express';
 import { QueueService } from '../queues/queue.service';
 import { QueueConfigService } from './queue-config.service';
@@ -61,7 +61,7 @@ export class QueueInterceptor implements NestInterceptor {
 
       // Determinar cola por prefijo de URL
       const queueType = this.determineQueueByUrl(url);
-      
+
       // Crear job en la cola correspondiente
       let job;
       switch (queueType) {
@@ -78,7 +78,9 @@ export class QueueInterceptor implements NestInterceptor {
           job = await this.queueService.addStandardJob(jobData);
       }
 
-      this.logger.log(`📥 Job ${jobId} queued in ${queueType} queue for ${method} ${url}`);
+      this.logger.log(
+        `📥 Job ${jobId} queued in ${queueType} queue for ${method} ${url}`,
+      );
 
       // Retornar respuesta inmediata con job ID
       const queueResponse = {
@@ -90,15 +92,17 @@ export class QueueInterceptor implements NestInterceptor {
         timestamp: new Date().toISOString(),
       };
 
-      // Enviar respuesta y terminar la petición
-      response.status(202).json(queueResponse);
-      response.end();
-      
-      // Retornar un Observable que no emite nada para evitar doble respuesta
-      return EMPTY;
-
+      // Establecer status 202 y devolver el body como Observable para que Nest
+      // lo entregue correctamente. Evitamos enviar manualmente la respuesta
+      // porque eso provoca que Nest intente consumir el Observable y lance
+      // un EmptyError (causa del doble envío de headers).
+      response.status(202);
+      return of(queueResponse);
     } catch (error) {
-      this.logger.error(`❌ Error intercepting request ${method} ${url}:`, error);
+      this.logger.error(
+        `❌ Error intercepting request ${method} ${url}:`,
+        error,
+      );
       // Si hay error en el interceptor, ejecutar normalmente
       return next.handle();
     }
@@ -107,31 +111,37 @@ export class QueueInterceptor implements NestInterceptor {
   // Exclusiones del Interceptor
   private shouldExcludeFromQueue(url: string): boolean {
     const exclusions = [
-      '/queues/',           // Consulta de estado de colas  
-      '/health',            // Health checks para load balancers
-      '/metrics',           // Métricas de Prometheus
-      '/queue-dashboard',   // Dashboard de monitoreo
-      '/websocket',         // Endpoints de WebSocket
-      '/sse',               // Server-Sent Events
-      '/__',                // Rutas internas de desarrollo
+      '/queues/', // Consulta de estado de colas
+      '/health', // Health checks para load balancers
+      '/metrics', // Métricas de Prometheus
+      '/queue-dashboard', // Dashboard de monitoreo
+      '/websocket', // Endpoints de WebSocket
+      '/sse', // Server-Sent Events
+      '/__', // Rutas internas de desarrollo
     ];
 
-    return exclusions.some(exclusion => url.startsWith(exclusion));
+    return exclusions.some((exclusion) => url.startsWith(exclusion));
   }
 
   // Determinar cola por prefijo de URL - Routing Logic Simplificado
-  private determineQueueByUrl(url: string): 'critical' | 'standard' | 'background' {
+  private determineQueueByUrl(
+    url: string,
+  ): 'critical' | 'standard' | 'background' {
     // Critical Queue - Operaciones que NO pueden esperar
-    if (url.startsWith('/atomic-enrollment/') || 
-        url.startsWith('/auth/login') || 
-        url.startsWith('/auth/logout')) {
+    if (
+      url.startsWith('/atomic-enrollment/') ||
+      url.startsWith('/auth/login') ||
+      url.startsWith('/auth/logout')
+    ) {
       return 'critical';
     }
 
     // Background Queue - Pueden esperar
-    if (url.startsWith('/reports/') || 
-        url.startsWith('/notifications/') ||
-        url.startsWith('/database-performance/')) {
+    if (
+      url.startsWith('/reports/') ||
+      url.startsWith('/notifications/') ||
+      url.startsWith('/database-performance/')
+    ) {
       return 'background';
     }
 
@@ -142,7 +152,10 @@ export class QueueInterceptor implements NestInterceptor {
 
   // Generar job ID simple (timestamp + random)
   private generateJobId(): string {
-    const timestamp = new Date().toISOString().replace(/[-:T.]/g, '').slice(0, 14);
+    const timestamp = new Date()
+      .toISOString()
+      .replace(/[-:T.]/g, '')
+      .slice(0, 14);
     const random = Math.random().toString(36).substring(2, 8);
     return `${timestamp}_${random}`;
   }
@@ -152,10 +165,15 @@ export class QueueInterceptor implements NestInterceptor {
     try {
       const authHeader = headers.authorization;
       if (!authHeader?.startsWith('Bearer ')) return undefined;
-      
+
       const token = authHeader.substring(7);
       // Simple extraction sin validar JWT completo
-      const payload = JSON.parse(atob(token.split('.')[1]));
+      // Simple extraction sin validar JWT completo. Usar Buffer para decodificar
+      // base64 en Node (evita dependencia de atob en ambiente servidor).
+      const parts = token.split('.');
+      if (parts.length < 2) return undefined;
+      const payloadJson = Buffer.from(parts[1], 'base64').toString('utf8');
+      const payload = JSON.parse(payloadJson);
       return payload.sub || payload.userId || payload.id;
     } catch {
       return undefined;

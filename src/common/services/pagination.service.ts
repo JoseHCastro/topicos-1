@@ -1,5 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import { Repository, SelectQueryBuilder, FindManyOptions, ObjectLiteral } from 'typeorm';
+import {
+  Repository,
+  SelectQueryBuilder,
+  FindManyOptions,
+  ObjectLiteral,
+} from 'typeorm';
 import { PaginationDto, PaginatedResultDto } from '../dto';
 
 @Injectable()

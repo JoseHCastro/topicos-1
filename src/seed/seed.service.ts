@@ -79,9 +79,8 @@ export class SeedService {
     this.logger.log('🧹 Clearing database...');
 
     try {
-
       await this.dataSource.query('SET session_replication_role = replica;');
-      
+
       const tables = await this.dataSource.query(`
         SELECT tablename 
         FROM pg_tables 
@@ -89,7 +88,9 @@ export class SeedService {
       `);
 
       for (const table of tables) {
-        await this.dataSource.query(`TRUNCATE TABLE "${table.tablename}" RESTART IDENTITY CASCADE;`);
+        await this.dataSource.query(
+          `TRUNCATE TABLE "${table.tablename}" RESTART IDENTITY CASCADE;`,
+        );
         this.logger.log(` Cleared table: ${table.tablename}`);
       }
 
@@ -101,7 +102,7 @@ export class SeedService {
       this.logger.error(' Error clearing database:', error.message);
 
       this.logger.log('🔄 Attempting fallback clearing method...');
-      
+
       const seeders = [
         this.gradeSeeder,
         this.enrollmentDetailSeeder,
@@ -127,7 +128,10 @@ export class SeedService {
             await seeder.clear();
           }
         } catch (error) {
-          this.logger.warn(`⚠️ Clearing failed for ${seeder.constructor.name}:`, error.message);
+          this.logger.warn(
+            `⚠️ Clearing failed for ${seeder.constructor.name}:`,
+            error.message,
+          );
         }
       }
 

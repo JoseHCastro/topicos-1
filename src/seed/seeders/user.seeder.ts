@@ -52,9 +52,13 @@ export class UserSeeder implements SeederInterface {
       if (!existingUser) {
         const user = this.userRepository.create(userData);
         await this.userRepository.save(user);
-        this.logger.log(`Created user: ${userData.email} with type: ${userData.user_type}`);
+        this.logger.log(
+          `Created user: ${userData.email} with type: ${userData.user_type}`,
+        );
       } else {
-        this.logger.log(`User already exists: ${userData.email} with type: ${existingUser.user_type}`);
+        this.logger.log(
+          `User already exists: ${userData.email} with type: ${existingUser.user_type}`,
+        );
       }
     }
 

@@ -1,11 +1,16 @@
-import { Injectable, OnModuleInit, OnModuleDestroy, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  OnModuleInit,
+  OnModuleDestroy,
+  Logger,
+} from '@nestjs/common';
 import { Queue } from 'bullmq';
-import { 
-  criticalQueueConfig, 
-  standardQueueConfig, 
+import {
+  criticalQueueConfig,
+  standardQueueConfig,
   backgroundQueueConfig,
   QUEUE_NAMES,
-  QUEUE_TIMEOUTS 
+  QUEUE_TIMEOUTS,
 } from './queue.config';
 import { RedisService } from '../redis/redis.service';
 
@@ -28,7 +33,7 @@ export interface QueueJobOptions {
 @Injectable()
 export class QueueService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(QueueService.name);
-  
+
   // Las 3 colas básicas
   private criticalQueue: Queue;
   private standardQueue: Queue;
@@ -40,10 +45,12 @@ export class QueueService implements OnModuleInit, OnModuleDestroy {
     try {
       this.criticalQueue = new Queue(QUEUE_NAMES.CRITICAL, criticalQueueConfig);
       this.standardQueue = new Queue(QUEUE_NAMES.STANDARD, standardQueueConfig);
-      this.backgroundQueue = new Queue(QUEUE_NAMES.BACKGROUND, backgroundQueueConfig);
+      this.backgroundQueue = new Queue(
+        QUEUE_NAMES.BACKGROUND,
+        backgroundQueueConfig,
+      );
 
       this.setupQueueEventListeners();
-      
     } catch (error) {
       this.logger.error('❌ Error initializing queues:', error);
       throw error;
@@ -78,74 +85,64 @@ export class QueueService implements OnModuleInit, OnModuleDestroy {
   }
 
   async addCriticalJob(jobData: JobData, options?: QueueJobOptions) {
-    const job = await this.criticalQueue.add(
-      'process-request',
-      jobData,
-      {
-        ...options,
-        jobId: jobData.id,
-      }
-    );
-    
+    const job = await this.criticalQueue.add('process-request', jobData, {
+      ...options,
+      jobId: jobData.id,
+    });
+
     return job;
   }
 
   async addStandardJob(jobData: JobData, options?: QueueJobOptions) {
-    const job = await this.standardQueue.add(
-      'process-request',
-      jobData,
-      {
-        ...options,
-        jobId: jobData.id,
-      }
-    );
-    
+    const job = await this.standardQueue.add('process-request', jobData, {
+      ...options,
+      jobId: jobData.id,
+    });
+
     this.logger.log(`📥 Standard job ${job.id} queued`);
     return job;
   }
 
   async addBackgroundJob(jobData: JobData, options?: QueueJobOptions) {
-    const job = await this.backgroundQueue.add(
-      'process-request',
-      jobData,
-      {
-        ...options,
-        jobId: jobData.id,
-      }
-    );
-    
+    const job = await this.backgroundQueue.add('process-request', jobData, {
+      ...options,
+      jobId: jobData.id,
+    });
+
     this.logger.log(`📥 Background job ${job.id} queued`);
     return job;
   }
 
   async getJobStatus(jobId: string) {
     const job = await this.findJobInQueues(jobId);
-    
+
     if (!job) {
       return null;
     }
 
     const state = await job.getState();
-    
+
     // Si el job está completado, buscar el resultado en Redis
     let result = null;
     let error = null;
-    
+
     if (state === 'completed' || state === 'failed') {
       try {
         const resultKey = `job:result:${jobId}`;
         const resultData = await this.redisService.get(resultKey);
-        
+
         if (resultData) {
           const parsed = JSON.parse(resultData);
           result = parsed.result;
           error = parsed.error;
         }
       } catch (err) {
-        this.logger.error(`Error fetching job result from Redis: ${err.message}`);
+        this.logger.error(
+          `Error fetching job result from Redis: ${err.message}`,
+        );
       }
     }
-    
+
     return {
       id: job.id,
       status: state,
@@ -161,15 +158,19 @@ export class QueueService implements OnModuleInit, OnModuleDestroy {
   }
 
   private async findJobInQueues(jobId: string) {
-    const queues = [this.criticalQueue, this.standardQueue, this.backgroundQueue];
-    
+    const queues = [
+      this.criticalQueue,
+      this.standardQueue,
+      this.backgroundQueue,
+    ];
+
     for (const queue of queues) {
       const job = await queue.getJob(jobId);
       if (job) {
         return job;
       }
     }
-    
+
     return null;
   }
 

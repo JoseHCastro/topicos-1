@@ -17,7 +17,9 @@ import { EnrollmentDetail } from '../entities';
 
 @Controller('enrollment-details')
 export class EnrollmentDetailController {
-  constructor(private readonly enrollmentDetailService: EnrollmentDetailService) {}
+  constructor(
+    private readonly enrollmentDetailService: EnrollmentDetailService,
+  ) {}
 
   @Post()
   @Auth(ValidRoles.ADMIN, ValidRoles.STUDENT, ValidRoles.TEACHER)
@@ -27,7 +29,9 @@ export class EnrollmentDetailController {
 
   @Get()
   @Auth(ValidRoles.ADMIN, ValidRoles.STUDENT, ValidRoles.TEACHER)
-  findAll(@Query() paginationDto: PaginationDto): Promise<PaginatedResultDto<EnrollmentDetail>> {
+  findAll(
+    @Query() paginationDto: PaginationDto,
+  ): Promise<PaginatedResultDto<EnrollmentDetail>> {
     return this.enrollmentDetailService.findAll(paginationDto);
   }
 

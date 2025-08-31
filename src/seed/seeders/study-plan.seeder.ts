@@ -22,14 +22,18 @@ export class StudyPlanSeeder implements SeederInterface {
     const degreePrograms = await this.degreeProgramRepository.find();
 
     if (degreePrograms.length === 0) {
-      this.logger.warn('No degree programs found, skipping study plans seeding');
+      this.logger.warn(
+        'No degree programs found, skipping study plans seeding',
+      );
       return;
     }
 
-    const informaticaProgram = degreePrograms.find(dp => dp.code === '187-3');
+    const informaticaProgram = degreePrograms.find((dp) => dp.code === '187-3');
 
     if (!informaticaProgram) {
-      this.logger.warn('Ingeniería Informática program not found, skipping study plans seeding');
+      this.logger.warn(
+        'Ingeniería Informática program not found, skipping study plans seeding',
+      );
       return;
     }
 
@@ -63,7 +67,9 @@ export class StudyPlanSeeder implements SeederInterface {
       if (!existingStudyPlan) {
         const studyPlan = this.studyPlanRepository.create(studyPlanData);
         await this.studyPlanRepository.save(studyPlan);
-        this.logger.log(`Created study plan: ${studyPlanData.version} (Current: ${studyPlanData.is_current})`);
+        this.logger.log(
+          `Created study plan: ${studyPlanData.version} (Current: ${studyPlanData.is_current})`,
+        );
       } else {
         this.logger.log(`Study plan already exists: ${studyPlanData.version}`);
       }

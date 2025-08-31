@@ -3,7 +3,11 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { AcademicYear } from '../entities';
 import { CreateManagementDto, UpdateManagementDto } from '../dto';
-import { PaginationDto, PaginatedResultDto, PaginationService } from '../../common';
+import {
+  PaginationDto,
+  PaginatedResultDto,
+  PaginationService,
+} from '../../common';
 
 @Injectable()
 export class ManagementService {
@@ -18,13 +22,15 @@ export class ManagementService {
     return await this.managementRepository.save(management);
   }
 
-  async findAll(paginationDto: PaginationDto): Promise<PaginatedResultDto<AcademicYear>> {
+  async findAll(
+    paginationDto: PaginationDto,
+  ): Promise<PaginatedResultDto<AcademicYear>> {
     return await this.paginationService.paginateRepository<AcademicYear>(
       this.managementRepository,
       paginationDto,
       {
-        order: { year: 'DESC' }
-      }
+        order: { year: 'DESC' },
+      },
     );
   }
 

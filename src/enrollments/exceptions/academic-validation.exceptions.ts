@@ -26,7 +26,7 @@ export class PrerequisiteNotMetException extends HttpException {
  */
 export class ScheduleConflictException extends HttpException {
   constructor(conflicts: Array<{ course: string; time: string; day: string }>) {
-    const message = `Conflictos de horario detectados: ${conflicts.map(c => `${c.course} (${c.day} ${c.time})`).join(', ')}`;
+    const message = `Conflictos de horario detectados: ${conflicts.map((c) => `${c.course} (${c.day} ${c.time})`).join(', ')}`;
     super(
       {
         message,

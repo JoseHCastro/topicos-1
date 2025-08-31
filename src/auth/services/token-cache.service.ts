@@ -12,10 +12,12 @@ export class TokenCacheService implements OnModuleDestroy {
   private cleanupInterval: NodeJS.Timeout;
 
   constructor() {
-
-    this.cleanupInterval = setInterval(() => {
-      this.cleanupExpiredTokens();
-    }, 15 * 60 * 1000);
+    this.cleanupInterval = setInterval(
+      () => {
+        this.cleanupExpiredTokens();
+      },
+      15 * 60 * 1000,
+    );
   }
 
   /**
@@ -32,13 +34,11 @@ export class TokenCacheService implements OnModuleDestroy {
   revokeAllUserTokens(userId: string): void {
     const userJtis = this.userTokens.get(userId);
     if (userJtis) {
+      const expTime = Math.floor(Date.now() / 1000) + 24 * 60 * 60;
 
-      const expTime = Math.floor(Date.now() / 1000) + (24 * 60 * 60);
-
-      userJtis.forEach(jti => {
+      userJtis.forEach((jti) => {
         this.blacklistedTokens.set(jti, expTime);
       });
-
 
       this.userTokens.delete(userId);
     }
@@ -76,7 +76,9 @@ export class TokenCacheService implements OnModuleDestroy {
       }
     }
 
-    console.log(`[TokenCache] Limpieza completada. Tokens en blacklist: ${this.blacklistedTokens.size}`);
+    console.log(
+      `[TokenCache] Limpieza completada. Tokens en blacklist: ${this.blacklistedTokens.size}`,
+    );
   }
 
   /**
@@ -86,8 +88,10 @@ export class TokenCacheService implements OnModuleDestroy {
     return {
       blacklistedTokens: this.blacklistedTokens.size,
       activeUsers: this.userTokens.size,
-      totalUserTokens: Array.from(this.userTokens.values())
-        .reduce((sum, tokens) => sum + tokens.size, 0)
+      totalUserTokens: Array.from(this.userTokens.values()).reduce(
+        (sum, tokens) => sum + tokens.size,
+        0,
+      ),
     };
   }
 

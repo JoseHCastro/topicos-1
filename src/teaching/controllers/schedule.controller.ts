@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  Query,
+} from '@nestjs/common';
 import { ScheduleService } from '../services';
 import { CreateScheduleDto, UpdateScheduleDto } from '../dto';
 import { PaginationDto, PaginatedResultDto } from '../../common';
@@ -18,7 +27,9 @@ export class ScheduleController {
 
   @Get()
   @Auth(ValidRoles.ADMIN, ValidRoles.TEACHER, ValidRoles.STUDENT)
-  findAll(@Query() paginationDto: PaginationDto): Promise<PaginatedResultDto<Schedule>> {
+  findAll(
+    @Query() paginationDto: PaginationDto,
+  ): Promise<PaginatedResultDto<Schedule>> {
     return this.scheduleService.findAll(paginationDto);
   }
 
@@ -30,7 +41,10 @@ export class ScheduleController {
 
   @Patch(':id')
   @Auth(ValidRoles.ADMIN)
-  update(@Param('id') id: string, @Body() updateScheduleDto: UpdateScheduleDto) {
+  update(
+    @Param('id') id: string,
+    @Body() updateScheduleDto: UpdateScheduleDto,
+  ) {
     return this.scheduleService.update(id, updateScheduleDto);
   }
 

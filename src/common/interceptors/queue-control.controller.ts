@@ -12,12 +12,12 @@ export class QueueControlController {
   @Get('status')
   getQueueSystemStatus() {
     const isEnabled = this.queueConfig.isQueueEnabled();
-    
+
     return {
       queueSystemEnabled: isEnabled,
       status: isEnabled ? 'active' : 'bypassed',
-      message: isEnabled 
-        ? 'All requests are being queued' 
+      message: isEnabled
+        ? 'All requests are being queued'
         : 'Requests are processed directly',
       timestamp: new Date().toISOString(),
     };
@@ -26,7 +26,7 @@ export class QueueControlController {
   @Post('enable')
   enableQueueSystem() {
     this.queueConfig.enableQueue();
-    
+
     return {
       message: 'Queue system enabled',
       status: 'active',
@@ -38,7 +38,7 @@ export class QueueControlController {
   @Post('disable')
   disableQueueSystem() {
     this.queueConfig.disableQueue();
-    
+
     return {
       message: 'Queue system disabled',
       status: 'bypassed',
@@ -50,7 +50,7 @@ export class QueueControlController {
   @Post('toggle')
   toggleQueueSystem() {
     const newStatus = this.queueConfig.toggleQueue();
-    
+
     return {
       message: `Queue system ${newStatus ? 'enabled' : 'disabled'}`,
       status: newStatus ? 'active' : 'bypassed',
@@ -61,9 +61,11 @@ export class QueueControlController {
 
   // Endpoint para testear el sistema de colas
   @Get('test-job/:queueType')
-  async testQueue(@Param('queueType') queueType: 'critical' | 'standard' | 'background') {
+  async testQueue(
+    @Param('queueType') queueType: 'critical' | 'standard' | 'background',
+  ) {
     const jobId = `test_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
-    
+
     const testJobData = {
       id: jobId,
       method: 'GET',

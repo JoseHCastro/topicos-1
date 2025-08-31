@@ -8,7 +8,7 @@ export class HealthController {
   @Get('redis')
   async checkRedis() {
     const isConnected = await this.redisService.isConnected();
-    
+
     if (!isConnected) {
       return {
         status: 'error',
@@ -21,8 +21,8 @@ export class HealthController {
     const info = await this.redisService.getInfo();
     const memoryInfo = info
       .split('\n')
-      .filter(line => line.startsWith('used_memory_human:'))
-      .map(line => line.split(':')[1]?.trim())[0];
+      .filter((line) => line.startsWith('used_memory_human:'))
+      .map((line) => line.split(':')[1]?.trim())[0];
 
     return {
       status: 'healthy',
@@ -36,7 +36,7 @@ export class HealthController {
   @Get()
   async checkAll() {
     const redisHealth = await this.checkRedis();
-    
+
     return {
       status: redisHealth.status === 'healthy' ? 'healthy' : 'degraded',
       services: {

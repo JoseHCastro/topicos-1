@@ -39,7 +39,9 @@ export class StudentSeeder implements SeederInterface {
     if (!existingStudent) {
       const student = this.studentRepository.create(studentData);
       await this.studentRepository.save(student);
-      this.logger.log(`Created student: ${studentData.code} - ${studentData.email}`);
+      this.logger.log(
+        `Created student: ${studentData.code} - ${studentData.email}`,
+      );
     } else {
       this.logger.log(`Student already exists: ${studentData.code}`);
     }

@@ -11,7 +11,9 @@ export class QueueConfigService {
 
   enableQueue(): void {
     this.queueEnabled = true;
-    console.log('🔄 Queue system ENABLED - All requests will go through queues');
+    console.log(
+      '🔄 Queue system ENABLED - All requests will go through queues',
+    );
   }
 
   disableQueue(): void {
@@ -21,7 +23,9 @@ export class QueueConfigService {
 
   toggleQueue(): boolean {
     this.queueEnabled = !this.queueEnabled;
-    console.log(`🔄 Queue system ${this.queueEnabled ? 'ENABLED' : 'DISABLED'}`);
+    console.log(
+      `🔄 Queue system ${this.queueEnabled ? 'ENABLED' : 'DISABLED'}`,
+    );
     return this.queueEnabled;
   }
 }

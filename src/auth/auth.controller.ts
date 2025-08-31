@@ -1,11 +1,4 @@
-import {
-  Controller,
-  Get,
-  Post,
-  Body,
-  Patch,
-  Put,
-} from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Put } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CreateUserDto, LoginUserDto, UpdateUserDto } from './dto';
 import { Auth, GetUser } from './decorators';
@@ -15,9 +8,7 @@ import { JwtPayload } from './interfaces';
 
 @Controller('auth')
 export class AuthController {
-  constructor(
-    private readonly authService: AuthService,
-  ) {}
+  constructor(private readonly authService: AuthService) {}
 
   @Post('register')
   async create(@Body() createUserDto: CreateUserDto) {
@@ -32,7 +23,6 @@ export class AuthController {
   @Get('check-status')
   @Auth()
   checkAuthStatus(@GetUser() user: JwtPayload) {
-    
     return {
       id: user.id,
       email: user.email,

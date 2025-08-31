@@ -21,15 +21,24 @@ export class GradeSeeder implements SeederInterface {
   ) {}
 
   async run(): Promise<void> {
-
     const completedDetails = await this.enrollmentDetailRepository.find({
       where: { course_state: 'Approved' },
-      relations: ['enrollment', 'course_section', 'enrollment.student', 'course_section.course'],
+      relations: [
+        'enrollment',
+        'course_section',
+        'enrollment.student',
+        'course_section.course',
+      ],
     });
 
     const failedDetails = await this.enrollmentDetailRepository.find({
       where: { course_state: 'Failed' },
-      relations: ['enrollment', 'course_section', 'enrollment.student', 'course_section.course'],
+      relations: [
+        'enrollment',
+        'course_section',
+        'enrollment.student',
+        'course_section.course',
+      ],
     });
 
     const allCompletedDetails = [...completedDetails, ...failedDetails];
@@ -53,8 +62,9 @@ export class GradeSeeder implements SeederInterface {
       });
 
       if (!existingGrade) {
-        const finalGrade = detail.final_grade || Math.floor(Math.random() * 30) + 51;
-        
+        const finalGrade =
+          detail.final_grade || Math.floor(Math.random() * 30) + 51;
+
         const grade = {
           course_section_id: courseSection.id,
           student_id: student.id,
@@ -62,15 +72,24 @@ export class GradeSeeder implements SeederInterface {
         };
 
         await this.gradeRepository.save(grade);
-        console.log(`Created grade: ${student.code} -> ${courseSection.course?.code}: ${finalGrade}`);
+        console.log(
+          `Created grade: ${student.code} -> ${courseSection.course?.code}: ${finalGrade}`,
+        );
       } else {
-        console.log(`Grade already exists: ${student.code} -> ${courseSection.course?.code}`);
+        console.log(
+          `Grade already exists: ${student.code} -> ${courseSection.course?.code}`,
+        );
       }
     }
 
     const currentDetails = await this.enrollmentDetailRepository.find({
       where: { course_state: 'Enrolled' },
-      relations: ['enrollment', 'course_section', 'enrollment.student', 'course_section.course'],
+      relations: [
+        'enrollment',
+        'course_section',
+        'enrollment.student',
+        'course_section.course',
+      ],
       take: 3,
     });
 
@@ -89,7 +108,7 @@ export class GradeSeeder implements SeederInterface {
 
       if (!existingGrade) {
         const partialGrade = Math.floor(Math.random() * 40) + 40;
-        
+
         const grade = {
           course_section_id: courseSection.id,
           student_id: student.id,
@@ -97,7 +116,9 @@ export class GradeSeeder implements SeederInterface {
         };
 
         await this.gradeRepository.save(grade);
-        console.log(`Created partial grade: ${student.code} -> ${courseSection.course?.code}: ${partialGrade} (partial)`);
+        console.log(
+          `Created partial grade: ${student.code} -> ${courseSection.course?.code}: ${partialGrade} (partial)`,
+        );
       }
     }
 

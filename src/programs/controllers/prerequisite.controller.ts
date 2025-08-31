@@ -27,7 +27,9 @@ export class PrerequisiteController {
 
   @Get()
   @Auth(ValidRoles.ADMIN, ValidRoles.STUDENT, ValidRoles.TEACHER)
-  findAll(@Query() paginationDto: PaginationDto): Promise<PaginatedResultDto<Prerequisite>> {
+  findAll(
+    @Query() paginationDto: PaginationDto,
+  ): Promise<PaginatedResultDto<Prerequisite>> {
     return this.prerequisiteService.findAll(paginationDto);
   }
 

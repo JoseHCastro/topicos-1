@@ -3,7 +3,11 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CourseSection } from '../entities';
 import { CreateCourseSectionDto, UpdateCourseSectionDto } from '../dto';
-import { PaginationDto, PaginatedResultDto, PaginationService } from '../../common';
+import {
+  PaginationDto,
+  PaginatedResultDto,
+  PaginationService,
+} from '../../common';
 
 @Injectable()
 export class CourseSectionService {
@@ -13,18 +17,24 @@ export class CourseSectionService {
     private readonly paginationService: PaginationService,
   ) {}
 
-  async create(createCourseSectionDto: CreateCourseSectionDto): Promise<CourseSection> {
-    const courseSection = this.courseSectionRepository.create(createCourseSectionDto);
+  async create(
+    createCourseSectionDto: CreateCourseSectionDto,
+  ): Promise<CourseSection> {
+    const courseSection = this.courseSectionRepository.create(
+      createCourseSectionDto,
+    );
     return await this.courseSectionRepository.save(courseSection);
   }
 
-  async findAll(paginationDto: PaginationDto): Promise<PaginatedResultDto<CourseSection>> {
+  async findAll(
+    paginationDto: PaginationDto,
+  ): Promise<PaginatedResultDto<CourseSection>> {
     return this.paginationService.paginateRepository(
       this.courseSectionRepository,
       paginationDto,
       {
         relations: ['course', 'term', 'teacher', 'schedules'],
-      }
+      },
     );
   }
 
@@ -39,7 +49,10 @@ export class CourseSectionService {
     return courseSection;
   }
 
-  async update(id: string, updateCourseSectionDto: UpdateCourseSectionDto): Promise<CourseSection> {
+  async update(
+    id: string,
+    updateCourseSectionDto: UpdateCourseSectionDto,
+  ): Promise<CourseSection> {
     const courseSection = await this.findOne(id);
     Object.assign(courseSection, updateCourseSectionDto);
     return await this.courseSectionRepository.save(courseSection);
