@@ -54,17 +54,17 @@ export class LoadTestController {
    */
   @Post('custom')
   async runCustomTest(@Body() config: LoadTestConfig) {
-    // Validaciones básicas
-    if (!config.totalJobs || config.totalJobs < 1 || config.totalJobs > 2000) {
-      throw new Error('totalJobs must be between 1 and 2000');
+    // Validaciones básicas - CONFIGURADO PARA DEMO MASIVA
+    if (!config.totalJobs || config.totalJobs < 1 || config.totalJobs > 100000) {
+      throw new Error('totalJobs must be between 1 and 100000');
     }
 
     if (
       !config.concurrency ||
       config.concurrency < 1 ||
-      config.concurrency > 50
+      config.concurrency > 1000
     ) {
-      throw new Error('concurrency must be between 1 and 50');
+      throw new Error('concurrency must be between 1 and 1000');
     }
 
     if (
@@ -111,6 +111,49 @@ export class LoadTestController {
       config,
       message: `Stress test for ${queueType} queue started`,
       checkStatusUrl: `/load-test/${testId}/status`,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  /**
+   * 🔥 DEMO DE 100K REQUESTS CONCURRENTES
+   */
+  @Post('demo-100k')
+  async runDemo100K(
+    @Query('concurrency') concurrency: string = '500',
+    @Query('queueType') queueType: 'critical' | 'standard' | 'background' | 'mixed' = 'mixed',
+  ) {
+    const testConfig: LoadTestConfig = {
+      totalJobs: 100000,
+      concurrency: parseInt(concurrency, 10),
+      queueType,
+      endpoints: [
+        '/auth/check-status',
+        '/courses',
+        '/students', 
+        '/atomic-enrollment/enroll',
+        '/grades',
+      ],
+    };
+
+    const testId = this.loadTestService.runLoadTest(testConfig);
+
+    return {
+      testId,
+      config: testConfig,
+      message: '🚀 DEMO: 100,000 requests concurrentes iniciado',
+      description: 'Prueba de carga masiva para demostración',
+      estimatedDuration: '5-10 minutos',
+      targets: {
+        throughput: '> 1000 jobs/second',
+        successRate: '> 95%',
+        memoryUsage: '< 1GB',
+      },
+      monitoringUrls: {
+        status: `/load-test/${testId}/status`,
+        metrics: `/monitoring/stats`,
+        queueStats: `/queues/stats`,
+      },
       timestamp: new Date().toISOString(),
     };
   }

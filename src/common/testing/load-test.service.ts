@@ -127,8 +127,9 @@ export class LoadTestService {
           }
         });
 
-        // Pequeña pausa entre batches para no saturar
-        await this.sleep(100);
+        // Pausa adaptativa según el tamaño del test
+        const pauseMs = config.totalJobs > 10000 ? 50 : 100;
+        await this.sleep(pauseMs);
       }
 
       // Esperar a que todos los jobs completen

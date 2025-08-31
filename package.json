@@ -23,7 +23,9 @@
     "seed": "ts-node -r tsconfig-paths/register seed.ts",
     "seed:run": "npm run seed run",
     "seed:fresh": "npm run seed fresh",
-    "seed:clear": "npm run seed clear"
+    "seed:clear": "npm run seed clear",
+    "demo:100k": "node scripts/demo-100k-monitor.js",
+    "demo:start": "curl -X POST http://localhost:3000/load-test/demo-100k"
   },
   "dependencies": {
     "@nestjs-modules/ioredis": "^2.0.2",

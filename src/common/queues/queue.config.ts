@@ -6,22 +6,35 @@ const bullmqRedisConfig: ConnectionOptions = {
   password: process.env.REDIS_PASSWORD || undefined,
   db: parseInt(process.env.REDIS_DB || '0', 10),
 
+  // OPTIMIZADO PARA 100K REQUESTS
   maxRetriesPerRequest: 3,
-  connectTimeout: 5000,
+  connectTimeout: 10000,
   lazyConnect: true,
+  
+  // Pool de conexiones para alta concurrencia
+  family: 4,
+  keepAlive: true,
+  maxLoadingTimeout: 5000,
+  
+  // Buffer size optimizado
+  enableReadyCheck: false,
+  dropBufferSupport: false,
 };
 
 const baseQueueConfig: QueueOptions = {
   connection: bullmqRedisConfig,
 
   defaultJobOptions: {
-    removeOnComplete: 10,
-    removeOnFail: 20,
-    attempts: 3,
+    // OPTIMIZADO PARA DEMO DE 100K
+    removeOnComplete: 100,  // Mantener más jobs completados para métricas
+    removeOnFail: 50,       // Mantener más jobs fallidos para debugging
+    attempts: 2,            // Reducir intentos para demo rápida
     backoff: {
       type: 'exponential',
-      delay: 2000,
+      delay: 1000,          // Delay más rápido
     },
+    // TTL más largo para demo
+    ttl: 3600000,           // 1 hora
   },
 };
 
