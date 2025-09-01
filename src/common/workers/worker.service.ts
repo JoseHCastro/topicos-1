@@ -11,6 +11,8 @@ import { QUEUE_NAMES, QUEUE_TIMEOUTS } from '../queues/queue.config';
 import { RedisService } from '../redis/redis.service';
 import { ResourceMonitorService } from '../monitoring/resource-monitor.service';
 import { ConnectionPoolService } from '../monitoring/connection-pool.service';
+import { ICacheService } from '../cache/interfaces/cache.interface';
+import { CacheKeyBuilder } from '../cache/strategies/http-cache-key.strategy';
 
 @Injectable()
 export class WorkerService implements OnModuleInit, OnModuleDestroy {
@@ -32,6 +34,8 @@ export class WorkerService implements OnModuleInit, OnModuleDestroy {
     private readonly moduleRef: ModuleRef,
     private readonly resourceMonitor: ResourceMonitorService,
     private readonly connectionPool: ConnectionPoolService,
+    private readonly cacheService: ICacheService,
+    private readonly cacheKeyBuilder: CacheKeyBuilder,
   ) {}
 
   async onModuleInit() {
@@ -161,11 +165,30 @@ export class WorkerService implements OnModuleInit, OnModuleDestroy {
     );
 
     try {
+      // 🚀 CACHE-ASIDE PATTERN: Check cache first
+      let result = await this.tryGetFromCache(jobData);
+      
+      if (result) {
+        this.logger.log(`💨 [${queueType}] Job ${job.id} served from CACHE`);
+        
+        // Guardar resultado cacheado en Redis para polling consistency
+        await this.saveJobResult(job.id!, result, null);
+        return result;
+      }
+
+      // 🔄 Cache miss - execute request
+      this.logger.debug(`🔄 [${queueType}] Cache miss - executing job ${job.id}`);
+      
       // Ejecutar con timeout
-      const result = await Promise.race([
+      result = await Promise.race([
         this.executeHttpRequest(jobData),
         this.createTimeoutPromise(timeout * 1000), // convertir a milisegundos
       ]);
+
+      // 💾 Store in cache for future requests (background)
+      this.tryStoreInCache(jobData, result).catch(error => {
+        this.logger.warn(`Cache store failed for job ${job.id}:`, error.message);
+      });
 
       // Guardar resultado en Redis con TTL de 1 hora
       await this.saveJobResult(job.id!, result, null);
@@ -469,6 +492,161 @@ export class WorkerService implements OnModuleInit, OnModuleDestroy {
         success: false,
         details: { error: error.message },
       };
+    }
+  }
+
+  // 🚀 Cache Methods - Cache-Aside Pattern Implementation
+
+  /**
+   * 🔍 Try to get response from cache
+   */
+  private async tryGetFromCache(jobData: JobData): Promise<any | null> {
+    try {
+      // Generate cache key
+      const cacheKey = this.cacheKeyBuilder.forHttpRequest(
+        jobData.method,
+        jobData.url,
+        this.extractQueryParams(jobData.url),
+        jobData.userId,
+      );
+
+      if (!cacheKey) {
+        // Not cacheable
+        return null;
+      }
+
+      const cachedResult = await this.cacheService.get(cacheKey);
+      
+      if (cachedResult) {
+        this.logger.debug(`🎯 Cache HIT for ${jobData.method} ${jobData.url}`);
+        
+        // Add cache metadata to response
+        return {
+          ...cachedResult,
+          _cache: {
+            hit: true,
+            key: cacheKey,
+            timestamp: new Date().toISOString(),
+          },
+        };
+      }
+
+      this.logger.debug(`❌ Cache MISS for ${jobData.method} ${jobData.url}`);
+      return null;
+
+    } catch (error) {
+      this.logger.warn(`Cache read error: ${error.message}`);
+      return null; // Fail silently, continue with normal execution
+    }
+  }
+
+  /**
+   * 💾 Try to store response in cache
+   */
+  private async tryStoreInCache(jobData: JobData, result: any): Promise<void> {
+    try {
+      // Generate cache key
+      const cacheKey = this.cacheKeyBuilder.forHttpRequest(
+        jobData.method,
+        jobData.url,
+        this.extractQueryParams(jobData.url),
+        jobData.userId,
+      );
+
+      if (!cacheKey) {
+        // Not cacheable
+        return;
+      }
+
+      // Get specific TTL for this endpoint
+      const ttl = this.cacheKeyBuilder.getTtlForUrl(jobData.url);
+
+      // Store in cache (clone to prevent mutations)
+      const cacheableResult = this.prepareCacheableResult(result);
+      await this.cacheService.set(cacheKey, cacheableResult, ttl);
+
+      this.logger.debug(
+        `💾 Cached result for ${jobData.method} ${jobData.url} (TTL: ${ttl}ms)`,
+      );
+
+    } catch (error) {
+      this.logger.warn(`Cache write error: ${error.message}`);
+      // Fail silently, don't affect normal operation
+    }
+  }
+
+  /**
+   * 🔧 Extract query parameters from URL
+   */
+  private extractQueryParams(url: string): Record<string, any> | undefined {
+    try {
+      const urlObj = new URL(url, 'http://dummy.com');
+      const params: Record<string, any> = {};
+      
+      urlObj.searchParams.forEach((value, key) => {
+        params[key] = value;
+      });
+      
+      return Object.keys(params).length > 0 ? params : undefined;
+    } catch {
+      return undefined;
+    }
+  }
+
+  /**
+   * 🧹 Prepare result for caching (remove sensitive data, add metadata)
+   */
+  private prepareCacheableResult(result: any): any {
+    try {
+      // Clone the result to prevent mutations
+      const cacheable = JSON.parse(JSON.stringify(result));
+      
+      // Remove potentially sensitive information
+      if (cacheable.token) {
+        delete cacheable.token;
+      }
+      if (cacheable.password) {
+        delete cacheable.password;
+      }
+      if (cacheable.jwt) {
+        delete cacheable.jwt;
+      }
+
+      // Add cache metadata
+      cacheable._cache = {
+        cached: true,
+        cachedAt: new Date().toISOString(),
+        version: '1.0',
+      };
+
+      return cacheable;
+    } catch {
+      // If serialization fails, don't cache
+      return result;
+    }
+  }
+
+  /**
+   * 📊 Get cache statistics (for monitoring)
+   */
+  async getCacheStats() {
+    try {
+      return await this.cacheService.getStats();
+    } catch (error) {
+      this.logger.error('Error getting cache stats:', error);
+      return null;
+    }
+  }
+
+  /**
+   * 🧹 Clear cache manually (for debugging/maintenance)
+   */
+  async clearCache(): Promise<void> {
+    try {
+      await this.cacheService.clear();
+      this.logger.log('🧹 Cache cleared manually');
+    } catch (error) {
+      this.logger.error('Error clearing cache:', error);
     }
   }
 }

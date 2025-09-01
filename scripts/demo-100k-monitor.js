@@ -54,16 +54,18 @@ async function makeRequest(path) {
 
 async function getSystemStats() {
   try {
-    const [queueStats, monitoringStats, loadTestStats] = await Promise.all([
+    const [queueStats, monitoringStats, loadTestStats, cacheStats] = await Promise.all([
       makeRequest('/queues/stats'),
       makeRequest('/monitoring/stats'),
       makeRequest('/load-test/active'),
+      makeRequest('/monitoring/cache').catch(() => null), // Cache might not be available yet
     ]);
 
     return {
       queues: queueStats,
       monitoring: monitoringStats,
       loadTests: loadTestStats,
+      cache: cacheStats,
       timestamp: new Date(),
     };
   } catch (error) {
@@ -133,6 +135,24 @@ function displayStats(stats) {
     console.log(`Jobs Processed: ${colorize(formatNumber(workers.totalJobsProcessed), 'green')}`);
     console.log(`Heavy Jobs:     ${formatNumber(workers.heavyJobsProcessed)}`);
     console.log(`Uptime:         ${Math.round(workers.uptime / 1000)}s`);
+  }
+
+  // Cache Statistics
+  if (stats.cache && stats.cache.status === 'success') {
+    console.log(colorize('\n🚀 CACHE LRU:', 'yellow'));
+    const cache = stats.cache.cache;
+    
+    console.log(`Hit Rate:       ${colorize(`${cache.hitRate.toFixed(1)}%`, 
+      cache.hitRate > 70 ? 'green' : cache.hitRate > 30 ? 'yellow' : 'red')}`);
+    console.log(`Entries:        ${cache.size}/${cache.maxSize}`);
+    console.log(`Memory Usage:   ${cache.performance.memoryUsageMB}MB`);
+    console.log(`Avg Response:   ${cache.performance.averageResponseTimeMs}ms`);
+    console.log(`Operations:     ${formatNumber(cache.totalOperations)}`);
+    console.log(`Evictions:      ${cache.evictions}`);
+    
+    if (cache.health.issues.length > 0) {
+      console.log(`Issues:         ${colorize(cache.health.issues.join(', '), 'red')}`);
+    }
   }
 
   // Active Load Tests

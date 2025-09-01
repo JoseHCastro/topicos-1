@@ -15,10 +15,13 @@ export class MonitoringController {
    * Obtiene estadísticas completas del sistema de resource management
    */
   @Get('stats')
-  getSystemStats() {
+  async getSystemStats() {
     const workerStats = this.workerService.getWorkerStats();
     const memoryStats = this.resourceMonitor.getRecentStats(5);
     const poolStats = this.connectionPool.getRecentStats(5);
+    
+    // 🚀 Get cache statistics
+    const cacheStats = await this.workerService.getCacheStats();
 
     return {
       system: {
@@ -41,6 +44,10 @@ export class MonitoringController {
         config: this.connectionPool.getConfig(),
         recentHistory: poolStats,
       },
+      cache: cacheStats ? {
+        stats: cacheStats,
+        health: this.determineCacheHealth(cacheStats),
+      } : null,
       timestamp: new Date().toISOString(),
     };
   }
@@ -222,6 +229,62 @@ export class MonitoringController {
     };
   }
 
+  /**
+   * 🚀 Get detailed cache statistics
+   */
+  @Get('cache')
+  async getCacheStats() {
+    const cacheStats = await this.workerService.getCacheStats();
+    
+    if (!cacheStats) {
+      return {
+        status: 'error',
+        message: 'Cache statistics not available',
+        timestamp: new Date().toISOString(),
+      };
+    }
+
+    const health = this.determineCacheHealth(cacheStats);
+
+    return {
+      status: 'success',
+      cache: {
+        ...cacheStats,
+        health,
+        performance: {
+          hitRatePercentage: cacheStats.hitRate,
+          memoryUsageMB: (cacheStats.memoryUsage / 1024 / 1024).toFixed(2),
+          utilizationPercentage: ((cacheStats.size / cacheStats.maxSize) * 100).toFixed(1),
+          averageResponseTimeMs: cacheStats.averageResponseTime.toFixed(2),
+        },
+      },
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  /**
+   * 🧹 Clear cache manually
+   */
+  @Post('cache/clear')
+  @HttpCode(HttpStatus.OK)
+  async clearCache() {
+    try {
+      await this.workerService.clearCache();
+      
+      return {
+        status: 'success',
+        message: 'Cache cleared successfully',
+        timestamp: new Date().toISOString(),
+      };
+    } catch (error) {
+      return {
+        status: 'error',
+        message: `Failed to clear cache: ${error.message}`,
+        timestamp: new Date().toISOString(),
+      };
+    }
+  }
+
   // Método auxiliar para determinar estado general
   private determineOverallStatus(
     statuses: string[],
@@ -229,5 +292,43 @@ export class MonitoringController {
     if (statuses.includes('critical')) return 'critical';
     if (statuses.includes('warning')) return 'warning';
     return 'healthy';
+  }
+
+  /**
+   * 🚀 Determine cache health based on stats
+   */
+  private determineCacheHealth(stats: any): { status: 'healthy' | 'warning' | 'critical'; issues: string[] } {
+    const issues: string[] = [];
+    let status: 'healthy' | 'warning' | 'critical' = 'healthy';
+
+    if (!stats) {
+      return { status: 'critical', issues: ['Cache stats not available'] };
+    }
+
+    // Check hit rate
+    if (stats.hitRate < 30) {
+      issues.push(`Low hit rate: ${stats.hitRate.toFixed(1)}%`);
+      status = 'warning';
+    }
+
+    // Check cache size vs max size
+    if (stats.size >= stats.maxSize * 0.9) {
+      issues.push(`High cache usage: ${stats.size}/${stats.maxSize} entries`);
+      status = status === 'critical' ? 'critical' : 'warning';
+    }
+
+    // Check memory usage (if over 100MB for cache)
+    if (stats.memoryUsage > 100 * 1024 * 1024) {
+      issues.push(`High memory usage: ${(stats.memoryUsage / 1024 / 1024).toFixed(1)}MB`);
+      status = status === 'critical' ? 'critical' : 'warning';
+    }
+
+    // Check if too many evictions recently
+    if (stats.evictions > stats.totalOperations * 0.1) {
+      issues.push(`High eviction rate: ${stats.evictions} evictions`);
+      status = status === 'critical' ? 'critical' : 'warning';
+    }
+
+    return { status, issues };
   }
 }
