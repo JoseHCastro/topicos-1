@@ -45,7 +45,7 @@ export class ResourceMonitorService
   private monitoringInterval: NodeJS.Timeout | null = null;
   private lastCpuUsage: NodeJS.CpuUsage = process.cpuUsage();
   private stats: ResourceStats[] = [];
-  private readonly maxStatsHistory = 100; // Mantener 100 mediciones
+  private readonly maxStatsHistory = parseInt(process.env.MONITORING_MAX_STATS_HISTORY || '100', 10);
 
   // Estados de alerta
   private isMemoryWarning = false;
@@ -65,10 +65,11 @@ export class ResourceMonitorService
   }
 
   private startMonitoring() {
-    // Monitorear cada 5 segundos según especificación
+    // Monitorear según variable de entorno
+    const interval = parseInt(process.env.MONITORING_RESOURCE_INTERVAL || '5000', 10);
     this.monitoringInterval = setInterval(() => {
       this.checkResources();
-    }, 5000);
+    }, interval);
   }
 
   private stopMonitoring() {

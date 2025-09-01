@@ -107,12 +107,16 @@ export class WorkerService implements OnModuleInit, OnModuleDestroy {
       worker.on('completed', (job, result) => {
         this.jobsProcessed++;
         this.logger.log(`✅ [${name}] Job ${job.id} completed successfully`);
-        this.checkResourcesAfterJob(job, name);
+        if (job) {
+          this.checkResourcesAfterJob(job, name);
+        }
       });
 
       worker.on('failed', (job, err) => {
         this.logger.error(`❌ [${name}] Job ${job?.id} failed: ${err.message}`);
-        this.checkResourcesAfterJob(job, name);
+        if (job) {
+          this.checkResourcesAfterJob(job, name);
+        }
       });
 
       worker.on('error', (err) => {
@@ -387,6 +391,7 @@ export class WorkerService implements OnModuleInit, OnModuleDestroy {
 
   private isHeavyJob(job: Job): boolean {
     const jobData = job.data as JobData;
+    const heavyJobThreshold = parseInt(process.env.WORKER_HEAVY_JOB_THRESHOLD || '10000', 10);
 
     // Determinar si un job es "pesado" basado en varios criterios
     const heavyPatterns = [
@@ -402,7 +407,7 @@ export class WorkerService implements OnModuleInit, OnModuleDestroy {
 
     // También considerar jobs con mucho payload
     const hasLargePayload =
-      jobData.body && JSON.stringify(jobData.body).length > 10000; // 10KB+
+      jobData.body && JSON.stringify(jobData.body).length > heavyJobThreshold;
 
     return isHeavyUrl || hasLargePayload;
   }
@@ -410,9 +415,10 @@ export class WorkerService implements OnModuleInit, OnModuleDestroy {
   private maybeForceGarbageCollection(): boolean {
     const now = Date.now();
     const timeSinceLastGC = now - this.lastGCTime;
+    const gcInterval = parseInt(process.env.WORKER_GC_INTERVAL || '30000', 10);
 
-    // Solo hacer GC si han pasado al menos 30 segundos desde el último
-    if (timeSinceLastGC > 30000) {
+    // Solo hacer GC según intervalo configurado
+    if (timeSinceLastGC > gcInterval) {
       this.lastGCTime = now;
       const gcResult = this.resourceMonitor.forceGarbageCollection();
 

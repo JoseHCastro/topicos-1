@@ -9,10 +9,10 @@ export const redisConfig = {
     db: configService.get('REDIS_DB', 0),
 
     // Configuración básica sin clustering (single instance)
-    connectTimeout: 5000, // Timeout de conexión de 5 segundos
+    connectTimeout: parseInt(process.env.REDIS_CONNECT_TIMEOUT || '5000', 10),
     lazyConnect: true,
-    maxRetriesPerRequest: 3,
-    retryDelayOnFailure: 100,
+    maxRetriesPerRequest: parseInt(process.env.REDIS_MAX_RETRIES || '3', 10),
+    retryDelayOnFailure: parseInt(process.env.REDIS_RETRY_DELAY || '100', 10),
 
     // Máximo 10 conexiones concurrentes
     family: 4,
@@ -30,10 +30,10 @@ export const redisConnectionOptions = {
   db: parseInt(process.env.REDIS_DB || '0', 10),
 
   // Configuración de conexión
-  connectTimeout: 5000,
+  connectTimeout: parseInt(process.env.REDIS_CONNECT_TIMEOUT || '5000', 10),
   lazyConnect: true,
-  maxRetriesPerRequest: 3,
-  retryDelayOnFailure: 100,
+  maxRetriesPerRequest: parseInt(process.env.REDIS_MAX_RETRIES || '3', 10),
+  retryDelayOnFailure: parseInt(process.env.REDIS_RETRY_DELAY || '100', 10),
 
   // Pool de conexiones limitado
   family: 4,

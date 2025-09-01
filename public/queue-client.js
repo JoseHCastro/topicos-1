@@ -8,9 +8,45 @@
 class QueueClient {
   constructor(baseUrl = '') {
     this.baseUrl = baseUrl;
+    // Configuración por defecto, se puede sobrescribir con setConfig()
     this.pollingInterval = 2000; // 2 segundos
     this.maxPollingTime = 120000; // 2 minutos
     this.activePolls = new Map(); // Tracking de polls activos
+  }
+
+  /**
+   * Configura los intervalos de polling desde el servidor
+   * @param {Object} config - Configuración del polling
+   */
+  setConfig(config) {
+    if (config.pollingInterval) {
+      this.pollingInterval = config.pollingInterval;
+    }
+    if (config.maxPollingTime) {
+      this.maxPollingTime = config.maxPollingTime;
+    }
+    console.log(`📋 Queue Client config updated - Interval: ${this.pollingInterval}ms, Max time: ${this.maxPollingTime}ms`);
+  }
+
+  /**
+   * Obtiene la configuración del servidor
+   * @returns {Promise} Configuración del servidor
+   */
+  async loadConfigFromServer() {
+    try {
+      const response = await fetch(`${this.baseUrl}/monitoring/config`);
+      if (response.ok) {
+        const config = await response.json();
+        if (config.polling) {
+          this.setConfig({
+            pollingInterval: config.polling.interval,
+            maxPollingTime: config.polling.maxTime,
+          });
+        }
+      }
+    } catch (error) {
+      console.warn('⚠️ Could not load config from server, using defaults:', error.message);
+    }
   }
 
   /**

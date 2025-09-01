@@ -6,35 +6,30 @@ const bullmqRedisConfig: ConnectionOptions = {
   password: process.env.REDIS_PASSWORD || undefined,
   db: parseInt(process.env.REDIS_DB || '0', 10),
 
-  // OPTIMIZADO PARA 100K REQUESTS
-  maxRetriesPerRequest: 3,
-  connectTimeout: 10000,
+  // Configuración según variables de entorno
+  maxRetriesPerRequest: parseInt(process.env.REDIS_MAX_RETRIES || '3', 10),
+  connectTimeout: parseInt(process.env.REDIS_CONNECT_TIMEOUT || '10000', 10),
   lazyConnect: true,
   
   // Pool de conexiones para alta concurrencia
   family: 4,
-  keepAlive: true,
-  maxLoadingTimeout: 5000,
   
   // Buffer size optimizado
   enableReadyCheck: false,
-  dropBufferSupport: false,
 };
 
 const baseQueueConfig: QueueOptions = {
   connection: bullmqRedisConfig,
 
   defaultJobOptions: {
-    // OPTIMIZADO PARA DEMO DE 100K
-    removeOnComplete: 100,  // Mantener más jobs completados para métricas
-    removeOnFail: 50,       // Mantener más jobs fallidos para debugging
-    attempts: 2,            // Reducir intentos para demo rápida
+    // Configuración basada en variables de entorno
+    removeOnComplete: parseInt(process.env.QUEUE_REMOVE_ON_COMPLETE || '100', 10),
+    removeOnFail: parseInt(process.env.QUEUE_REMOVE_ON_FAIL || '50', 10),
+    attempts: parseInt(process.env.QUEUE_STANDARD_ATTEMPTS || '2', 10),
     backoff: {
       type: 'exponential',
-      delay: 1000,          // Delay más rápido
+      delay: parseInt(process.env.REDIS_RETRY_DELAY || '1000', 10),
     },
-    // TTL más largo para demo
-    ttl: 3600000,           // 1 hora
   },
 };
 
@@ -42,8 +37,8 @@ export const criticalQueueConfig: QueueOptions = {
   ...baseQueueConfig,
   defaultJobOptions: {
     ...baseQueueConfig.defaultJobOptions,
-    attempts: 3,
-    delay: 0,
+    attempts: parseInt(process.env.QUEUE_CRITICAL_ATTEMPTS || '3', 10),
+    delay: parseInt(process.env.QUEUE_CRITICAL_DELAY || '0', 10),
   },
 };
 
@@ -51,8 +46,8 @@ export const standardQueueConfig: QueueOptions = {
   ...baseQueueConfig,
   defaultJobOptions: {
     ...baseQueueConfig.defaultJobOptions,
-    attempts: 2,
-    delay: 100,
+    attempts: parseInt(process.env.QUEUE_STANDARD_ATTEMPTS || '2', 10),
+    delay: parseInt(process.env.QUEUE_STANDARD_DELAY || '100', 10),
   },
 };
 
@@ -60,8 +55,8 @@ export const backgroundQueueConfig: QueueOptions = {
   ...baseQueueConfig,
   defaultJobOptions: {
     ...baseQueueConfig.defaultJobOptions,
-    attempts: 1,
-    delay: 1000,
+    attempts: parseInt(process.env.QUEUE_BACKGROUND_ATTEMPTS || '1', 10),
+    delay: parseInt(process.env.QUEUE_BACKGROUND_DELAY || '1000', 10),
   },
 };
 
@@ -72,7 +67,7 @@ export const QUEUE_NAMES = {
 } as const;
 
 export const QUEUE_TIMEOUTS = {
-  CRITICAL: 30,
-  STANDARD: 60,
-  BACKGROUND: 120,
+  CRITICAL: parseInt(process.env.QUEUE_CRITICAL_TIMEOUT || '30', 10),
+  STANDARD: parseInt(process.env.QUEUE_STANDARD_TIMEOUT || '60', 10),
+  BACKGROUND: parseInt(process.env.QUEUE_BACKGROUND_TIMEOUT || '120', 10),
 } as const;

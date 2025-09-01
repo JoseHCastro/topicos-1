@@ -216,14 +216,44 @@ export class MonitoringController {
   @Get('config')
   getSystemConfig() {
     return {
-      memory: this.resourceMonitor.getLimits(),
-      connectionPool: this.connectionPool.getConfig(),
-      environment: {
-        nodeEnv: process.env.NODE_ENV,
-        workerMaxHeapMB: process.env.WORKER_MAX_HEAP_MB || '256',
-        workerMaxRssMB: process.env.WORKER_MAX_RSS_MB || '512',
-        dbPoolMax: process.env.WORKER_DB_POOL_MAX || '5',
-        gcAvailable: !!global.gc,
+      environment: process.env.NODE_ENV || 'development',
+      features: {
+        queueSystemEnabled: process.env.ENABLE_QUEUE_SYSTEM === 'true',
+        cacheEnabled: process.env.ENABLE_CACHE === 'true',
+        monitoringEnabled: process.env.ENABLE_MONITORING === 'true',
+      },
+      polling: {
+        interval: parseInt(process.env.POLLING_INTERVAL || '2000', 10),
+        maxTime: parseInt(process.env.POLLING_MAX_TIME || '120000', 10),
+        timeoutRetries: parseInt(process.env.POLLING_TIMEOUT_RETRIES || '3', 10),
+      },
+      queue: {
+        timeouts: {
+          critical: parseInt(process.env.QUEUE_CRITICAL_TIMEOUT || '30', 10),
+          standard: parseInt(process.env.QUEUE_STANDARD_TIMEOUT || '60', 10),
+          background: parseInt(process.env.QUEUE_BACKGROUND_TIMEOUT || '120', 10),
+        },
+        attempts: {
+          critical: parseInt(process.env.QUEUE_CRITICAL_ATTEMPTS || '3', 10),
+          standard: parseInt(process.env.QUEUE_STANDARD_ATTEMPTS || '2', 10),
+          background: parseInt(process.env.QUEUE_BACKGROUND_ATTEMPTS || '1', 10),
+        },
+      },
+      worker: {
+        maxHeapMB: parseInt(process.env.WORKER_MAX_HEAP_MB || '256', 10),
+        maxRssMB: parseInt(process.env.WORKER_MAX_RSS_MB || '512', 10),
+        maxCpuPercent: parseInt(process.env.WORKER_MAX_CPU_PERCENT || '80', 10),
+        gcInterval: parseInt(process.env.WORKER_GC_INTERVAL || '30000', 10),
+      },
+      cache: {
+        maxEntries: parseInt(process.env.CACHE_MAX_ENTRIES || '1000', 10),
+        ttlMinutes: parseInt(process.env.CACHE_TTL_MINUTES || '5', 10),
+        enabled: process.env.CACHE_ENABLED === 'true',
+      },
+      monitoring: {
+        resourceInterval: parseInt(process.env.MONITORING_RESOURCE_INTERVAL || '5000', 10),
+        connectionPoolInterval: parseInt(process.env.MONITORING_CONNECTION_POOL_INTERVAL || '10000', 10),
+        healthCheckInterval: parseInt(process.env.MONITORING_HEALTH_CHECK_INTERVAL || '30000', 10),
       },
       timestamp: new Date().toISOString(),
     };
@@ -314,19 +344,19 @@ export class MonitoringController {
     // Check cache size vs max size
     if (stats.size >= stats.maxSize * 0.9) {
       issues.push(`High cache usage: ${stats.size}/${stats.maxSize} entries`);
-      status = status === 'critical' ? 'critical' : 'warning';
+      status = (status === 'warning' || status === 'healthy') ? 'warning' : status;
     }
 
     // Check memory usage (if over 100MB for cache)
     if (stats.memoryUsage > 100 * 1024 * 1024) {
       issues.push(`High memory usage: ${(stats.memoryUsage / 1024 / 1024).toFixed(1)}MB`);
-      status = status === 'critical' ? 'critical' : 'warning';
+      status = (status === 'warning' || status === 'healthy') ? 'warning' : status;
     }
 
     // Check if too many evictions recently
     if (stats.evictions > stats.totalOperations * 0.1) {
       issues.push(`High eviction rate: ${stats.evictions} evictions`);
-      status = status === 'critical' ? 'critical' : 'warning';
+      status = (status === 'warning' || status === 'healthy') ? 'warning' : status;
     }
 
     return { status, issues };
