@@ -2,6 +2,8 @@ import { Controller, Get, Post, HttpCode, HttpStatus } from '@nestjs/common';
 import { ResourceMonitorService } from './resource-monitor.service';
 import { ConnectionPoolService } from './connection-pool.service';
 import { WorkerService } from '../workers/worker.service';
+import { WebSocketGateway } from '../websockets/websocket.gateway';
+import { JobStatusService } from '../websockets/job-status.service';
 
 @Controller('monitoring')
 export class MonitoringController {
@@ -9,6 +11,8 @@ export class MonitoringController {
     private readonly resourceMonitor: ResourceMonitorService,
     private readonly connectionPool: ConnectionPoolService,
     private readonly workerService: WorkerService,
+    private readonly webSocketGateway: WebSocketGateway,
+    private readonly jobStatusService: JobStatusService,
   ) {}
 
   /**
@@ -360,5 +364,39 @@ export class MonitoringController {
     }
 
     return { status, issues };
+  }
+
+  /**
+   * Obtiene estadísticas de conexiones WebSocket
+   */
+  @Get('websocket/stats')
+  async getWebSocketStats() {
+    const gatewayStats = this.webSocketGateway.getGatewayStats();
+    const jobStats = this.jobStatusService.getJobStatistics();
+
+    return {
+      websocket: gatewayStats,
+      jobs: jobStats,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  /**
+   * Obtiene la configuración de polling para clientes
+   */
+  @Get('config')
+  async getClientConfig() {
+    return {
+      polling: {
+        interval: parseInt(process.env.POLLING_INTERVAL || '2000', 10),
+        maxTime: parseInt(process.env.POLLING_MAX_TIME || '120000', 10),
+      },
+      websocket: {
+        enabled: true,
+        namespace: '/jobs',
+        fallbackToPolling: true,
+      },
+      timestamp: new Date().toISOString(),
+    };
   }
 }

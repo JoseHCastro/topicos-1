@@ -9,6 +9,7 @@ import { Observable, of } from 'rxjs';
 import { Request, Response } from 'express';
 import { QueueService } from '../queues/queue.service';
 import { QueueConfigService } from './queue-config.service';
+import { JobStatusService } from '../websockets/job-status.service';
 
 @Injectable()
 export class QueueInterceptor implements NestInterceptor {
@@ -17,6 +18,7 @@ export class QueueInterceptor implements NestInterceptor {
   constructor(
     private readonly queueService: QueueService,
     private readonly queueConfig: QueueConfigService,
+    private readonly jobStatusService: JobStatusService,
   ) {}
 
   async intercept(
@@ -81,6 +83,9 @@ export class QueueInterceptor implements NestInterceptor {
       this.logger.log(
         `📥 Job ${jobId} queued in ${queueType} queue for ${method} ${url}`,
       );
+
+      // Notificar WebSocket que el job fue encolado
+      this.jobStatusService.markJobQueued(jobId, queueType);
 
       // Retornar respuesta inmediata con job ID
       const queueResponse = {

@@ -3,6 +3,8 @@ import {
   Logger,
   OnModuleInit,
   OnModuleDestroy,
+  Inject,
+  forwardRef,
 } from '@nestjs/common';
 import { Worker, Job } from 'bullmq';
 import { ModuleRef } from '@nestjs/core';
@@ -12,7 +14,9 @@ import { RedisService } from '../redis/redis.service';
 import { ResourceMonitorService } from '../monitoring/resource-monitor.service';
 import { ConnectionPoolService } from '../monitoring/connection-pool.service';
 import { ICacheService } from '../cache/interfaces/cache.interface';
+import { CACHE_SERVICE_TOKEN } from '../cache/interfaces/cache.tokens';
 import { CacheKeyBuilder } from '../cache/strategies/http-cache-key.strategy';
+import { JobStatusService } from '../websockets/job-status.service';
 
 @Injectable()
 export class WorkerService implements OnModuleInit, OnModuleDestroy {
@@ -34,8 +38,11 @@ export class WorkerService implements OnModuleInit, OnModuleDestroy {
     private readonly moduleRef: ModuleRef,
     private readonly resourceMonitor: ResourceMonitorService,
     private readonly connectionPool: ConnectionPoolService,
+    @Inject(CACHE_SERVICE_TOKEN)
     private readonly cacheService: ICacheService,
     private readonly cacheKeyBuilder: CacheKeyBuilder,
+    @Inject(forwardRef(() => JobStatusService))
+    private readonly jobStatusService: JobStatusService,
   ) {}
 
   async onModuleInit() {
@@ -102,11 +109,19 @@ export class WorkerService implements OnModuleInit, OnModuleDestroy {
     workers.forEach(({ worker, name }) => {
       worker.on('active', (job) => {
         this.logger.log(`🔄 [${name}] Job ${job.id} started processing`);
+        // Notificar WebSocket que el job está en procesamiento
+        if (job.id) {
+          this.jobStatusService.markJobProcessing(job.id, name.toLowerCase());
+        }
       });
 
       worker.on('completed', (job, result) => {
         this.jobsProcessed++;
         this.logger.log(`✅ [${name}] Job ${job.id} completed successfully`);
+        // Notificar WebSocket que el job se completó
+        if (job.id) {
+          this.jobStatusService.markJobCompleted(job.id, result);
+        }
         if (job) {
           this.checkResourcesAfterJob(job, name);
         }
@@ -114,8 +129,20 @@ export class WorkerService implements OnModuleInit, OnModuleDestroy {
 
       worker.on('failed', (job, err) => {
         this.logger.error(`❌ [${name}] Job ${job?.id} failed: ${err.message}`);
+        // Notificar WebSocket que el job falló
+        if (job?.id) {
+          this.jobStatusService.markJobFailed(job.id, err.message);
+        }
         if (job) {
           this.checkResourcesAfterJob(job, name);
+        }
+      });
+
+      worker.on('progress', (job, progress) => {
+        this.logger.debug(`📊 [${name}] Job ${job.id} progress: ${progress}%`);
+        // Notificar WebSocket del progreso
+        if (typeof progress === 'number' && job.id) {
+          this.jobStatusService.updateJobProgress(job.id, progress);
         }
       });
 

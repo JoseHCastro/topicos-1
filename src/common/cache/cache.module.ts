@@ -3,6 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { LRUCacheService } from './services/lru-cache.service';
 import { HttpCacheKeyStrategy, CacheKeyBuilder } from './strategies/http-cache-key.strategy';
 import { ICacheService, CacheConfig } from './interfaces/cache.interface';
+import { CACHE_SERVICE_TOKEN } from './interfaces/cache.tokens';
 
 /**
  * 🏗️ Cache Module - Dependency Injection Configuration
@@ -23,7 +24,7 @@ export class CacheModule {
       providers: [
         // 📊 Cache Service principal
         {
-          provide: ICacheService,
+          provide: CACHE_SERVICE_TOKEN,
           useFactory: (configService: ConfigService) => {
             const config = CacheModule.createCacheConfig(configService);
             return new LRUCacheService(config);
@@ -38,11 +39,11 @@ export class CacheModule {
         // 🎯 Convenience alias
         {
           provide: 'CACHE_SERVICE',
-          useExisting: ICacheService,
+          useExisting: CACHE_SERVICE_TOKEN,
         },
       ],
       exports: [
-        ICacheService,
+        CACHE_SERVICE_TOKEN,
         'CACHE_SERVICE',
         HttpCacheKeyStrategy,
         CacheKeyBuilder,
@@ -63,7 +64,7 @@ export class CacheModule {
       providers: [
         // 📊 Cache Service con configuración personalizada
         {
-          provide: ICacheService,
+          provide: CACHE_SERVICE_TOKEN,
           useFactory: async (...args: any[]) => {
             const config = options.useFactory 
               ? await options.useFactory(...args)
@@ -81,11 +82,11 @@ export class CacheModule {
         // 🎯 Convenience alias
         {
           provide: 'CACHE_SERVICE',
-          useExisting: ICacheService,
+          useExisting: CACHE_SERVICE_TOKEN,
         },
       ],
       exports: [
-        ICacheService,
+        CACHE_SERVICE_TOKEN,
         'CACHE_SERVICE',
         HttpCacheKeyStrategy,
         CacheKeyBuilder,
@@ -110,18 +111,18 @@ export class CacheModule {
       module: CacheModule,
       providers: [
         {
-          provide: ICacheService,
+          provide: CACHE_SERVICE_TOKEN,
           useValue: new LRUCacheService(testConfig),
         },
         HttpCacheKeyStrategy,
         CacheKeyBuilder,
         {
           provide: 'CACHE_SERVICE',
-          useExisting: ICacheService,
+          useExisting: CACHE_SERVICE_TOKEN,
         },
       ],
       exports: [
-        ICacheService,
+        CACHE_SERVICE_TOKEN,
         'CACHE_SERVICE', 
         HttpCacheKeyStrategy,
         CacheKeyBuilder,
