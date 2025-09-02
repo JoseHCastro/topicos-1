@@ -10,6 +10,7 @@ import {
   MinLength,
   ValidateIf,
 } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export enum UserRole {
   ADMIN = 'ADMIN',
@@ -18,10 +19,22 @@ export enum UserRole {
 }
 
 export class CreateUserDto {
+  @ApiProperty({
+    description: 'Email del usuario (debe ser único)',
+    example: 'estudiante@uagrm.edu.bo',
+    format: 'email'
+  })
   @IsEmail()
   @IsNotEmpty()
   email: string;
 
+  @ApiProperty({
+    description: 'Contraseña del usuario',
+    example: 'Password123!',
+    minLength: 6,
+    maxLength: 50,
+    pattern: '/(?:(?=.*\\d)|(?=.*\\W+))(?![.\\n])(?=.*[A-Z])(?=.*[a-z]).*$/'
+  })
   @IsString()
   @MinLength(6)
   @MaxLength(50)
@@ -31,11 +44,21 @@ export class CreateUserDto {
   })
   password: string;
 
+  @ApiProperty({
+    description: 'Nombre(s) del usuario',
+    example: 'Juan Carlos',
+    minLength: 1
+  })
   @IsString()
   @MinLength(1)
   @IsNotEmpty()
   firstName: string;
 
+  @ApiProperty({
+    description: 'Apellido(s) del usuario',
+    example: 'Pérez García',
+    minLength: 1
+  })
   @IsString()
   @MinLength(1)
   @IsNotEmpty()
