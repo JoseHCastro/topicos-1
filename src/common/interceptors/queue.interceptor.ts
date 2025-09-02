@@ -113,19 +113,9 @@ export class QueueInterceptor implements NestInterceptor {
     }
   }
 
-  // Exclusiones del Interceptor
+  // Exclusiones del Interceptor - Ahora configurable
   private shouldExcludeFromQueue(url: string): boolean {
-    const exclusions = [
-      '/queues/', // Consulta de estado de colas
-      '/health', // Health checks para load balancers
-      '/metrics', // Métricas de Prometheus
-      '/queue-dashboard', // Dashboard de monitoreo
-      '/websocket', // Endpoints de WebSocket
-      '/sse', // Server-Sent Events
-      '/__', // Rutas internas de desarrollo
-    ];
-
-    return exclusions.some((exclusion) => url.startsWith(exclusion));
+    return this.queueConfig.shouldExcludeFromQueue(url);
   }
 
   // Determinar cola por prefijo de URL - Routing Logic Simplificado

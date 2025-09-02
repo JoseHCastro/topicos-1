@@ -1,6 +1,6 @@
-import { Controller, Get, Post, Param } from '@nestjs/common';
+import { Controller, Get, Post, Param, Body, Delete } from '@nestjs/common';
 import { QueueService } from '../queues/queue.service';
-import { QueueConfigService } from '../interceptors/queue-config.service';
+import { QueueConfigService } from './queue-config.service';
 
 @Controller('queue-control')
 export class QueueControlController {
@@ -12,6 +12,7 @@ export class QueueControlController {
   @Get('status')
   getQueueSystemStatus() {
     const isEnabled = this.queueConfig.isQueueEnabled();
+    const exclusions = this.queueConfig.getExclusions();
 
     return {
       queueSystemEnabled: isEnabled,
@@ -19,6 +20,12 @@ export class QueueControlController {
       message: isEnabled
         ? 'All requests are being queued'
         : 'Requests are processed directly',
+      exclusions: {
+        total: exclusions.default.length + exclusions.custom.length + exclusions.env.length,
+        default: exclusions.default,
+        custom: exclusions.custom,
+        environment: exclusions.env,
+      },
       timestamp: new Date().toISOString(),
     };
   }
@@ -55,6 +62,66 @@ export class QueueControlController {
       message: `Queue system ${newStatus ? 'enabled' : 'disabled'}`,
       status: newStatus ? 'active' : 'bypassed',
       queueSystemEnabled: newStatus,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  // ========== NUEVOS ENDPOINTS PARA EXCLUSIONES ==========
+
+  @Get('exclusions')
+  getExclusions() {
+    const exclusions = this.queueConfig.getExclusions();
+
+    return {
+      message: 'Current queue exclusions',
+      exclusions,
+      totalCount: exclusions.default.length + exclusions.custom.length + exclusions.env.length,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  @Post('exclusions')
+  addExclusion(@Body() body: { urlPattern: string }) {
+    if (!body.urlPattern) {
+      return {
+        error: 'urlPattern is required',
+        example: { urlPattern: '/my-endpoint' },
+        timestamp: new Date().toISOString(),
+      };
+    }
+
+    this.queueConfig.addExclusion(body.urlPattern);
+
+    return {
+      message: `Exclusion added: ${body.urlPattern}`,
+      urlPattern: body.urlPattern,
+      exclusions: this.queueConfig.getExclusions(),
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  @Delete('exclusions/:pattern')
+  removeExclusion(@Param('pattern') pattern: string) {
+    // Decodificar el patrón URL
+    const decodedPattern = decodeURIComponent(pattern);
+    
+    this.queueConfig.removeExclusion(decodedPattern);
+
+    return {
+      message: `Exclusion removed: ${decodedPattern}`,
+      urlPattern: decodedPattern,
+      exclusions: this.queueConfig.getExclusions(),
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  @Delete('exclusions')
+  clearCustomExclusions() {
+    this.queueConfig.clearCustomExclusions();
+
+    return {
+      message: 'All custom exclusions cleared',
+      exclusions: this.queueConfig.getExclusions(),
       timestamp: new Date().toISOString(),
     };
   }

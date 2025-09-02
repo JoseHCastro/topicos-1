@@ -77,3 +77,4 @@ child.on('error', (error) => {
   console.error(`❌ Failed to start application: ${error.message}`);
   process.exit(1);
 });
+
