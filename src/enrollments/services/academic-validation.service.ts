@@ -26,19 +26,19 @@ export class AcademicValidationService {
   constructor(
     @InjectRepository(Prerequisite)
     private readonly prerequisiteRepository: Repository<Prerequisite>,
-    
+
     @InjectRepository(Schedule)
     private readonly scheduleRepository: Repository<Schedule>,
-    
+
     @InjectRepository(EnrollmentDetail)
     private readonly enrollmentDetailRepository: Repository<EnrollmentDetail>,
-    
+
     @InjectRepository(Grade)
     private readonly gradeRepository: Repository<Grade>,
-    
+
     @InjectRepository(CourseSection)
     private readonly courseSectionRepository: Repository<CourseSection>,
-    
+
     private readonly transactionService: TransactionService,
     private readonly optimizedQueryService: OptimizedQueryService,
   ) {}
@@ -50,19 +50,24 @@ export class AcademicValidationService {
     studentId: string,
     courseSectionId: string,
     termId: string,
-    manager?: EntityManager
+    manager?: EntityManager,
   ): Promise<ValidationResult> {
     const results = await Promise.all([
       this.validatePrerequisites(studentId, courseSectionId, manager),
-      this.validateScheduleConflicts(studentId, courseSectionId, termId, manager),
+      this.validateScheduleConflicts(
+        studentId,
+        courseSectionId,
+        termId,
+        manager,
+      ),
       this.validateAcademicLimits(studentId, termId, manager),
-      this.validateCourseNotPassed(studentId, courseSectionId, manager)
+      this.validateCourseNotPassed(studentId, courseSectionId, manager),
     ]);
 
     const result: ValidationResult = {
-      isValid: results.every(r => r.isValid),
-      errors: results.flatMap(r => r.errors),
-      warnings: results.flatMap(r => r.warnings)
+      isValid: results.every((r) => r.isValid),
+      errors: results.flatMap((r) => r.errors),
+      warnings: results.flatMap((r) => r.warnings),
     };
 
     return result;
@@ -74,41 +79,42 @@ export class AcademicValidationService {
   async validatePrerequisites(
     studentId: string,
     courseSectionId: string,
-    manager?: EntityManager
+    manager?: EntityManager,
   ): Promise<ValidationResult> {
     const courseSection = await this.courseSectionRepository.findOne({
       where: { id: courseSectionId },
-      relations: ['course']
+      relations: ['course'],
     });
 
     if (!courseSection) {
       return {
         isValid: false,
         errors: ['Sección de curso no encontrada'],
-        warnings: []
+        warnings: [],
       };
     }
 
-    const prerequisites = await this.optimizedQueryService.getPrerequisitesByCourse(
-      courseSection.course.id
-    );
+    const prerequisites =
+      await this.optimizedQueryService.getPrerequisitesByCourse(
+        courseSection.course.id,
+      );
 
     if (prerequisites.length === 0) {
       return { isValid: true, errors: [], warnings: [] };
     }
 
-    const prerequisiteChecks = await this.optimizedQueryService.batchCheckPrerequisites(
-      studentId,
-      [courseSection.course.id]
-    );
+    const prerequisiteChecks =
+      await this.optimizedQueryService.batchCheckPrerequisites(studentId, [
+        courseSection.course.id,
+      ]);
 
     const courseCheck = prerequisiteChecks[0];
     const result: ValidationResult = {
       isValid: courseCheck.hasPrerequisites,
-      errors: courseCheck.missingPrerequisites.map(code => 
-        `Prerrequisito no cumplido: ${code}`
+      errors: courseCheck.missingPrerequisites.map(
+        (code) => `Prerrequisito no cumplido: ${code}`,
       ),
-      warnings: []
+      warnings: [],
     };
 
     return result;
@@ -121,26 +127,34 @@ export class AcademicValidationService {
     studentId: string,
     courseSectionId: string,
     termId: string,
-    manager?: EntityManager
+    manager?: EntityManager,
   ): Promise<ValidationResult> {
-
-    const newSchedules = await this.optimizedQueryService.getSchedulesBySections([courseSectionId]);
+    const newSchedules =
+      await this.optimizedQueryService.getSchedulesBySections([
+        courseSectionId,
+      ]);
 
     if (newSchedules.length === 0) {
       return { isValid: true, errors: [], warnings: [] };
     }
 
-    const enrolledDetails = await this.optimizedQueryService.getStudentEnrollmentDetails(
-      studentId,
-      termId
-    );
+    const enrolledDetails =
+      await this.optimizedQueryService.getStudentEnrollmentDetails(
+        studentId,
+        termId,
+      );
 
     if (enrolledDetails.length === 0) {
       return { isValid: true, errors: [], warnings: [] };
     }
 
-    const enrolledSectionIds = enrolledDetails.map(detail => detail.course_section.id);
-    const enrolledSchedules = await this.optimizedQueryService.getSchedulesBySections(enrolledSectionIds);
+    const enrolledSectionIds = enrolledDetails.map(
+      (detail) => detail.course_section.id,
+    );
+    const enrolledSchedules =
+      await this.optimizedQueryService.getSchedulesBySections(
+        enrolledSectionIds,
+      );
 
     const conflicts: ScheduleConflict[] = [];
 
@@ -150,7 +164,7 @@ export class AcademicValidationService {
           conflicts.push({
             existingCourseSection: `${existingSchedule.course_section.course.code} - Grupo ${existingSchedule.course_section.group_label}`,
             conflictingTime: `${newSchedule.time_start} - ${newSchedule.time_end}`,
-            day: newSchedule.weekday
+            day: newSchedule.weekday,
           });
         }
       }
@@ -158,10 +172,11 @@ export class AcademicValidationService {
 
     return {
       isValid: conflicts.length === 0,
-      errors: conflicts.map(c => 
-        `Conflicto de horario el ${c.day} de ${c.conflictingTime} con ${c.existingCourseSection}`
+      errors: conflicts.map(
+        (c) =>
+          `Conflicto de horario el ${c.day} de ${c.conflictingTime} con ${c.existingCourseSection}`,
       ),
-      warnings: []
+      warnings: [],
     };
   }
 
@@ -171,22 +186,30 @@ export class AcademicValidationService {
   async validateAcademicLimits(
     studentId: string,
     termId: string,
-    manager?: EntityManager
+    manager?: EntityManager,
   ): Promise<ValidationResult> {
-
-    const enrolledCount = await this.optimizedQueryService.getEnrolledCoursesCount(
-      studentId,
-      termId
-    );
+    const enrolledCount =
+      await this.optimizedQueryService.getEnrolledCoursesCount(
+        studentId,
+        termId,
+      );
 
     const MAX_COURSES_PER_TERM = 8;
 
     const result: ValidationResult = {
       isValid: enrolledCount < MAX_COURSES_PER_TERM,
-      errors: enrolledCount >= MAX_COURSES_PER_TERM ? 
-        [`Límite de materias excedido: ${enrolledCount}/${MAX_COURSES_PER_TERM}`] : [],
-      warnings: enrolledCount >= MAX_COURSES_PER_TERM - 1 ? 
-        [`Cerca del límite de materias: ${enrolledCount}/${MAX_COURSES_PER_TERM}`] : []
+      errors:
+        enrolledCount >= MAX_COURSES_PER_TERM
+          ? [
+              `Límite de materias excedido: ${enrolledCount}/${MAX_COURSES_PER_TERM}`,
+            ]
+          : [],
+      warnings:
+        enrolledCount >= MAX_COURSES_PER_TERM - 1
+          ? [
+              `Cerca del límite de materias: ${enrolledCount}/${MAX_COURSES_PER_TERM}`,
+            ]
+          : [],
     };
 
     return result;
@@ -198,32 +221,34 @@ export class AcademicValidationService {
   async validateCourseNotPassed(
     studentId: string,
     courseSectionId: string,
-    manager?: EntityManager
+    manager?: EntityManager,
   ): Promise<ValidationResult> {
-
     const courseSection = await this.courseSectionRepository.findOne({
       where: { id: courseSectionId },
-      relations: ['course']
+      relations: ['course'],
     });
 
     if (!courseSection) {
       return {
         isValid: false,
         errors: ['Sección de curso no encontrada'],
-        warnings: []
+        warnings: [],
       };
     }
 
     const hasPassed = await this.optimizedQueryService.hasStudentPassedCourse(
       studentId,
-      courseSection.course.id
+      courseSection.course.id,
     );
 
     return {
       isValid: !hasPassed,
-      errors: hasPassed ? 
-        [`Ya aprobó la materia: ${courseSection.course.code} - ${courseSection.course.name}`] : [],
-      warnings: []
+      errors: hasPassed
+        ? [
+            `Ya aprobó la materia: ${courseSection.course.code} - ${courseSection.course.name}`,
+          ]
+        : [],
+      warnings: [],
     };
   }
 
@@ -263,13 +288,17 @@ export class AcademicValidationService {
    */
   async checkPrerequisitesCompliance(
     studentId: string,
-    courseId: string
-  ): Promise<{ courseId: string; hasPrerequisites: boolean; missingPrerequisites: string[] }> {
-    const prerequisiteChecks = await this.optimizedQueryService.batchCheckPrerequisites(
-      studentId,
-      [courseId]
-    );
-    
+    courseId: string,
+  ): Promise<{
+    courseId: string;
+    hasPrerequisites: boolean;
+    missingPrerequisites: string[];
+  }> {
+    const prerequisiteChecks =
+      await this.optimizedQueryService.batchCheckPrerequisites(studentId, [
+        courseId,
+      ]);
+
     return prerequisiteChecks[0];
   }
 
@@ -279,19 +308,29 @@ export class AcademicValidationService {
   async getScheduleConflictsForStudent(
     studentId: string,
     termId: string,
-    proposedSchedules: { weekday: string; timeStart: string; timeEnd: string }[]
+    proposedSchedules: {
+      weekday: string;
+      timeStart: string;
+      timeEnd: string;
+    }[],
   ): Promise<ScheduleConflict[]> {
-    const enrolledDetails = await this.optimizedQueryService.getStudentEnrollmentDetails(
-      studentId,
-      termId
-    );
+    const enrolledDetails =
+      await this.optimizedQueryService.getStudentEnrollmentDetails(
+        studentId,
+        termId,
+      );
 
     if (enrolledDetails.length === 0) {
       return [];
     }
 
-    const enrolledSectionIds = enrolledDetails.map(detail => detail.course_section.id);
-    const enrolledSchedules = await this.optimizedQueryService.getSchedulesBySections(enrolledSectionIds);
+    const enrolledSectionIds = enrolledDetails.map(
+      (detail) => detail.course_section.id,
+    );
+    const enrolledSchedules =
+      await this.optimizedQueryService.getSchedulesBySections(
+        enrolledSectionIds,
+      );
 
     const conflicts: ScheduleConflict[] = [];
 
@@ -299,13 +338,15 @@ export class AcademicValidationService {
       for (const existingSchedule of enrolledSchedules) {
         if (
           proposedSchedule.weekday === existingSchedule.weekday &&
-          this.timeToMinutes(proposedSchedule.timeStart) < this.timeToMinutes(existingSchedule.time_end) &&
-          this.timeToMinutes(proposedSchedule.timeEnd) > this.timeToMinutes(existingSchedule.time_start)
+          this.timeToMinutes(proposedSchedule.timeStart) <
+            this.timeToMinutes(existingSchedule.time_end) &&
+          this.timeToMinutes(proposedSchedule.timeEnd) >
+            this.timeToMinutes(existingSchedule.time_start)
         ) {
           conflicts.push({
             existingCourseSection: `${existingSchedule.course_section.course.code} - Grupo ${existingSchedule.course_section.group_label}`,
             conflictingTime: `${proposedSchedule.timeStart} - ${proposedSchedule.timeEnd}`,
-            day: proposedSchedule.weekday
+            day: proposedSchedule.weekday,
           });
         }
       }

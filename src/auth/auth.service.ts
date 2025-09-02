@@ -34,7 +34,7 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly tokenCacheService: TokenCacheService,
   ) {}
-  
+
   async create(createUserDto: CreateUserDto) {
     const { email, password, role } = createUserDto;
 
@@ -45,7 +45,7 @@ export class AuthService {
       expectedStudent: 'STUDENT',
       expectedTeacher: 'TEACHER',
       isStudent: role === UserRole.STUDENT,
-      isTeacher: role === UserRole.TEACHER
+      isTeacher: role === UserRole.TEACHER,
     });
 
     const existingUser = await this.userRepository.findOne({
@@ -58,7 +58,6 @@ export class AuthService {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    
     if (role === UserRole.STUDENT) {
       console.log(' Creando STUDENT');
       const student = await this.createStudent(createUserDto, hashedPassword);
@@ -94,7 +93,14 @@ export class AuthService {
 
     const user = await this.userRepository.findOne({
       where: { email },
-      select: { email: true, password: true, id: true, first_name: true, last_name: true, user_type: true },
+      select: {
+        email: true,
+        password: true,
+        id: true,
+        first_name: true,
+        last_name: true,
+        user_type: true,
+      },
     });
 
     if (!user) {
@@ -158,30 +164,30 @@ export class AuthService {
    */
   private getJwtToken(user: User | Student | Teacher | Admin): string {
     const now = Math.floor(Date.now() / 1000);
-    const exp = now + (24 * 60 * 60); // 24 horas
+    const exp = now + 24 * 60 * 60; // 24 horas
     const jti = uuidv4();
-    
+
     const payload: JwtPayload = {
       id: user.id,
       email: user.email,
       first_name: user.first_name,
       last_name: user.last_name,
       phone: user.phone,
-      role: user.user_type, 
+      role: user.user_type,
       roles: [user.user_type],
       iat: now,
       exp: exp,
       jti: jti,
     };
-    
+
     if (user.user_type === 'STUDENT' && 'code' in user) {
-      payload.student_code = (user as Student).code;
+      payload.student_code = user.code;
     }
 
     if (user.user_type === 'TEACHER' && 'category' in user) {
-      payload.teacher_category = (user as Teacher).category;
+      payload.teacher_category = user.category;
     }
-    
+
     this.tokenCacheService.registerToken(payload);
 
     const token = this.jwtService.sign(payload);
@@ -191,16 +197,24 @@ export class AuthService {
   /**
    * Carga información completa del usuario basada en su tipo
    */
-  private async loadFullUserInfo(user: User): Promise<User | Student | Teacher | Admin> {
+  private async loadFullUserInfo(
+    user: User,
+  ): Promise<User | Student | Teacher | Admin> {
     switch (user.user_type) {
       case 'STUDENT':
-        const student = await this.studentRepository.findOne({ where: { id: user.id } });
+        const student = await this.studentRepository.findOne({
+          where: { id: user.id },
+        });
         return student || user;
       case 'TEACHER':
-        const teacher = await this.teacherRepository.findOne({ where: { id: user.id } });
+        const teacher = await this.teacherRepository.findOne({
+          where: { id: user.id },
+        });
         return teacher || user;
       case 'ADMIN':
-        const admin = await this.adminRepository.findOne({ where: { id: user.id } });
+        const admin = await this.adminRepository.findOne({
+          where: { id: user.id },
+        });
         return admin || user;
       default:
         return user;
@@ -222,27 +236,27 @@ export class AuthService {
   }
 
   private parseUser(user: User) {
-    
-    const { password, user_type, ...userWithoutPassword } = user as any;   
-    
-    return { 
+    const { password, user_type, ...userWithoutPassword } = user as any;
+
+    return {
       ...userWithoutPassword,
-      role: user_type 
+      role: user_type,
     };
   }
 
-  private async createStudent(createStudentDto: CreateUserDto, password: string) {
-    
-    await this.validateDataStudent(createStudentDto);    
+  private async createStudent(
+    createStudentDto: CreateUserDto,
+    password: string,
+  ) {
+    await this.validateDataStudent(createStudentDto);
     const student = this.studentRepository.create({
-      
       email: createStudentDto.email,
       password: password,
       first_name: createStudentDto.firstName,
       last_name: createStudentDto.lastName,
       phone: createStudentDto.phone,
-      user_type: createStudentDto.role, 
-      
+      user_type: createStudentDto.role,
+
       code: createStudentDto.studentCode,
       enrolled_at: new Date(),
       birth_date: createStudentDto.birthDate,
@@ -265,21 +279,23 @@ export class AuthService {
           `El estudiante con código: ${studentCode} ya existe`,
         );
       }
-    }      
+    }
     return true;
   }
 
-  private async createTeacher(createTeacherDto: CreateUserDto, password: string) {
-    
+  private async createTeacher(
+    createTeacherDto: CreateUserDto,
+    password: string,
+  ) {
     await this.validateDataTeacher(createTeacherDto);
-    
-    const teacher = this.teacherRepository.create({      
+
+    const teacher = this.teacherRepository.create({
       email: createTeacherDto.email,
       password: password,
       first_name: createTeacherDto.firstName,
       last_name: createTeacherDto.lastName,
       phone: createTeacherDto.phone,
-      user_type: createTeacherDto.role,       
+      user_type: createTeacherDto.role,
       category: createTeacherDto.department || 'Regular',
       workload: 'FullTime',
       contract_type: 'Permanent',
@@ -289,19 +305,18 @@ export class AuthService {
     return await this.teacherRepository.save(teacher);
   }
 
-  private async validateDataTeacher(createTeacherDto: CreateUserDto) {    
+  private async validateDataTeacher(createTeacherDto: CreateUserDto) {
     return true;
   }
 
   private async createAdmin(createAdminDto: CreateUserDto, password: string) {
     const admin = this.adminRepository.create({
-      
       email: createAdminDto.email,
       password: password,
       first_name: createAdminDto.firstName,
       last_name: createAdminDto.lastName,
       phone: createAdminDto.phone,
-      user_type: createAdminDto.role, 
+      user_type: createAdminDto.role,
     });
     return await this.adminRepository.save(admin);
   }

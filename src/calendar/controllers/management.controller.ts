@@ -27,7 +27,9 @@ export class ManagementController {
 
   @Get()
   @Auth(ValidRoles.ADMIN, ValidRoles.STUDENT, ValidRoles.TEACHER)
-  findAll(@Query() paginationDto: PaginationDto): Promise<PaginatedResultDto<AcademicYear>> {
+  findAll(
+    @Query() paginationDto: PaginationDto,
+  ): Promise<PaginatedResultDto<AcademicYear>> {
     return this.managementService.findAll(paginationDto);
   }
 

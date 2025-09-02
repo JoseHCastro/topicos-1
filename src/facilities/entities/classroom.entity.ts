@@ -1,4 +1,11 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  OneToMany,
+  CreateDateColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 import { Schedule } from '../../teaching/entities/schedule.entity';
 
 @Entity('classroom')
@@ -23,16 +30,16 @@ export class Classroom {
 
   @CreateDateColumn({
     type: 'timestamptz',
-    name: 'created_at'
+    name: 'created_at',
   })
   created_at: Date;
 
   @UpdateDateColumn({
     type: 'timestamptz',
-    name: 'updated_at'
+    name: 'updated_at',
   })
   updated_at: Date;
 
-  @OneToMany(() => Schedule, schedule => schedule.classroom)
+  @OneToMany(() => Schedule, (schedule) => schedule.classroom)
   schedules: Schedule[];
 }

@@ -1,4 +1,11 @@
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  OneToMany,
+  CreateDateColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 import { StudyPlan } from './study-plan.entity';
 
 @Entity('degree_program')
@@ -23,16 +30,16 @@ export class DegreeProgram {
 
   @CreateDateColumn({
     type: 'timestamptz',
-    name: 'created_at'
+    name: 'created_at',
   })
   created_at: Date;
 
   @UpdateDateColumn({
     type: 'timestamptz',
-    name: 'updated_at'
+    name: 'updated_at',
   })
   updated_at: Date;
 
-  @OneToMany(() => StudyPlan, studyPlan => studyPlan.degree_program)
+  @OneToMany(() => StudyPlan, (studyPlan) => studyPlan.degree_program)
   study_plans: StudyPlan[];
 }

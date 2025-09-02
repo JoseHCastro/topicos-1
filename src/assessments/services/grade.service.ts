@@ -3,7 +3,11 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Grade } from '../entities';
 import { CreateGradeDto, UpdateGradeDto } from '../dto';
-import { PaginationDto, PaginatedResultDto, PaginationService } from '../../common';
+import {
+  PaginationDto,
+  PaginatedResultDto,
+  PaginationService,
+} from '../../common';
 
 @Injectable()
 export class GradeService {
@@ -18,13 +22,15 @@ export class GradeService {
     return await this.gradeRepository.save(grade);
   }
 
-  async findAll(paginationDto: PaginationDto): Promise<PaginatedResultDto<Grade>> {
+  async findAll(
+    paginationDto: PaginationDto,
+  ): Promise<PaginatedResultDto<Grade>> {
     return this.paginationService.paginateRepository(
       this.gradeRepository,
       paginationDto,
       {
         relations: ['course_section', 'student'],
-      }
+      },
     );
   }
 
@@ -39,25 +45,31 @@ export class GradeService {
     return grade;
   }
 
-  async findByStudent(studentId: string, paginationDto: PaginationDto): Promise<PaginatedResultDto<Grade>> {
+  async findByStudent(
+    studentId: string,
+    paginationDto: PaginationDto,
+  ): Promise<PaginatedResultDto<Grade>> {
     return this.paginationService.paginateRepository(
       this.gradeRepository,
       paginationDto,
       {
         where: { student_id: studentId },
         relations: ['course_section', 'student'],
-      }
+      },
     );
   }
 
-  async findByCourseSection(courseSectionId: string, paginationDto: PaginationDto): Promise<PaginatedResultDto<Grade>> {
+  async findByCourseSection(
+    courseSectionId: string,
+    paginationDto: PaginationDto,
+  ): Promise<PaginatedResultDto<Grade>> {
     return this.paginationService.paginateRepository(
       this.gradeRepository,
       paginationDto,
       {
         where: { course_section_id: courseSectionId },
         relations: ['course_section', 'student'],
-      }
+      },
     );
   }
 

@@ -21,7 +21,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest();
-    
+
     let status: number;
     let errorResponse: any;
 
@@ -58,19 +58,19 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     } else if (exception instanceof HttpException) {
       status = exception.getStatus();
       const exceptionResponse = exception.getResponse();
-      
+
       errorResponse = {
         success: false,
-        error: typeof exceptionResponse === 'object' 
-          ? (exceptionResponse as any).error || 'HTTP_EXCEPTION'
-          : 'HTTP_EXCEPTION',
+        error:
+          typeof exceptionResponse === 'object'
+            ? (exceptionResponse as any).error || 'HTTP_EXCEPTION'
+            : 'HTTP_EXCEPTION',
         message: exception.message,
         details: exceptionResponse,
         timestamp: new Date().toISOString(),
         path: request.url,
       };
     } else {
-      
       status = HttpStatus.INTERNAL_SERVER_ERROR;
       errorResponse = {
         success: false,
@@ -79,13 +79,13 @@ export class GlobalExceptionFilter implements ExceptionFilter {
         timestamp: new Date().toISOString(),
         path: request.url,
       };
-      
+
       this.logger.error(
         `Error interno: ${exception}`,
         exception instanceof Error ? exception.stack : 'No stack trace',
       );
     }
-    
+
     if (status >= 500) {
       this.logger.error(
         `HTTP ${status} Error: ${JSON.stringify(errorResponse)}`,

@@ -12,7 +12,7 @@ import { META_ROLES } from '../decorators/role-protected.decorator';
 
 @Injectable()
 export class UserRoleGuard implements CanActivate {
-  constructor(private readonly reflector: Reflector) { }
+  constructor(private readonly reflector: Reflector) {}
 
   canActivate(
     context: ExecutionContext,
@@ -41,7 +41,7 @@ export class UserRoleGuard implements CanActivate {
       return true;
     }
 
-    if (user.roles && user.roles.some(role => validRoles.includes(role))) {
+    if (user.roles && user.roles.some((role) => validRoles.includes(role))) {
       return true;
     }
 

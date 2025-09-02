@@ -23,7 +23,8 @@ export class QuotaExceededException extends HttpException {
 
 export class DuplicateEnrollmentException extends HttpException {
   constructor(enrollmentId: string, courseSectionId: string, message?: string) {
-    const defaultMessage = 'El estudiante ya está inscrito en esta sección de curso';
+    const defaultMessage =
+      'El estudiante ya está inscrito en esta sección de curso';
     super(
       {
         message: message || defaultMessage,

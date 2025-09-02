@@ -29,12 +29,12 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     if (!id) {
       throw new UnauthorizedException('Token payload is invalid');
     }
-    
+
     const now = Math.floor(Date.now() / 1000);
     if (exp < now) {
       throw new UnauthorizedException('Token expired');
     }
-    
+
     if (!jti) {
       throw new UnauthorizedException('Invalid token format - missing JTI');
     }
@@ -42,7 +42,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     if (this.tokenCacheService.isTokenRevoked(jti)) {
       throw new UnauthorizedException('Token has been revoked');
     }
-    
+
     return payload;
   }
 }

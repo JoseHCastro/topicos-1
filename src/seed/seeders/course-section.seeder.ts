@@ -24,11 +24,11 @@ export class CourseSectionSeeder implements SeederInterface {
     console.log('Seeding course sections...');
 
     const courses = await this.courseRepository.find();
-    const currentTerm = await this.termRepository.findOne({ 
-      where: { name: '2025-I' } 
+    const currentTerm = await this.termRepository.findOne({
+      where: { name: '2025-I' },
     });
-    const teacher = await this.teacherRepository.findOne({ 
-      where: { email: 'docente@uagrm.edu.bo' }
+    const teacher = await this.teacherRepository.findOne({
+      where: { email: 'docente@uagrm.edu.bo' },
     });
 
     if (!currentTerm || !teacher || courses.length === 0) {
@@ -36,12 +36,12 @@ export class CourseSectionSeeder implements SeederInterface {
       return;
     }
 
-    const firstSemesterCourses = courses.filter(course => 
-      ['UNI100', 'FIS100', 'INF110', 'INF119', 'MAT101'].includes(course.code)
+    const firstSemesterCourses = courses.filter((course) =>
+      ['UNI100', 'FIS100', 'INF110', 'INF119', 'MAT101'].includes(course.code),
     );
 
     const courseSectionsData = [
-      ...firstSemesterCourses.map(course => ({
+      ...firstSemesterCourses.map((course) => ({
         course_id: course.id,
         term_id: currentTerm.id,
         teacher_id: teacher.id,
@@ -52,7 +52,7 @@ export class CourseSectionSeeder implements SeederInterface {
         quota_available: 35,
       })),
 
-      ...firstSemesterCourses.map(course => ({
+      ...firstSemesterCourses.map((course) => ({
         course_id: course.id,
         term_id: currentTerm.id,
         teacher_id: teacher.id,
@@ -64,12 +64,12 @@ export class CourseSectionSeeder implements SeederInterface {
       })),
     ];
 
-    const advancedCourses = courses.filter(course => 
-      ['INF120', 'MAT102', 'INF210', 'INF220', 'INF312'].includes(course.code)
+    const advancedCourses = courses.filter((course) =>
+      ['INF120', 'MAT102', 'INF210', 'INF220', 'INF312'].includes(course.code),
     );
 
     courseSectionsData.push(
-      ...advancedCourses.map(course => ({
+      ...advancedCourses.map((course) => ({
         course_id: course.id,
         term_id: currentTerm.id,
         teacher_id: teacher.id,
@@ -78,7 +78,7 @@ export class CourseSectionSeeder implements SeederInterface {
         shift: 'Mañana',
         quota_max: 30,
         quota_available: 25,
-      }))
+      })),
     );
 
     for (const sectionData of courseSectionsData) {
@@ -93,12 +93,16 @@ export class CourseSectionSeeder implements SeederInterface {
       if (!existingSection) {
         const courseSection = this.courseSectionRepository.create(sectionData);
         await this.courseSectionRepository.save(courseSection);
-        
-        const course = courses.find(c => c.id === sectionData.course_id);
-        console.log(`Created course section: ${course?.code}-${sectionData.group_label} (${sectionData.shift})`);
+
+        const course = courses.find((c) => c.id === sectionData.course_id);
+        console.log(
+          `Created course section: ${course?.code}-${sectionData.group_label} (${sectionData.shift})`,
+        );
       } else {
-        const course = courses.find(c => c.id === sectionData.course_id);
-        console.log(`Course section already exists: ${course?.code}-${sectionData.group_label}`);
+        const course = courses.find((c) => c.id === sectionData.course_id);
+        console.log(
+          `Course section already exists: ${course?.code}-${sectionData.group_label}`,
+        );
       }
     }
 

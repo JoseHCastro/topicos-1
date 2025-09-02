@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📋 Queue System Demo - Fase 2</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 8px;
+            padding: 24px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        h1 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+        }
+        
+        .demo-section {
+            margin-bottom: 30px;
+        }
+        
+        .demo-section h3 {
+            color: #34495e;
+            margin-bottom: 15px;
+        }
+        
+        button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+        }
+        
+        button:hover {
+            background: #2980b9;
+        }
+        
+        button:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+        }
+        
+        .critical { background: #e74c3c; }
+        .critical:hover { background: #c0392b; }
+        
+        .standard { background: #f39c12; }
+        .standard:hover { background: #d68910; }
+        
+        .background { background: #27ae60; }
+        .background:hover { background: #229954; }
+        
+        .log {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        
+        .status-waiting { background: #f39c12; color: white; }
+        .status-processing { background: #3498db; color: white; }
+        .status-completed { background: #27ae60; color: white; }
+        .status-failed { background: #e74c3c; color: white; }
+        
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #ecf0f1;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #3498db, #2ecc71);
+            transition: width 0.3s ease;
+            border-radius: 10px;
+        }
+        
+        .job-card {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 10px 0;
+            background: #f9f9f9;
+        }
+        
+        .job-card.completed {
+            border-color: #27ae60;
+            background: #d5f5d5;
+        }
+        
+        .job-card.failed {
+            border-color: #e74c3c;
+            background: #fde2e2;
+        }
+        
+        .json-output {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 10px;
+            font-family: monospace;
+            font-size: 12px;
+            white-space: pre-wrap;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📋 Sistema de Colas Universal - Demo Fase 2</h1>
+        <p><strong>Prueba el sistema de polling automático</strong> - Los requests van a cola y el cliente hace polling automáticamente para obtener resultados.</p>
+    </div>
+
+    <div class="container demo-section">
+        <h3>🚀 Pruebas de Endpoints por Cola</h3>
+        <p>Selecciona un tipo de operación para probar el sistema de colas:</p>
+        
+        <div>
+            <button class="critical" onclick="testCriticalEndpoint()">🔴 Critical: Auth Login</button>
+            <button class="critical" onclick="testEnrollment()">🔴 Critical: Enrollment</button>
+            <button class="standard" onclick="testStandardEndpoint()">🟡 Standard: Get Courses</button>
+            <button class="standard" onclick="testStudents()">🟡 Standard: Get Students</button>
+            <button class="background" onclick="testBackgroundEndpoint()">🟢 Background: Generate Report</button>
+        </div>
+    </div>
+
+    <div class="container demo-section">
+        <h3>📊 Jobs Activos</h3>
+        <div id="active-jobs">
+            <p><em>No hay jobs activos...</em></p>
+        </div>
+    </div>
+
+    <div class="container demo-section">
+        <h3>📈 Estado de las Colas</h3>
+        <button onclick="refreshQueueStats()">🔄 Actualizar Estadísticas</button>
+        <div id="queue-stats">
+            <p><em>Haz clic en "Actualizar Estadísticas" para ver el estado...</em></p>
+        </div>
+    </div>
+
+    <div class="container">
+        <h3>📋 Log de Actividad</h3>
+        <button onclick="clearLog()">🗑️ Limpiar Log</button>
+        <div id="log" class="log">Sistema iniciado...\n</div>
+    </div>
+
+    <script src="/queue-demo/client.js"></script>
+    <script>
+        // Variables globales
+        let activeJobs = new Map();
+        let jobCounter = 1;
+
+        // Configurar cliente con logging
+        const originalConsoleLog = console.log;
+        console.log = function(...args) {
+            const timestamp = new Date().toLocaleTimeString();
+            const message = args.join(' ');
+            document.getElementById('log').textContent += `[${timestamp}] ${message}\n`;
+            document.getElementById('log').scrollTop = document.getElementById('log').scrollHeight;
+            originalConsoleLog.apply(console, args);
+        };
+
+        // Funciones de prueba para diferentes endpoints
+        async function testCriticalEndpoint() {
+            const loginData = {
+                email: 'usuario@test.com',
+                password: 'password123'
+            };
+
+            try {
+                await testEndpoint('POST', '/auth/login', loginData, 'critical');
+            } catch (error) {
+                console.log(`❌ Error in critical endpoint: ${error.message}`);
+            }
+        }
+
+        async function testEnrollment() {
+            const enrollmentData = {
+                studentId: 'student_123',
+                courseId: 'course_456',
+                semester: '2024-1'
+            };
+
+            try {
+                await testEndpoint('POST', '/atomic-enrollment/enroll', enrollmentData, 'critical');
+            } catch (error) {
+                console.log(`❌ Error in enrollment: ${error.message}`);
+            }
+        }
+
+        async function testStandardEndpoint() {
+            try {
+                await testEndpoint('GET', '/courses', null, 'standard');
+            } catch (error) {
+                console.log(`❌ Error in standard endpoint: ${error.message}`);
+            }
+        }
+
+        async function testStudents() {
+            try {
+                await testEndpoint('GET', '/students?page=1&limit=10', null, 'standard');
+            } catch (error) {
+                console.log(`❌ Error in students endpoint: ${error.message}`);
+            }
+        }
+
+        async function testBackgroundEndpoint() {
+            const reportData = {
+                type: 'enrollment_summary',
+                semester: '2024-1',
+                format: 'pdf'
+            };
+
+            try {
+                await testEndpoint('POST', '/reports/generate', reportData, 'background');
+            } catch (error) {
+                console.log(`❌ Error in background endpoint: ${error.message}`);
+            }
+        }
+
+        // Función genérica para probar endpoints
+        async function testEndpoint(method, url, data, queueType) {
+            const jobNumber = jobCounter++;
+            const jobDisplayName = `Job #${jobNumber}: ${method} ${url}`;
+
+            console.log(`🚀 Iniciando ${jobDisplayName} (${queueType})`);
+
+            // Deshabilitar botones durante la prueba
+            disableButtons(true);
+
+            try {
+                // Hacer request con polling automático
+                const result = await queueClient.queueRequest(url, {
+                    method,
+                    body: data ? JSON.stringify(data) : undefined,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer test_token_123'
+                    }
+                }, {
+                    onUpdate: (status) => {
+                        updateJobDisplay(jobDisplayName, status);
+                    },
+                    onProgress: (progress) => {
+                        console.log(`📊 ${jobDisplayName} - Progreso: ${progress}%`);
+                    }
+                });
+
+                console.log(`✅ ${jobDisplayName} completado exitosamente!`);
+                console.log('Resultado:', JSON.stringify(result, null, 2));
+                
+                // Actualizar display final
+                updateJobDisplay(jobDisplayName, { 
+                    status: 'completed', 
+                    result: result 
+                });
+
+            } catch (error) {
+                console.log(`❌ ${jobDisplayName} falló: ${error.message}`);
+                updateJobDisplay(jobDisplayName, { 
+                    status: 'failed', 
+                    error: error.message 
+                });
+            } finally {
+                // Re-habilitar botones
+                setTimeout(() => {
+                    disableButtons(false);
+                    // Remover job del display después de 10 segundos
+                    setTimeout(() => removeJobDisplay(jobDisplayName), 10000);
+                }, 1000);
+            }
+        }
+
+        // Función para actualizar el display de jobs
+        function updateJobDisplay(jobName, status) {
+            const container = document.getElementById('active-jobs');
+            let jobCard = document.getElementById(`job-${jobName.replace(/[^a-zA-Z0-9]/g, '_')}`);
+
+            if (!jobCard) {
+                jobCard = document.createElement('div');
+                jobCard.id = `job-${jobName.replace(/[^a-zA-Z0-9]/g, '_')}`;
+                jobCard.className = 'job-card';
+                container.appendChild(jobCard);
+                
+                // Limpiar mensaje de "no hay jobs"
+                const emptyMessage = container.querySelector('p em');
+                if (emptyMessage) {
+                    emptyMessage.remove();
+                }
+            }
+
+            // Actualizar contenido
+            const statusClass = `status-${status.status}`;
+            const cardClass = status.status === 'completed' ? 'completed' : 
+                             status.status === 'failed' ? 'failed' : '';
+            
+            jobCard.className = `job-card ${cardClass}`;
+            
+            let progressBar = '';
+            if (status.progress !== undefined && status.status === 'processing') {
+                progressBar = `
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${status.progress}%"></div>
+                    </div>
+                `;
+            }
+
+            let resultDisplay = '';
+            if (status.result) {
+                resultDisplay = `
+                    <div style="margin-top: 10px;">
+                        <strong>Resultado:</strong>
+                        <div class="json-output">${JSON.stringify(status.result, null, 2)}</div>
+                    </div>
+                `;
+            }
+
+            if (status.error) {
+                resultDisplay = `
+                    <div style="margin-top: 10px;">
+                        <strong>Error:</strong>
+                        <div class="json-output" style="color: #e74c3c;">${status.error}</div>
+                    </div>
+                `;
+            }
+
+            jobCard.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <strong>${jobName}</strong>
+                    <span class="status-indicator ${statusClass}">${status.status}</span>
+                </div>
+                ${progressBar}
+                <div style="font-size: 12px; color: #666; margin-top: 5px;">
+                    Job ID: ${status.jobId || 'N/A'}
+                </div>
+                ${resultDisplay}
+            `;
+        }
+
+        // Función para remover job del display
+        function removeJobDisplay(jobName) {
+            const jobCard = document.getElementById(`job-${jobName.replace(/[^a-zA-Z0-9]/g, '_')}`);
+            if (jobCard) {
+                jobCard.remove();
+                
+                // Si no quedan jobs, mostrar mensaje
+                const container = document.getElementById('active-jobs');
+                if (container.children.length === 0) {
+                    container.innerHTML = '<p><em>No hay jobs activos...</em></p>';
+                }
+            }
+        }
+
+        // Función para deshabilitar/habilitar botones
+        function disableButtons(disabled) {
+            const buttons = document.querySelectorAll('button');
+            buttons.forEach(button => {
+                if (!button.textContent.includes('Limpiar') && !button.textContent.includes('Actualizar')) {
+                    button.disabled = disabled;
+                }
+            });
+        }
+
+        // Función para actualizar estadísticas de colas
+        async function refreshQueueStats() {
+            try {
+                console.log('📊 Obteniendo estadísticas de colas...');
+                const stats = await queueClient.getQueuesStats();
+                
+                const container = document.getElementById('queue-stats');
+                container.innerHTML = `
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-top: 15px;">
+                        <div style="background: #fff3cd; padding: 15px; border-radius: 5px; border-left: 4px solid #ffc107;">
+                            <h4 style="margin: 0; color: #856404;">🔴 Cola Critical</h4>
+                            <p style="margin: 5px 0;"><strong>Jobs esperando:</strong> ${stats.queues.critical.waiting}</p>
+                            <p style="margin: 5px 0;"><strong>Timeout:</strong> ${stats.queues.critical.timeout}s</p>
+                        </div>
+                        
+                        <div style="background: #d4edda; padding: 15px; border-radius: 5px; border-left: 4px solid #28a745;">
+                            <h4 style="margin: 0; color: #155724;">🟡 Cola Standard</h4>
+                            <p style="margin: 5px 0;"><strong>Jobs esperando:</strong> ${stats.queues.standard.waiting}</p>
+                            <p style="margin: 5px 0;"><strong>Timeout:</strong> ${stats.queues.standard.timeout}s</p>
+                        </div>
+                        
+                        <div style="background: #cff4fc; padding: 15px; border-radius: 5px; border-left: 4px solid #0dcaf0;">
+                            <h4 style="margin: 0; color: #055160;">🟢 Cola Background</h4>
+                            <p style="margin: 5px 0;"><strong>Jobs esperando:</strong> ${stats.queues.background.waiting}</p>
+                            <p style="margin: 5px 0;"><strong>Timeout:</strong> ${stats.queues.background.timeout}s</p>
+                        </div>
+                    </div>
+                    <div style="margin-top: 15px; font-size: 12px; color: #666;">
+                        Última actualización: ${new Date().toLocaleString()}
+                    </div>
+                `;
+                
+            } catch (error) {
+                console.log(`❌ Error obteniendo estadísticas: ${error.message}`);
+                document.getElementById('queue-stats').innerHTML = `
+                    <div style="color: #e74c3c; padding: 10px; background: #fde2e2; border-radius: 5px;">
+                        ❌ Error obteniendo estadísticas: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        // Función para limpiar log
+        function clearLog() {
+            document.getElementById('log').textContent = 'Sistema iniciado...\n';
+        }
+
+        // Cargar estadísticas iniciales
+        refreshQueueStats();
+
+        // Auto-refresh de estadísticas cada 30 segundos
+        setInterval(refreshQueueStats, 30000);
+
+        console.log('🎯 Demo interface cargada - ¡Prueba el sistema de colas!');
+    </script>
+</body>
+</html>

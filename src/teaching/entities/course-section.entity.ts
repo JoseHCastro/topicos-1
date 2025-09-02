@@ -1,4 +1,14 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, JoinColumn, CreateDateColumn, UpdateDateColumn, Index } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  OneToMany,
+  JoinColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+  Index,
+} from 'typeorm';
 import { Course } from '../../programs/entities/course.entity';
 import { Term } from '../../calendar/entities/term.entity';
 import { Teacher } from '../../auth/entities/teacher.entity';
@@ -26,7 +36,7 @@ export class CourseSection {
   teacher_id: string;
 
   @Column('varchar', { length: 10 })
-  group_label: string; 
+  group_label: string;
 
   @Column('varchar', { length: 20 })
   modality: string;
@@ -42,13 +52,13 @@ export class CourseSection {
 
   @CreateDateColumn({
     type: 'timestamptz',
-    name: 'created_at'
+    name: 'created_at',
   })
   created_at: Date;
 
   @UpdateDateColumn({
     type: 'timestamptz',
-    name: 'updated_at'
+    name: 'updated_at',
   })
   updated_at: Date;
 
@@ -64,12 +74,14 @@ export class CourseSection {
   @JoinColumn({ name: 'teacher_id' })
   teacher: Teacher;
 
-  @OneToMany(() => Schedule, schedule => schedule.course_section, { cascade: true })
+  @OneToMany(() => Schedule, (schedule) => schedule.course_section, {
+    cascade: true,
+  })
   schedules: Schedule[];
 
-  @OneToMany(() => Grade, grade => grade.course_section)
+  @OneToMany(() => Grade, (grade) => grade.course_section)
   grades: Grade[];
 
-  @OneToMany(() => EnrollmentDetail, detail => detail.course_section)
+  @OneToMany(() => EnrollmentDetail, (detail) => detail.course_section)
   enrollment_details: EnrollmentDetail[];
 }

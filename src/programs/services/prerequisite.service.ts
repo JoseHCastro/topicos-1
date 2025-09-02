@@ -3,7 +3,11 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Prerequisite } from '../entities';
 import { CreatePrerequisiteDto, UpdatePrerequisiteDto } from '../dto';
-import { PaginationDto, PaginatedResultDto, PaginationService } from '../../common';
+import {
+  PaginationDto,
+  PaginatedResultDto,
+  PaginationService,
+} from '../../common';
 
 @Injectable()
 export class PrerequisiteService {
@@ -14,18 +18,22 @@ export class PrerequisiteService {
   ) {}
 
   async create(createPrerequisiteDto: CreatePrerequisiteDto) {
-    const prerequisite = this.prerequisiteRepository.create(createPrerequisiteDto);
+    const prerequisite = this.prerequisiteRepository.create(
+      createPrerequisiteDto,
+    );
     return await this.prerequisiteRepository.save(prerequisite);
   }
 
-  async findAll(paginationDto: PaginationDto): Promise<PaginatedResultDto<Prerequisite>> {
+  async findAll(
+    paginationDto: PaginationDto,
+  ): Promise<PaginatedResultDto<Prerequisite>> {
     return await this.paginationService.paginateRepository<Prerequisite>(
       this.prerequisiteRepository,
       paginationDto,
       {
         relations: ['main_course', 'required_course'],
-        order: { created_at: 'DESC' }
-      }
+        order: { created_at: 'DESC' },
+      },
     );
   }
 

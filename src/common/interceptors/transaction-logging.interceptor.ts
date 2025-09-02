@@ -17,23 +17,19 @@ export class TransactionLoggingInterceptor implements NestInterceptor {
     const { method, url, body } = request;
     const startTime = Date.now();
 
-    
     if (url.includes('atomic-enrollment') || url.includes('enroll')) {
-      this.logger.log(
-        `Iniciando transacción: ${method} ${url}`,
-        {
-          timestamp: new Date().toISOString(),
-          method,
-          url,
-          bodyKeys: Object.keys(body || {}),
-        }
-      );
+      this.logger.log(`Iniciando transacción: ${method} ${url}`, {
+        timestamp: new Date().toISOString(),
+        method,
+        url,
+        bodyKeys: Object.keys(body || {}),
+      });
     }
 
     return next.handle().pipe(
       tap((response) => {
         const duration = Date.now() - startTime;
-        
+
         if (url.includes('atomic-enrollment') || url.includes('enroll')) {
           this.logger.log(
             `Transacción exitosa: ${method} ${url} - ${duration}ms`,
@@ -43,13 +39,13 @@ export class TransactionLoggingInterceptor implements NestInterceptor {
               url,
               duration,
               success: response?.success || true,
-            }
+            },
           );
         }
       }),
       catchError((error) => {
         const duration = Date.now() - startTime;
-        
+
         if (url.includes('atomic-enrollment') || url.includes('enroll')) {
           this.logger.error(
             ` Transacción fallida: ${method} ${url} - ${duration}ms`,
@@ -60,12 +56,12 @@ export class TransactionLoggingInterceptor implements NestInterceptor {
               duration,
               error: error.message,
               statusCode: error.status,
-            }
+            },
           );
         }
-        
+
         throw error;
-      })
+      }),
     );
   }
 }

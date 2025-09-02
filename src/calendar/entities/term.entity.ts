@@ -1,4 +1,13 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, JoinColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  OneToMany,
+  JoinColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+} from 'typeorm';
 import { AcademicYear } from './academic-year.entity';
 import { CourseSection } from '../../teaching/entities/course-section.entity';
 import { Enrollment } from '../../enrollments/entities/enrollment.entity';
@@ -25,23 +34,23 @@ export class Term {
 
   @CreateDateColumn({
     type: 'timestamptz',
-    name: 'created_at'
+    name: 'created_at',
   })
   created_at: Date;
 
   @UpdateDateColumn({
     type: 'timestamptz',
-    name: 'updated_at'
+    name: 'updated_at',
   })
   updated_at: Date;
 
-  @ManyToOne(() => AcademicYear, academicYear => academicYear.terms)
+  @ManyToOne(() => AcademicYear, (academicYear) => academicYear.terms)
   @JoinColumn({ name: 'academic_year_id' })
   academic_year: AcademicYear;
 
-  @OneToMany(() => CourseSection, courseSection => courseSection.term)
+  @OneToMany(() => CourseSection, (courseSection) => courseSection.term)
   course_sections: CourseSection[];
 
-  @OneToMany(() => Enrollment, enrollment => enrollment.term)
+  @OneToMany(() => Enrollment, (enrollment) => enrollment.term)
   enrollments: Enrollment[];
 }

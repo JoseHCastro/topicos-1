@@ -82,9 +82,13 @@ export class ScheduleSeeder implements SeederInterface {
           });
 
           await this.scheduleRepository.save(schedule);
-          console.log(`Created schedule: ${courseSection.course?.code}-${courseSection.group_label} ${scheduleData.weekday} ${scheduleData.time_start}-${scheduleData.time_end} in ${classroom.code}`);
+          console.log(
+            `Created schedule: ${courseSection.course?.code}-${courseSection.group_label} ${scheduleData.weekday} ${scheduleData.time_start}-${scheduleData.time_end} in ${classroom.code}`,
+          );
         } else {
-          console.log(`Schedule already exists: ${courseSection.course?.code}-${courseSection.group_label} ${scheduleData.weekday}`);
+          console.log(
+            `Schedule already exists: ${courseSection.course?.code}-${courseSection.group_label} ${scheduleData.weekday}`,
+          );
         }
       }
     }

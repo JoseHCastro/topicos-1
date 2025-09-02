@@ -29,8 +29,10 @@ export class EnrollmentDetailSeeder implements SeederInterface {
       relations: ['course'],
     });
 
-    const firstSemesterSections = courseSections.filter(section => 
-      ['UNI100', 'FIS100', 'INF110', 'INF119', 'MAT101'].includes(section.course?.code || '')
+    const firstSemesterSections = courseSections.filter((section) =>
+      ['UNI100', 'FIS100', 'INF110', 'INF119', 'MAT101'].includes(
+        section.course?.code || '',
+      ),
     );
 
     if (enrollments.length === 0 || firstSemesterSections.length === 0) {
@@ -40,8 +42,10 @@ export class EnrollmentDetailSeeder implements SeederInterface {
 
     for (const enrollment of enrollments) {
       // Inscribir en materias de primer semestre (grupo A por defecto)
-      const groupASections = firstSemesterSections.filter(section => section.group_label === 'A');
-      
+      const groupASections = firstSemesterSections.filter(
+        (section) => section.group_label === 'A',
+      );
+
       for (const courseSection of groupASections) {
         const existingDetail = await this.enrollmentDetailRepository.findOne({
           where: {
@@ -61,14 +65,22 @@ export class EnrollmentDetailSeeder implements SeederInterface {
             remark: `Inscrito en ${courseSection.course?.name}`,
           };
 
-          const savedDetail = await this.enrollmentDetailRepository.save(enrollmentDetail);
-          
-          courseSection.quota_available = Math.max(0, courseSection.quota_available - 1);
+          const savedDetail =
+            await this.enrollmentDetailRepository.save(enrollmentDetail);
+
+          courseSection.quota_available = Math.max(
+            0,
+            courseSection.quota_available - 1,
+          );
           await this.courseSectionRepository.save(courseSection);
 
-          console.log(`Created enrollment detail: ${enrollment.student?.code} -> ${courseSection.course?.code}-${courseSection.group_label}`);
+          console.log(
+            `Created enrollment detail: ${enrollment.student?.code} -> ${courseSection.course?.code}-${courseSection.group_label}`,
+          );
         } else {
-          console.log(`Enrollment detail already exists: ${enrollment.student?.code} -> ${courseSection.course?.code}-${courseSection.group_label}`);
+          console.log(
+            `Enrollment detail already exists: ${enrollment.student?.code} -> ${courseSection.course?.code}-${courseSection.group_label}`,
+          );
         }
       }
     }
@@ -80,7 +92,7 @@ export class EnrollmentDetailSeeder implements SeederInterface {
 
     for (const enrollment of previousEnrollments.slice(0, 2)) {
       const sampleSections = firstSemesterSections.slice(0, 3);
-      
+
       for (const courseSection of sampleSections) {
         const existingDetail = await this.enrollmentDetailRepository.findOne({
           where: {
@@ -102,7 +114,9 @@ export class EnrollmentDetailSeeder implements SeederInterface {
           };
 
           await this.enrollmentDetailRepository.save(enrollmentDetail);
-          console.log(`Created completed enrollment detail: ${enrollment.student?.code} -> ${courseSection.course?.code} (${finalGrade})`);
+          console.log(
+            `Created completed enrollment detail: ${enrollment.student?.code} -> ${courseSection.course?.code} (${finalGrade})`,
+          );
         }
       }
     }

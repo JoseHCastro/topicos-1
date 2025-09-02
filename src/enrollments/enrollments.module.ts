@@ -6,19 +6,19 @@ import { CourseSection } from '../teaching/entities';
 import { Prerequisite } from '../programs/entities';
 import { Schedule } from '../teaching/entities';
 import { Grade } from '../assessments/entities';
-import { 
-  EnrollmentService, 
-  EnrollmentDetailService, 
-  AtomicEnrollmentService, 
+import {
+  EnrollmentService,
+  EnrollmentDetailService,
+  AtomicEnrollmentService,
   AcademicValidationService,
-  OptimizedQueryService
+  OptimizedQueryService,
 } from './services';
-import { 
-  EnrollmentController, 
-  EnrollmentDetailController, 
-  AtomicEnrollmentController, 
+import {
+  EnrollmentController,
+  EnrollmentDetailController,
+  AtomicEnrollmentController,
   AcademicValidationController,
-  DatabasePerformanceController
+  DatabasePerformanceController,
 } from './controllers';
 import { AuthModule } from '../auth/auth.module';
 import { CommonModule } from '../common/common.module';
@@ -27,39 +27,39 @@ import { IdempotencyService } from '../common/services';
 @Module({
   imports: [
     TypeOrmModule.forFeature([
-      Enrollment, 
-      EnrollmentDetail, 
+      Enrollment,
+      EnrollmentDetail,
       CourseSection,
       Prerequisite,
       Schedule,
-      Grade
+      Grade,
     ]),
     PassportModule.register({ defaultStrategy: 'jwt' }),
     AuthModule,
     CommonModule,
   ],
   controllers: [
-    EnrollmentController, 
-    EnrollmentDetailController, 
-    AtomicEnrollmentController, 
+    EnrollmentController,
+    EnrollmentDetailController,
+    AtomicEnrollmentController,
     AcademicValidationController,
-    DatabasePerformanceController
+    DatabasePerformanceController,
   ],
   providers: [
-    EnrollmentService, 
-    EnrollmentDetailService, 
-    AtomicEnrollmentService, 
+    EnrollmentService,
+    EnrollmentDetailService,
+    AtomicEnrollmentService,
     AcademicValidationService,
     OptimizedQueryService,
-    IdempotencyService
+    IdempotencyService,
   ],
   exports: [
-    TypeOrmModule, 
-    EnrollmentService, 
-    EnrollmentDetailService, 
-    AtomicEnrollmentService, 
+    TypeOrmModule,
+    EnrollmentService,
+    EnrollmentDetailService,
+    AtomicEnrollmentService,
     AcademicValidationService,
-    OptimizedQueryService
+    OptimizedQueryService,
   ],
 })
 export class EnrollmentsModule {}

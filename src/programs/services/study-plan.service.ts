@@ -3,7 +3,11 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { StudyPlan } from '../entities';
 import { CreateStudyPlanDto, UpdateStudyPlanDto } from '../dto';
-import { PaginationDto, PaginatedResultDto, PaginationService } from '../../common';
+import {
+  PaginationDto,
+  PaginatedResultDto,
+  PaginationService,
+} from '../../common';
 
 @Injectable()
 export class StudyPlanService {
@@ -18,14 +22,16 @@ export class StudyPlanService {
     return await this.studyPlanRepository.save(studyPlan);
   }
 
-  async findAll(paginationDto: PaginationDto): Promise<PaginatedResultDto<StudyPlan>> {
+  async findAll(
+    paginationDto: PaginationDto,
+  ): Promise<PaginatedResultDto<StudyPlan>> {
     return await this.paginationService.paginateRepository<StudyPlan>(
       this.studyPlanRepository,
       paginationDto,
       {
         relations: ['degree_program'],
-        order: { created_at: 'DESC' }
-      }
+        order: { created_at: 'DESC' },
+      },
     );
   }
 
@@ -36,7 +42,9 @@ export class StudyPlanService {
     });
 
     if (!studyPlan) {
-      throw new NotFoundException(`Plan de estudios con ID ${id} no encontrado`);
+      throw new NotFoundException(
+        `Plan de estudios con ID ${id} no encontrado`,
+      );
     }
 
     return studyPlan;
@@ -49,7 +57,9 @@ export class StudyPlanService {
     });
 
     if (!studyPlan) {
-      throw new NotFoundException(`Plan de estudios con ID ${id} no encontrado`);
+      throw new NotFoundException(
+        `Plan de estudios con ID ${id} no encontrado`,
+      );
     }
 
     return await this.studyPlanRepository.save(studyPlan);

@@ -15,19 +15,25 @@ import { TokenCacheService } from './services/token-cache.service';
   imports: [
     ConfigModule,
     TypeOrmModule.forFeature([User, Student, Teacher, Admin]),
-    PassportModule.register({ 
-      defaultStrategy: 'jwt'
+    PassportModule.register({
+      defaultStrategy: 'jwt',
     }),
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => {
         return {
-          secret: configService.get<string>('JWT_SECRET'),          
+          secret: configService.get<string>('JWT_SECRET'),
         };
       },
     }),
   ],
-  exports: [TypeOrmModule, JwtStrategy, PassportModule, JwtModule, TokenCacheService],
+  exports: [
+    TypeOrmModule,
+    JwtStrategy,
+    PassportModule,
+    JwtModule,
+    TokenCacheService,
+  ],
 })
 export class AuthModule {}

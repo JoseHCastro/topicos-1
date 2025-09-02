@@ -16,11 +16,26 @@ services:
     networks:
       - postgres_network
 
+  redis:
+    image: redis:7-alpine
+    container_name: topicosAvanzados_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+      - ./config/redis.conf:/usr/local/etc/redis/redis.conf
+    command: redis-server /usr/local/etc/redis/redis.conf
+    networks:
+      - postgres_network
+    environment:
+      - TZ=America/La_Paz
+
   app:
     image: nukesito/topicos-1:latest
     container_name: topicosAvanzados_app
     depends_on:
       - db
+      - redis
     ports:
       - "3000:3000"
     environment:
@@ -31,11 +46,14 @@ services:
       - DB_NAME=${DB_NAME}
       - NODE_ENV=development
       - JWT_SECRET=your_super_secret_jwt_key_here_make_it_long_and_secure
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
     networks:
       - postgres_network
 
 volumes:
   postgres_data:
+  redis_data:
 
 networks:
   postgres_network:

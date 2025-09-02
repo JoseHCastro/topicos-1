@@ -3,7 +3,11 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { EnrollmentDetail } from '../entities';
 import { CreateEnrollmentDetailDto, UpdateEnrollmentDetailDto } from '../dto';
-import { PaginationDto, PaginatedResultDto, PaginationService } from '../../common';
+import {
+  PaginationDto,
+  PaginatedResultDto,
+  PaginationService,
+} from '../../common';
 
 @Injectable()
 export class EnrollmentDetailService {
@@ -14,18 +18,22 @@ export class EnrollmentDetailService {
   ) {}
 
   async create(createEnrollmentDetailDto: CreateEnrollmentDetailDto) {
-    const enrollmentDetail = this.enrollmentDetailRepository.create(createEnrollmentDetailDto);
+    const enrollmentDetail = this.enrollmentDetailRepository.create(
+      createEnrollmentDetailDto,
+    );
     return await this.enrollmentDetailRepository.save(enrollmentDetail);
   }
 
-  async findAll(paginationDto: PaginationDto): Promise<PaginatedResultDto<EnrollmentDetail>> {
+  async findAll(
+    paginationDto: PaginationDto,
+  ): Promise<PaginatedResultDto<EnrollmentDetail>> {
     return this.paginationService.paginateRepository(
       this.enrollmentDetailRepository,
       paginationDto,
       {
         relations: ['enrollment', 'course_section'],
         order: { created_at: 'DESC' },
-      }
+      },
     );
   }
 
@@ -36,20 +44,27 @@ export class EnrollmentDetailService {
     });
 
     if (!enrollmentDetail) {
-      throw new NotFoundException(`Detalle de inscripción con ID ${id} no encontrado`);
+      throw new NotFoundException(
+        `Detalle de inscripción con ID ${id} no encontrado`,
+      );
     }
 
     return enrollmentDetail;
   }
 
-  async update(id: string, updateEnrollmentDetailDto: UpdateEnrollmentDetailDto) {
+  async update(
+    id: string,
+    updateEnrollmentDetailDto: UpdateEnrollmentDetailDto,
+  ) {
     const enrollmentDetail = await this.enrollmentDetailRepository.preload({
       id: id,
       ...updateEnrollmentDetailDto,
     });
 
     if (!enrollmentDetail) {
-      throw new NotFoundException(`Detalle de inscripción con ID ${id} no encontrado`);
+      throw new NotFoundException(
+        `Detalle de inscripción con ID ${id} no encontrado`,
+      );
     }
 
     return await this.enrollmentDetailRepository.save(enrollmentDetail);

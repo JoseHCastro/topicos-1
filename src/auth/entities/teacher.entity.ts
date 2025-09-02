@@ -16,6 +16,6 @@ export class Teacher extends User {
   @Column('date')
   hired_at: Date;
 
-  @OneToMany(() => CourseSection, courseSection => courseSection.teacher)
+  @OneToMany(() => CourseSection, (courseSection) => courseSection.teacher)
   course_sections: CourseSection[];
 }

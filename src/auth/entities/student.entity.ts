@@ -17,9 +17,9 @@ export class Student extends User {
   @Column('char', { length: 1, nullable: true })
   sex: string;
 
-  @OneToMany(() => Enrollment, enrollment => enrollment.student)
+  @OneToMany(() => Enrollment, (enrollment) => enrollment.student)
   enrollments: Enrollment[];
 
-  @OneToMany(() => Grade, grade => grade.student)
+  @OneToMany(() => Grade, (grade) => grade.student)
   grades: Grade[];
 }

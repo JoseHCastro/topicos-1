@@ -52,7 +52,6 @@ export class AtomicEnrollmentService {
 
     return await this.transactionService.executeWithRetry(
       async (manager: EntityManager) => {
-
         const enrollment = await this.validateEnrollmentExists(
           manager,
           createEnrollmentDetailDto.enrollment_id,
@@ -211,7 +210,6 @@ export class AtomicEnrollmentService {
     manager: EntityManager,
     courseSection: CourseSection,
   ): Promise<CourseSection> {
-
     const result = await manager
       .createQueryBuilder()
       .update(CourseSection)
@@ -279,18 +277,19 @@ export class AtomicEnrollmentService {
       `Iniciando validaciones académicas para Student ${enrollment.student.id} en CourseSection ${courseSection.id}`,
     );
 
-    const validationResult = await this.academicValidationService.validateEnrollment(
-      enrollment.student.id,
-      courseSection.id,
-      courseSection.term_id,
-      manager,
-    );
+    const validationResult =
+      await this.academicValidationService.validateEnrollment(
+        enrollment.student.id,
+        courseSection.id,
+        courseSection.term_id,
+        manager,
+      );
 
     if (!validationResult.isValid) {
       this.logger.warn(
         `Validaciones académicas fallidas para Student ${enrollment.student.id}: ${validationResult.errors.join('; ')}`,
       );
-      
+
       throw new MultipleValidationException(
         validationResult.errors,
         validationResult.warnings,

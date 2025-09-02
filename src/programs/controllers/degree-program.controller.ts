@@ -1,4 +1,14 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, ParseUUIDPipe, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  ParseUUIDPipe,
+  Query,
+} from '@nestjs/common';
 import { DegreeProgramService } from '../services';
 import { Auth } from '../../auth/decorators';
 import { ValidRoles } from '../../auth/interfaces';
@@ -17,7 +27,9 @@ export class DegreeProgramController {
 
   @Get()
   @Auth(ValidRoles.ADMIN, ValidRoles.STUDENT, ValidRoles.TEACHER)
-  findAll(@Query() paginationDto: PaginationDto): Promise<PaginatedResultDto<DegreeProgram>> {
+  findAll(
+    @Query() paginationDto: PaginationDto,
+  ): Promise<PaginatedResultDto<DegreeProgram>> {
     return this.degreeProgramService.findAll(paginationDto);
   }
 
@@ -29,7 +41,10 @@ export class DegreeProgramController {
 
   @Patch(':id')
   @Auth(ValidRoles.ADMIN)
-  update(@Param('id', ParseUUIDPipe) id: string, @Body() updateDegreeProgramDto: any) {
+  update(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() updateDegreeProgramDto: any,
+  ) {
     return this.degreeProgramService.update(id, updateDegreeProgramDto);
   }
 

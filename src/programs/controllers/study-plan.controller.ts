@@ -27,7 +27,9 @@ export class StudyPlanController {
 
   @Get()
   @Auth(ValidRoles.ADMIN, ValidRoles.STUDENT, ValidRoles.TEACHER)
-  findAll(@Query() paginationDto: PaginationDto): Promise<PaginatedResultDto<StudyPlan>> {
+  findAll(
+    @Query() paginationDto: PaginationDto,
+  ): Promise<PaginatedResultDto<StudyPlan>> {
     return this.studyPlanService.findAll(paginationDto);
   }
 

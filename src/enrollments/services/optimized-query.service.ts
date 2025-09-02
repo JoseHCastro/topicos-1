@@ -26,13 +26,7 @@ export class OptimizedQueryService {
   async getPrerequisitesByCourse(courseId: string): Promise<Prerequisite[]> {
     return this.prerequisiteRepository
       .createQueryBuilder('p')
-      .select([
-        'p.id',
-        'p.kind',
-        'rc.id',
-        'rc.code',
-        'rc.name'
-      ])
+      .select(['p.id', 'p.kind', 'rc.id', 'rc.code', 'rc.name'])
       .innerJoin('p.required_course', 'rc')
       .where('p.main_course_id = :courseId', { courseId })
       .orderBy('p.kind', 'ASC')
@@ -44,16 +38,13 @@ export class OptimizedQueryService {
    * Consulta optimizada para verificar materias aprobadas por estudiante
    * Utiliza IDX_grade_approved_courses
    */
-  async getApprovedCoursesByStudent(studentId: string, courseIds: string[]): Promise<Grade[]> {
+  async getApprovedCoursesByStudent(
+    studentId: string,
+    courseIds: string[],
+  ): Promise<Grade[]> {
     return this.gradeRepository
       .createQueryBuilder('g')
-      .select([
-        'g.id',
-        'g.final_grade',
-        'cs.id',
-        'c.id',
-        'c.code'
-      ])
+      .select(['g.id', 'g.final_grade', 'cs.id', 'c.id', 'c.code'])
       .innerJoin('g.course_section', 'cs')
       .innerJoin('cs.course', 'c')
       .where('g.student_id = :studentId', { studentId })
@@ -70,7 +61,7 @@ export class OptimizedQueryService {
     courseSectionIds: string[],
     weekday: string,
     timeStart: string,
-    timeEnd: string
+    timeEnd: string,
   ): Promise<Schedule[]> {
     return this.scheduleRepository
       .createQueryBuilder('s')
@@ -82,15 +73,20 @@ export class OptimizedQueryService {
         's.time_end',
         'cs.group_label',
         'c.code',
-        'c.name'
+        'c.name',
       ])
       .innerJoin('s.course_section', 'cs')
       .innerJoin('cs.course', 'c')
-      .where('s.course_section_id IN (:...courseSectionIds)', { courseSectionIds })
+      .where('s.course_section_id IN (:...courseSectionIds)', {
+        courseSectionIds,
+      })
       .andWhere('s.weekday = :weekday', { weekday })
-      .andWhere(`
+      .andWhere(
+        `
         (s.time_start < :timeEnd AND s.time_end > :timeStart)
-      `, { timeStart, timeEnd })
+      `,
+        { timeStart, timeEnd },
+      )
       .orderBy('s.time_start', 'ASC')
       .getMany();
   }
@@ -99,7 +95,10 @@ export class OptimizedQueryService {
    * Consulta optimizada para contar materias inscritas por estudiante y término
    * Utiliza IDX_enrollment_detail_student_term
    */
-  async getEnrolledCoursesCount(studentId: string, termId: string): Promise<number> {
+  async getEnrolledCoursesCount(
+    studentId: string,
+    termId: string,
+  ): Promise<number> {
     const result = await this.enrollmentDetailRepository
       .createQueryBuilder('ed')
       .select('COUNT(*)', 'count')
@@ -117,7 +116,10 @@ export class OptimizedQueryService {
    * Consulta optimizada para obtener detalles de inscripción del estudiante en un término
    * Utiliza IDX_enrollment_detail_student_term
    */
-  async getStudentEnrollmentDetails(studentId: string, termId: string): Promise<EnrollmentDetail[]> {
+  async getStudentEnrollmentDetails(
+    studentId: string,
+    termId: string,
+  ): Promise<EnrollmentDetail[]> {
     return this.enrollmentDetailRepository
       .createQueryBuilder('ed')
       .select([
@@ -128,7 +130,7 @@ export class OptimizedQueryService {
         'c.id',
         'c.code',
         'c.name',
-        'c.credits'
+        'c.credits',
       ])
       .innerJoin('ed.enrollment', 'e')
       .innerJoin('ed.course_section', 'cs')
@@ -144,7 +146,9 @@ export class OptimizedQueryService {
    * Consulta optimizada para obtener horarios de secciones específicas
    * Utiliza IDX_schedule_course_section
    */
-  async getSchedulesBySections(courseSectionIds: string[]): Promise<Schedule[]> {
+  async getSchedulesBySections(
+    courseSectionIds: string[],
+  ): Promise<Schedule[]> {
     return this.scheduleRepository
       .createQueryBuilder('s')
       .select([
@@ -155,11 +159,13 @@ export class OptimizedQueryService {
         's.time_end',
         'cs.group_label',
         'c.code',
-        'c.name'
+        'c.name',
       ])
       .innerJoin('s.course_section', 'cs')
       .innerJoin('cs.course', 'c')
-      .where('s.course_section_id IN (:...courseSectionIds)', { courseSectionIds })
+      .where('s.course_section_id IN (:...courseSectionIds)', {
+        courseSectionIds,
+      })
       .orderBy('s.weekday', 'ASC')
       .addOrderBy('s.time_start', 'ASC')
       .getMany();
@@ -169,7 +175,10 @@ export class OptimizedQueryService {
    * Consulta optimizada para verificar si un estudiante ya aprobó una materia específica
    * Utiliza IDX_grade_approved_courses
    */
-  async hasStudentPassedCourse(studentId: string, courseId: string): Promise<boolean> {
+  async hasStudentPassedCourse(
+    studentId: string,
+    courseId: string,
+  ): Promise<boolean> {
     const grade = await this.gradeRepository
       .createQueryBuilder('g')
       .select('g.id')
@@ -189,45 +198,51 @@ export class OptimizedQueryService {
    */
   async batchCheckPrerequisites(
     studentId: string,
-    courseIds: string[]
-  ): Promise<{ courseId: string; hasPrerequisites: boolean; missingPrerequisites: string[] }[]> {
-
+    courseIds: string[],
+  ): Promise<
+    {
+      courseId: string;
+      hasPrerequisites: boolean;
+      missingPrerequisites: string[];
+    }[]
+  > {
     const prerequisites = await this.prerequisiteRepository
       .createQueryBuilder('p')
-      .select([
-        'p.main_course_id',
-        'p.required_course_id',
-        'rc.code'
-      ])
+      .select(['p.main_course_id', 'p.required_course_id', 'rc.code'])
       .innerJoin('p.required_course', 'rc')
       .where('p.main_course_id IN (:...courseIds)', { courseIds })
       .getMany();
 
-    const allRequiredCourseIds = prerequisites.map(p => p.required_course_id);
-    const approvedGrades = await this.getApprovedCoursesByStudent(studentId, allRequiredCourseIds);
+    const allRequiredCourseIds = prerequisites.map((p) => p.required_course_id);
+    const approvedGrades = await this.getApprovedCoursesByStudent(
+      studentId,
+      allRequiredCourseIds,
+    );
     const approvedCourseIds = new Set(
-      approvedGrades.map(g => g.course_section.course.id)
+      approvedGrades.map((g) => g.course_section.course.id),
     );
 
-    return courseIds.map(courseId => {
-      const coursePrerequisites = prerequisites.filter(p => p.main_course_id === courseId);
-      
+    return courseIds.map((courseId) => {
+      const coursePrerequisites = prerequisites.filter(
+        (p) => p.main_course_id === courseId,
+      );
+
       if (coursePrerequisites.length === 0) {
         return {
           courseId,
           hasPrerequisites: true,
-          missingPrerequisites: []
+          missingPrerequisites: [],
         };
       }
 
       const missingPrerequisites = coursePrerequisites
-        .filter(p => !approvedCourseIds.has(p.required_course_id))
-        .map(p => p.required_course.code);
+        .filter((p) => !approvedCourseIds.has(p.required_course_id))
+        .map((p) => p.required_course.code);
 
       return {
         courseId,
         hasPrerequisites: missingPrerequisites.length === 0,
-        missingPrerequisites
+        missingPrerequisites,
       };
     });
   }

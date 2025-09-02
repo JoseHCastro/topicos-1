@@ -18,13 +18,12 @@ export class EnrollmentSeeder implements SeederInterface {
   ) {}
 
   async run(): Promise<void> {
-
     const students = await this.studentRepository.find();
-    const currentTerm = await this.termRepository.findOne({ 
-      where: { name: '2025-I' } 
+    const currentTerm = await this.termRepository.findOne({
+      where: { name: '2025-I' },
     });
-    const previousTerm = await this.termRepository.findOne({ 
-      where: { name: '2024-II' } 
+    const previousTerm = await this.termRepository.findOne({
+      where: { name: '2024-II' },
     });
 
     if (students.length === 0 || !currentTerm) {
@@ -67,14 +66,28 @@ export class EnrollmentSeeder implements SeederInterface {
       if (!existingEnrollment) {
         const enrollment = this.enrollmentRepository.create(enrollmentData);
         await this.enrollmentRepository.save(enrollment);
-        
-        const student = students.find(s => s.id === enrollmentData.student_id);
-        const term = enrollmentData.term_id === currentTerm.id ? currentTerm : previousTerm;
-        console.log(`Created enrollment: ${student?.code} for term ${term?.name}`);
+
+        const student = students.find(
+          (s) => s.id === enrollmentData.student_id,
+        );
+        const term =
+          enrollmentData.term_id === currentTerm.id
+            ? currentTerm
+            : previousTerm;
+        console.log(
+          `Created enrollment: ${student?.code} for term ${term?.name}`,
+        );
       } else {
-        const student = students.find(s => s.id === enrollmentData.student_id);
-        const term = enrollmentData.term_id === currentTerm.id ? currentTerm : previousTerm;
-        console.log(`Enrollment already exists: ${student?.code} for term ${term?.name}`);
+        const student = students.find(
+          (s) => s.id === enrollmentData.student_id,
+        );
+        const term =
+          enrollmentData.term_id === currentTerm.id
+            ? currentTerm
+            : previousTerm;
+        console.log(
+          `Enrollment already exists: ${student?.code} for term ${term?.name}`,
+        );
       }
     }
 

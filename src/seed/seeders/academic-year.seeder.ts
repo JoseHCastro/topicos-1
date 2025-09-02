@@ -46,11 +46,14 @@ export class AcademicYearSeeder implements SeederInterface {
       });
 
       if (!existingYear) {
-        const academicYear = this.academicYearRepository.create(academicYearData);
+        const academicYear =
+          this.academicYearRepository.create(academicYearData);
         await this.academicYearRepository.save(academicYear);
         this.logger.log(`Created academic year: ${academicYearData.year}`);
       } else {
-        this.logger.log(`Academic year already exists: ${academicYearData.year}`);
+        this.logger.log(
+          `Academic year already exists: ${academicYearData.year}`,
+        );
       }
     }
 

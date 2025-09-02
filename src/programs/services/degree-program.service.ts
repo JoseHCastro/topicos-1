@@ -2,7 +2,11 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { DegreeProgram } from '../entities';
-import { PaginationDto, PaginatedResultDto, PaginationService } from '../../common';
+import {
+  PaginationDto,
+  PaginatedResultDto,
+  PaginationService,
+} from '../../common';
 
 @Injectable()
 export class DegreeProgramService {
@@ -13,18 +17,22 @@ export class DegreeProgramService {
   ) {}
 
   async create(createDegreeProgramDto: any) {
-    const degreeProgram = this.degreeProgramRepository.create(createDegreeProgramDto);
+    const degreeProgram = this.degreeProgramRepository.create(
+      createDegreeProgramDto,
+    );
     return await this.degreeProgramRepository.save(degreeProgram);
   }
 
-  async findAll(paginationDto: PaginationDto): Promise<PaginatedResultDto<DegreeProgram>> {
+  async findAll(
+    paginationDto: PaginationDto,
+  ): Promise<PaginatedResultDto<DegreeProgram>> {
     return this.paginationService.paginateRepository(
       this.degreeProgramRepository,
       paginationDto,
       {
         relations: ['study_plans'],
         order: { name: 'ASC' },
-      }
+      },
     );
   }
 

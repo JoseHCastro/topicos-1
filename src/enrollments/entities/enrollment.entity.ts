@@ -1,4 +1,14 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, JoinColumn, CreateDateColumn, UpdateDateColumn, Index } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  OneToMany,
+  JoinColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+  Index,
+} from 'typeorm';
 import { Student } from '../../auth/entities/student.entity';
 import { Term } from '../../calendar/entities/term.entity';
 import { EnrollmentDetail } from './enrollment-detail.entity';
@@ -32,13 +42,13 @@ export class Enrollment {
 
   @CreateDateColumn({
     type: 'timestamptz',
-    name: 'created_at'
+    name: 'created_at',
   })
   created_at: Date;
 
   @UpdateDateColumn({
     type: 'timestamptz',
-    name: 'updated_at'
+    name: 'updated_at',
   })
   updated_at: Date;
 
@@ -50,6 +60,8 @@ export class Enrollment {
   @JoinColumn({ name: 'term_id' })
   term: Term;
 
-  @OneToMany(() => EnrollmentDetail, detail => detail.enrollment, { cascade: true })
+  @OneToMany(() => EnrollmentDetail, (detail) => detail.enrollment, {
+    cascade: true,
+  })
   enrollment_details: EnrollmentDetail[];
 }

@@ -1,4 +1,13 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  Query,
+} from '@nestjs/common';
 import { GradeService } from '../services';
 import { CreateGradeDto, UpdateGradeDto } from '../dto';
 import { PaginationDto, PaginatedResultDto } from '../../common';
@@ -27,7 +36,10 @@ export class GradeController {
       return this.gradeService.findByStudent(studentId, paginationDto);
     }
     if (courseSectionId) {
-      return this.gradeService.findByCourseSection(courseSectionId, paginationDto);
+      return this.gradeService.findByCourseSection(
+        courseSectionId,
+        paginationDto,
+      );
     }
     return this.gradeService.findAll(paginationDto);
   }

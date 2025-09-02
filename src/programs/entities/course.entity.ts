@@ -1,4 +1,14 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, JoinColumn, CreateDateColumn, UpdateDateColumn, Unique } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+  OneToMany,
+  JoinColumn,
+  CreateDateColumn,
+  UpdateDateColumn,
+  Unique,
+} from 'typeorm';
 import { StudyPlan } from './study-plan.entity';
 import { Level } from './level.entity';
 import { Prerequisite } from './prerequisite.entity';
@@ -36,30 +46,30 @@ export class Course {
 
   @CreateDateColumn({
     type: 'timestamptz',
-    name: 'created_at'
+    name: 'created_at',
   })
   created_at: Date;
 
   @UpdateDateColumn({
     type: 'timestamptz',
-    name: 'updated_at'
+    name: 'updated_at',
   })
   updated_at: Date;
 
-  @ManyToOne(() => StudyPlan, studyPlan => studyPlan.courses)
+  @ManyToOne(() => StudyPlan, (studyPlan) => studyPlan.courses)
   @JoinColumn({ name: 'study_plan_id' })
   study_plan: StudyPlan;
 
-  @ManyToOne(() => Level, level => level.courses)
+  @ManyToOne(() => Level, (level) => level.courses)
   @JoinColumn({ name: 'level_id' })
   level: Level;
 
-  @OneToMany(() => Prerequisite, prerequisite => prerequisite.main_course)
+  @OneToMany(() => Prerequisite, (prerequisite) => prerequisite.main_course)
   prerequisites_as_main: Prerequisite[];
 
-  @OneToMany(() => Prerequisite, prerequisite => prerequisite.required_course)
+  @OneToMany(() => Prerequisite, (prerequisite) => prerequisite.required_course)
   prerequisites_as_required: Prerequisite[];
 
-  @OneToMany(() => CourseSection, courseSection => courseSection.course)
+  @OneToMany(() => CourseSection, (courseSection) => courseSection.course)
   course_sections: CourseSection[];
 }

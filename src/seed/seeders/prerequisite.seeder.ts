@@ -85,11 +85,15 @@ export class PrerequisiteSeeder implements SeederInterface {
     ];
 
     for (const rule of prerequisiteRules) {
-      const course = courses.find(c => c.code === rule.course_code);
-      const prerequisiteCourse = courses.find(c => c.code === rule.prerequisite_code);
+      const course = courses.find((c) => c.code === rule.course_code);
+      const prerequisiteCourse = courses.find(
+        (c) => c.code === rule.prerequisite_code,
+      );
 
       if (!course || !prerequisiteCourse) {
-        this.logger.warn(`Course not found for prerequisite rule: ${rule.prerequisite_code} -> ${rule.course_code}`);
+        this.logger.warn(
+          `Course not found for prerequisite rule: ${rule.prerequisite_code} -> ${rule.course_code}`,
+        );
         continue;
       }
 
@@ -107,11 +111,16 @@ export class PrerequisiteSeeder implements SeederInterface {
           kind: 'Prerequisite',
         };
 
-        const prerequisite = this.prerequisiteRepository.create(prerequisiteData);
+        const prerequisite =
+          this.prerequisiteRepository.create(prerequisiteData);
         await this.prerequisiteRepository.save(prerequisite);
-        this.logger.log(`Created prerequisite: ${rule.prerequisite_code} -> ${rule.course_code}`);
+        this.logger.log(
+          `Created prerequisite: ${rule.prerequisite_code} -> ${rule.course_code}`,
+        );
       } else {
-        this.logger.log(`Prerequisite already exists: ${rule.prerequisite_code} -> ${rule.course_code}`);
+        this.logger.log(
+          `Prerequisite already exists: ${rule.prerequisite_code} -> ${rule.course_code}`,
+        );
       }
     }
 
