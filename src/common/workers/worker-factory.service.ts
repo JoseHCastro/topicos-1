@@ -35,7 +35,18 @@ export class WorkerFactoryService {
     const workerId = `${queueDef.name}-${strategy}-${workerNumber}`;
     
     try {
-      const connection = this.redisService.getClient();
+      // Crear configuración específica para BullMQ workers
+      const bullMQConnection = {
+        host: process.env.REDIS_HOST || 'localhost',
+        port: parseInt(process.env.REDIS_PORT || '6379', 10),
+        password: process.env.REDIS_PASSWORD || undefined,
+        db: parseInt(process.env.REDIS_DB || '0', 10),
+        maxRetriesPerRequest: null, // BullMQ requiere que sea null
+        lazyConnect: true,
+        connectTimeout: parseInt(process.env.REDIS_CONNECT_TIMEOUT || '5000', 10),
+        retryDelayOnFailure: parseInt(process.env.REDIS_RETRY_DELAY || '100', 10),
+        family: 4,
+      };
       
       const worker = new Worker(
         queueDef.name,
@@ -48,7 +59,7 @@ export class WorkerFactoryService {
           );
         },
         {
-          connection,
+          connection: bullMQConnection,
           concurrency: queueDef.concurrency,
           maxStalledCount: 1,
           stalledInterval: 30000,
