@@ -4,6 +4,7 @@ import { WorkerFactoryService } from './worker-factory.service';
 import { WorkerHealthService } from './worker-health.service';
 import { JobProcessorService } from './job-processor.service';
 import { JobSimulatorService } from './job-simulator.service';
+import { HttpExecutorService } from './http-executor.service';
 import { JobCacheService } from './job-cache.service';
 import { WorkerResourceManagerService } from './worker-resource-manager.service';
 import { WorkerStatsService } from './worker-stats.service';
@@ -27,6 +28,7 @@ import { WebSocketModule } from '../websockets/websocket.module';
     WorkerHealthService,
     JobProcessorService,
     JobSimulatorService,
+    HttpExecutorService,
     JobCacheService,
     WorkerResourceManagerService,
     WorkerStatsService,
@@ -37,6 +39,7 @@ import { WebSocketModule } from '../websockets/websocket.module';
     WorkerHealthService,
     JobProcessorService,
     JobSimulatorService,
+    HttpExecutorService,
     JobCacheService,
     WorkerResourceManagerService,
     WorkerStatsService,

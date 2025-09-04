@@ -4,6 +4,7 @@ import { JobData } from '../interceptors/interfaces/job-data.interface';
 import { QueueDefinition } from '../queues/queue-config.interface';
 import { RedisService } from '../redis/redis.service';
 import { JobSimulatorService } from './job-simulator.service';
+import { HttpExecutorService } from './http-executor.service';
 import { JobCacheService } from './job-cache.service';
 
 @Injectable()
@@ -13,6 +14,7 @@ export class JobProcessorService {
   constructor(
     private readonly redisService: RedisService,
     private readonly simulator: JobSimulatorService,
+    private readonly httpExecutor: HttpExecutorService,
     private readonly cache: JobCacheService,
   ) {}
 
@@ -43,11 +45,22 @@ export class JobProcessorService {
       // 2. Cache miss - execute request
       this.logger.debug(`🔄 [${queueName}]${workerInfo} Cache miss - executing job ${job.id}`);
       
-      // 3. Execute with timeout
-      result = await Promise.race([
-        this.simulator.executeRequest(jobData),
-        this.createTimeoutPromise(timeout * 1000),
-      ]);
+      // 3. Decidir si ejecutar realmente o simular
+      const shouldExecuteReal = this.shouldExecuteRealRequest(jobData);
+      
+      if (shouldExecuteReal) {
+        this.logger.log(`🌐 [${queueName}]${workerInfo} Executing REAL HTTP request for job ${job.id}`);
+        result = await Promise.race([
+          this.httpExecutor.executeRequest(jobData),
+          this.createTimeoutPromise(timeout * 1000),
+        ]);
+      } else {
+        this.logger.log(`🎭 [${queueName}]${workerInfo} Executing SIMULATED request for job ${job.id}`);
+        result = await Promise.race([
+          this.simulator.executeRequest(jobData),
+          this.createTimeoutPromise(timeout * 1000),
+        ]);
+      }
 
       // 4. Store in cache (async)
       this.cache.tryStoreInCache(jobData, result).catch(error => {
@@ -78,6 +91,50 @@ export class JobProcessorService {
         reject(new Error(`Job timeout after ${ms}ms`));
       }, ms);
     });
+  }
+
+  /**
+   * Determina si una petición debe ejecutarse realmente o solo simularse
+   */
+  private shouldExecuteRealRequest(jobData: JobData): boolean {
+    // Variable de entorno para controlar el modo
+    const executeReal = process.env.QUEUE_EXECUTE_REAL === 'true';
+    
+    if (!executeReal) {
+      return false; // Por defecto simular
+    }
+
+    // Lista de endpoints seguros para ejecutar realmente
+    const safeEndpoints = [
+      '/auth/register',
+      '/auth/login', 
+      '/auth/users',
+      '/courses',
+      '/programs',
+      '/enrollments',
+      '/schedules',
+      '/facilities',
+      '/assessments',
+      '/calendar'
+    ];
+
+    // Lista de endpoints que NUNCA deben ejecutarse realmente
+    const forbiddenEndpoints = [
+      '/admin/',
+      '/queue-admin/',
+      '/queues/',
+      '/health',
+      '/metrics',
+      '/monitoring'
+    ];
+
+    // Verificar si está en la lista prohibida
+    if (forbiddenEndpoints.some(pattern => jobData.url.includes(pattern))) {
+      return false;
+    }
+
+    // Verificar si está en la lista segura
+    return safeEndpoints.some(pattern => jobData.url.includes(pattern));
   }
 
   private async saveJobResult(jobId: string, result: any, error: string | null): Promise<void> {

@@ -37,6 +37,12 @@ export class QueueInterceptor implements NestInterceptor {
       return next.handle();
     }
 
+    // ⚠️ CRÍTICO: Excluir peticiones internas del worker para evitar loops infinitos
+    if (headers['x-internal-request'] === 'true') {
+      this.logger.debug(`🔄 Internal worker request bypassed: ${method} ${url}`);
+      return next.handle();
+    }
+
     // Exclusiones del Interceptor - estos endpoints NO van a cola
     if (this.shouldExcludeFromQueue(url)) {
       this.logger.debug(`⚪ Excluded from queue: ${method} ${url}`);
