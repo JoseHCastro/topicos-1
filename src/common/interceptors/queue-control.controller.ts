@@ -137,6 +137,10 @@ export class QueueControlController {
       id: jobId,
       method: 'GET',
       url: `/test/${queueType}`,
+      headers: {
+        'content-type': 'application/json',
+        'user-agent': 'queue-test-client/1.0',
+      },
       timestamp: Date.now(),
     };
 

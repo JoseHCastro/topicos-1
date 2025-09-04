@@ -23,6 +23,9 @@ export interface QueueDefinition {
   /** Worker concurrency level */
   concurrency: number;
   
+  /** Number of workers to create for this queue */
+  workers?: number;
+  
   /** URL patterns that should go to this queue */
   urlPatterns: string[];
   
@@ -141,6 +144,23 @@ export const DEFAULT_QUEUE_CONFIG: QueueSystemConfig = {
  * Load queue configuration from environment variables or config files
  */
 export function loadQueueConfig(): QueueSystemConfig {
+  // First try to load from config/queues.json
+  try {
+    const fs = require('fs');
+    const path = require('path');
+    
+    // Look for queues.json in config directory
+    const configPath = path.join(process.cwd(), 'config', 'queues.json');
+    
+    if (fs.existsSync(configPath)) {
+      const configData = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+      console.log(`✅ Loaded queue configuration from ${configPath}`);
+      return configData;
+    }
+  } catch (error) {
+    console.warn(`⚠️ Failed to load config/queues.json: ${error.message}`);
+  }
+  
   // Check if custom config exists in environment
   const customConfigPath = process.env.QUEUE_CONFIG_PATH;
   
@@ -163,5 +183,6 @@ export function loadQueueConfig(): QueueSystemConfig {
     pollingTimeout: parseInt(process.env.QUEUE_POLLING_TIMEOUT || '300000', 10),
   };
   
+  console.log('📋 Using default queue configuration with environment overrides');
   return { ...DEFAULT_QUEUE_CONFIG, ...envConfig };
 }

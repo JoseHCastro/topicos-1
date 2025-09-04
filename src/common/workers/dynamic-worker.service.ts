@@ -22,8 +22,8 @@ import { JobStatusService } from '../websockets/job-status.service';
 export class DynamicWorkerService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(DynamicWorkerService.name);
 
-  // Dynamic worker storage
-  private workers: Map<string, Worker> = new Map();
+  // Dynamic worker storage - Array per queue for multiple workers
+  private workers: Map<string, Worker[]> = new Map();
 
   // Statistics
   private jobsProcessed = 0;
@@ -49,9 +49,10 @@ export class DynamicWorkerService implements OnModuleInit, OnModuleDestroy {
   }
 
   async onModuleDestroy() {
-    const closePromises = Array.from(this.workers.values()).map(worker => worker.close());
+    const allWorkers = Array.from(this.workers.values()).flat();
+    const closePromises = allWorkers.map(worker => worker.close());
     await Promise.all(closePromises);
-    this.logger.log(`🔴 All ${this.workers.size} workers stopped`);
+    this.logger.log(`🔴 All ${allWorkers.length} workers stopped`);
   }
 
   /**
@@ -66,42 +67,58 @@ export class DynamicWorkerService implements OnModuleInit, OnModuleDestroy {
   }
 
   /**
-   * Create a worker for a specific queue
+   * Create multiple workers for a specific queue based on configuration
    */
   private async createWorkerForQueue(queueName: string) {
     const queueDef = this.queueService.getQueueDefinition(queueName);
     const queue = this.queueService.getQueue(queueName);
     
     if (!queueDef || !queue) {
-      this.logger.error(`Cannot create worker for queue '${queueName}' - queue definition or instance not found`);
+      this.logger.error(`Cannot create workers for queue '${queueName}' - queue definition or instance not found`);
       return;
     }
 
-    try {
-      const worker = new Worker(
-        queueName,
-        async (job) => this.processJob(job, queueName, queueDef),
-        {
-          connection: queue.opts.connection,
-          concurrency: queueDef.concurrency,
-        },
-      );
+    // Get number of workers from configuration (default to 1 if not specified)
+    const workerCount = queueDef.workers || 1;
+    const queueWorkers: Worker[] = [];
 
-      this.workers.set(queueName, worker);
-      this.setupWorkerEventListeners(worker, queueName);
+    try {
+      // Create multiple workers for this queue
+      for (let i = 0; i < workerCount; i++) {
+        const workerId = i + 1;
+        const worker = new Worker(
+          queueName,
+          async (job) => this.processJob(job, queueName, queueDef, workerId),
+          {
+            connection: queue.opts.connection,
+            concurrency: queueDef.concurrency,
+          },
+        );
+
+        queueWorkers.push(worker);
+        this.setupWorkerEventListeners(worker, queueName, workerId);
+        
+        this.logger.log(`✅ Worker #${workerId} created for queue '${queueName}' (concurrency: ${queueDef.concurrency})`);
+      }
+
+      // Store all workers for this queue
+      this.workers.set(queueName, queueWorkers);
       
-      this.logger.log(`✅ Worker created for queue '${queueName}' (concurrency: ${queueDef.concurrency})`);
+      this.logger.log(`🎉 ${workerCount} workers created for queue '${queueName}' (total concurrency: ${workerCount * queueDef.concurrency})`);
     } catch (error) {
-      this.logger.error(`❌ Failed to create worker for queue '${queueName}':`, error);
+      this.logger.error(`❌ Failed to create workers for queue '${queueName}':`, error);
     }
   }
 
   /**
-   * Setup event listeners for a worker
+   * Setup event listeners for a worker with worker ID
    */
-  private setupWorkerEventListeners(worker: Worker, queueName: string) {
+  private setupWorkerEventListeners(worker: Worker, queueName: string, workerId?: number) {
+    const workerInfo = workerId ? `#${workerId}` : '';
+    const fullWorkerName = `${queueName} ${workerInfo}`.trim();
+
     worker.on('active', (job) => {
-      this.logger.log(`🔄 [${queueName}] Job ${job.id} started processing`);
+      this.logger.log(`🔄 [${fullWorkerName}] Job ${job.id} started processing`);
       if (job.id) {
         this.jobStatusService.markJobProcessing(job.id, queueName);
       }
@@ -109,46 +126,47 @@ export class DynamicWorkerService implements OnModuleInit, OnModuleDestroy {
 
     worker.on('completed', (job, result) => {
       this.jobsProcessed++;
-      this.logger.log(`✅ [${queueName}] Job ${job.id} completed successfully`);
+      this.logger.log(`✅ [${fullWorkerName}] Job ${job.id} completed successfully`);
       if (job.id) {
         this.jobStatusService.markJobCompleted(job.id, result);
       }
       if (job) {
-        this.checkResourcesAfterJob(job, queueName);
+        this.checkResourcesAfterJob(job, fullWorkerName);
       }
     });
 
     worker.on('failed', (job, err) => {
-      this.logger.error(`❌ [${queueName}] Job ${job?.id} failed: ${err.message}`);
+      this.logger.error(`❌ [${fullWorkerName}] Job ${job?.id} failed: ${err.message}`);
       if (job?.id) {
         this.jobStatusService.markJobFailed(job.id, err.message);
       }
       if (job) {
-        this.checkResourcesAfterJob(job, queueName);
+        this.checkResourcesAfterJob(job, fullWorkerName);
       }
     });
 
     worker.on('progress', (job, progress) => {
-      this.logger.debug(`📊 [${queueName}] Job ${job.id} progress: ${progress}%`);
+      this.logger.debug(`📊 [${fullWorkerName}] Job ${job.id} progress: ${progress}%`);
       if (typeof progress === 'number' && job.id) {
         this.jobStatusService.updateJobProgress(job.id, progress);
       }
     });
 
     worker.on('error', (err) => {
-      this.logger.error(`💥 [${queueName}] Worker error: ${err.message}`);
+      this.logger.error(`💥 [${fullWorkerName}] Worker error: ${err.message}`);
     });
   }
 
   /**
-   * Process a job from any queue
+   * Process a job from any queue with worker identification
    */
-  private async processJob(job: Job, queueName: string, queueDef: QueueDefinition): Promise<any> {
+  private async processJob(job: Job, queueName: string, queueDef: QueueDefinition, workerId?: number): Promise<any> {
     const jobData = job.data as JobData;
     const timeout = queueDef.timeout;
+    const workerInfo = workerId ? ` [Worker #${workerId}]` : '';
 
     this.logger.log(
-      `📋 [${queueName}] Processing job ${job.id}: ${jobData.method} ${jobData.url}`,
+      `📋 [${queueName}]${workerInfo} Processing job ${job.id}: ${jobData.method} ${jobData.url}`,
     );
 
     try {
@@ -156,13 +174,13 @@ export class DynamicWorkerService implements OnModuleInit, OnModuleDestroy {
       let result = await this.tryGetFromCache(jobData);
       
       if (result) {
-        this.logger.log(`💨 [${queueName}] Job ${job.id} served from CACHE`);
+        this.logger.log(`💨 [${queueName}]${workerInfo} Job ${job.id} served from CACHE`);
         await this.saveJobResult(job.id!, result, null);
         return result;
       }
 
       // Cache miss - execute request
-      this.logger.debug(`🔄 [${queueName}] Cache miss - executing job ${job.id}`);
+      this.logger.debug(`🔄 [${queueName}]${workerInfo} Cache miss - executing job ${job.id}`);
       
       // Execute with timeout
       result = await Promise.race([
@@ -178,12 +196,12 @@ export class DynamicWorkerService implements OnModuleInit, OnModuleDestroy {
       // Save result in Redis
       await this.saveJobResult(job.id!, result, null);
 
-      this.logger.log(`✅ [${queueName}] Job ${job.id} completed successfully`);
+      this.logger.log(`✅ [${queueName}]${workerInfo} Job ${job.id} completed successfully`);
       return result;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       
-      this.logger.error(`❌ [${queueName}] Job ${job.id} failed: ${errorMessage}`);
+      this.logger.error(`❌ [${queueName}]${workerInfo} Job ${job.id} failed: ${errorMessage}`);
       
       // Save error in Redis
       await this.saveJobResult(job.id!, null, errorMessage);
@@ -454,16 +472,31 @@ export class DynamicWorkerService implements OnModuleInit, OnModuleDestroy {
   }
 
   /**
-   * Get worker statistics
+   * Get worker statistics showing multiple workers per queue
    */
   getWorkerStats() {
     const memoryHealth = this.resourceMonitor.getHealthStatus();
     const poolHealth = this.connectionPool.getHealthStatus();
     const currentMemory = this.resourceMonitor.getCurrentMemoryUsage();
 
+    // Calculate worker details per queue
+    const workerDetails: Record<string, any> = {};
+    let totalWorkers = 0;
+
+    this.workers.forEach((workersArray, queueName) => {
+      const queueDef = this.queueService.getQueueDefinition(queueName);
+      workerDetails[queueName] = {
+        count: workersArray.length,
+        concurrency: queueDef?.concurrency || 1,
+        totalConcurrency: workersArray.length * (queueDef?.concurrency || 1),
+      };
+      totalWorkers += workersArray.length;
+    });
+
     return {
       workers: {
-        total: this.workers.size,
+        total: totalWorkers,
+        queues: workerDetails,
         active: Array.from(this.workers.keys()),
       },
       jobs: {
@@ -488,32 +521,37 @@ export class DynamicWorkerService implements OnModuleInit, OnModuleDestroy {
   }
 
   /**
-   * Add worker for new queue (for runtime configuration updates)
+   * Add workers for new queue (for runtime configuration updates)
    */
   async addWorkerForQueue(queueName: string) {
     if (this.workers.has(queueName)) {
-      this.logger.warn(`⚠️ Worker for queue '${queueName}' already exists`);
+      this.logger.warn(`⚠️ Workers for queue '${queueName}' already exist`);
       return;
     }
 
     await this.createWorkerForQueue(queueName);
-    this.logger.log(`✅ Dynamic worker added for queue '${queueName}'`);
+    const workers = this.workers.get(queueName);
+    const workerCount = workers ? workers.length : 0;
+    
+    this.logger.log(`✅ ${workerCount} dynamic workers added for queue '${queueName}'`);
   }
 
   /**
-   * Remove worker for queue (for runtime configuration updates)
+   * Remove all workers for a queue (for runtime configuration updates)
    */
   async removeWorkerForQueue(queueName: string) {
-    const worker = this.workers.get(queueName);
+    const workers = this.workers.get(queueName);
     
-    if (!worker) {
-      this.logger.warn(`⚠️ Worker for queue '${queueName}' not found`);
+    if (!workers || workers.length === 0) {
+      this.logger.warn(`⚠️ No workers found for queue '${queueName}'`);
       return;
     }
 
-    await worker.close();
+    // Close all workers for this queue
+    await Promise.all(workers.map(worker => worker.close()));
     this.workers.delete(queueName);
-    this.logger.log(`🔴 Worker for queue '${queueName}' removed`);
+    
+    this.logger.log(`🔴 ${workers.length} workers for queue '${queueName}' removed`);
   }
 
   /**
@@ -530,5 +568,68 @@ export class DynamicWorkerService implements OnModuleInit, OnModuleDestroy {
     await this.initializeWorkers();
     
     this.logger.log('✅ Workers reloaded successfully');
+  }
+
+  /**
+   * 📊 Get cache statistics (for monitoring)
+   */
+  async getCacheStats() {
+    try {
+      return await this.cacheService.getStats();
+    } catch (error) {
+      this.logger.error('Error getting cache stats:', error);
+      return null;
+    }
+  }
+
+  /**
+   * 🧹 Clear cache manually (for debugging/maintenance)
+   */
+  async clearCache(): Promise<void> {
+    try {
+      await this.cacheService.clear();
+      this.logger.log('🧹 Cache cleared manually');
+    } catch (error) {
+      this.logger.error('Error clearing cache:', error);
+    }
+  }
+
+  /**
+   * 🧹 Perform resource cleanup
+   */
+  async performResourceCleanup(): Promise<{ success: boolean; details: any }> {
+    try {
+      const beforeMemory = this.resourceMonitor.getCurrentMemoryUsage();
+
+      // 1. Forzar garbage collection
+      const gcResult = this.resourceMonitor.forceGarbageCollection();
+
+      // 2. Limpiar conexiones idle
+      await this.connectionPool.cleanupIdleConnections();
+
+      // 3. Verificar test de conexión
+      const connectionTest = await this.connectionPool.testConnection();
+
+      const afterMemory = this.resourceMonitor.getCurrentMemoryUsage();
+      const memoryFreedMB =
+        (beforeMemory.heapUsed - afterMemory.heapUsed) / 1024 / 1024;
+
+      return {
+        success: true,
+        details: {
+          garbageCollection: gcResult,
+          memoryFreedMB: memoryFreedMB.toFixed(1),
+          connectionTest: connectionTest,
+          beforeMemoryMB: (beforeMemory.heapUsed / 1024 / 1024).toFixed(1),
+          afterMemoryMB: (afterMemory.heapUsed / 1024 / 1024).toFixed(1),
+        },
+      };
+    } catch (error) {
+      this.logger.error(`❌ Error during resource cleanup: ${error.message}`);
+      return {
+        success: false,
+        details: { error: error.message },
+      };
+    }
   }
 }

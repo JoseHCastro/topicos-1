@@ -1,7 +1,7 @@
 import { Controller, Get, Post, HttpCode, HttpStatus } from '@nestjs/common';
 import { ResourceMonitorService } from './resource-monitor.service';
 import { ConnectionPoolService } from './connection-pool.service';
-import { WorkerService } from '../workers/worker.service';
+import { DynamicWorkerService } from '../workers/dynamic-worker.service';
 import { WebSocketGateway } from '../websockets/websocket.gateway';
 import { JobStatusService } from '../websockets/job-status.service';
 
@@ -10,7 +10,7 @@ export class MonitoringController {
   constructor(
     private readonly resourceMonitor: ResourceMonitorService,
     private readonly connectionPool: ConnectionPoolService,
-    private readonly workerService: WorkerService,
+    private readonly workerService: DynamicWorkerService,
     private readonly webSocketGateway: WebSocketGateway,
     private readonly jobStatusService: JobStatusService,
   ) {}

@@ -1,5 +1,5 @@
 import { Module, forwardRef } from '@nestjs/common';
-import { WorkerService } from './worker.service';
+import { DynamicWorkerService } from './dynamic-worker.service';
 import { QueueModule } from '../queues/queue.module';
 import { RedisModule } from '../redis/redis.module';
 import { MonitoringModule } from '../monitoring/monitoring.module';
@@ -14,7 +14,7 @@ import { WebSocketModule } from '../websockets/websocket.module';
     CacheModule.forRoot(),
     forwardRef(() => WebSocketModule),
   ],
-  providers: [WorkerService],
-  exports: [WorkerService],
+  providers: [DynamicWorkerService],
+  exports: [DynamicWorkerService],
 })
 export class WorkerModule {}
