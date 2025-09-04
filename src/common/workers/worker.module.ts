@@ -15,7 +15,7 @@ import { WebSocketModule } from '../websockets/websocket.module';
 
 @Module({
   imports: [
-    QueueModule, 
+    forwardRef(() => QueueModule), 
     RedisModule, 
     MonitoringModule, 
     CacheModule.forRoot(),

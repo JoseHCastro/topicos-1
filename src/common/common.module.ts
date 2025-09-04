@@ -16,9 +16,8 @@ import { TestingModule } from './testing/testing.module';
     HealthModule,
     QueueModule,
     InterceptorModule,
-    WorkerModule,
-    MonitoringModule,
-    WebSocketModule,
+    // Remover dependencias circulares temporalmente
+    // WorkerModule, MonitoringModule, WebSocketModule se manejan por separado
     TestingModule,
   ],
   providers: [TransactionService, PaginationService],
@@ -27,9 +26,6 @@ import { TestingModule } from './testing/testing.module';
     PaginationService,
     RedisModule,
     QueueModule,
-    WorkerModule,
-    MonitoringModule,
-    WebSocketModule,
     TestingModule,
   ],
 })
