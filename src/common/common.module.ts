@@ -7,6 +7,7 @@ import { InterceptorModule } from './interceptors/interceptor.module';
 import { WorkerModule } from './workers/worker.module';
 import { MonitoringModule } from './monitoring/monitoring.module';
 import { WebSocketModule } from './websockets/websocket.module';
+import { TestingModule } from './testing/testing.module';
 
 @Global()
 @Module({
@@ -18,6 +19,7 @@ import { WebSocketModule } from './websockets/websocket.module';
     WorkerModule,
     MonitoringModule,
     WebSocketModule,
+    TestingModule,
   ],
   providers: [TransactionService, PaginationService],
   exports: [
@@ -28,6 +30,7 @@ import { WebSocketModule } from './websockets/websocket.module';
     WorkerModule,
     MonitoringModule,
     WebSocketModule,
+    TestingModule,
   ],
 })
 export class CommonModule {}

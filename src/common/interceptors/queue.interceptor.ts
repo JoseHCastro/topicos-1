@@ -7,19 +7,20 @@ import {
 } from '@nestjs/common';
 import { Observable, of } from 'rxjs';
 import { Request, Response } from 'express';
-import { QueueService } from '../queues/queue.service';
+import { DynamicQueueService } from '../queues/dynamic-queue.service';
 import { QueueConfigService } from './queue-config.service';
 import { JobStatusService } from '../websockets/job-status.service';
+import { JobData, QueueResponse } from './interfaces/job-data.interface';
 
 @Injectable()
 export class QueueInterceptor implements NestInterceptor {
   private readonly logger = new Logger(QueueInterceptor.name);
 
   constructor(
-    private readonly queueService: QueueService,
+    private readonly queueService: DynamicQueueService,
     private readonly queueConfig: QueueConfigService,
     private readonly jobStatusService: JobStatusService,
-  ) {}
+  ) { }
 
   async intercept(
     context: ExecutionContext,
@@ -46,12 +47,12 @@ export class QueueInterceptor implements NestInterceptor {
       // Generar job ID simple (timestamp + random)
       const jobId = this.generateJobId();
 
-      // Extraer información básica
-      const jobData = {
+      // Extraer y preparar datos de la petición
+      const jobData: JobData = {
         id: jobId,
         method,
         url,
-        body: method !== 'GET' ? body : undefined,
+        data: this.extractRequestData(method, body, request.query),
         headers: {
           authorization: headers.authorization,
           'content-type': headers['content-type'],
@@ -59,42 +60,46 @@ export class QueueInterceptor implements NestInterceptor {
         },
         userId: this.extractUserId(headers),
         timestamp: Date.now(),
+        queryParams: Object.keys(request.query).length > 0 ? request.query : undefined,
+        clientIp: this.extractClientIp(request),
       };
 
-      // Determinar cola por prefijo de URL
-      const queueType = this.determineQueueByUrl(url);
+      // Determinar cola dinámicamente por URL
+      const queueName = this.queueService.determineQueueForUrl(url);
+      const queueDef = this.queueService.getQueueDefinition(queueName);
 
-      // Crear job en la cola correspondiente
-      let job;
-      switch (queueType) {
-        case 'critical':
-          job = await this.queueService.addCriticalJob(jobData);
-          break;
-        case 'standard':
-          job = await this.queueService.addStandardJob(jobData);
-          break;
-        case 'background':
-          job = await this.queueService.addBackgroundJob(jobData);
-          break;
-        default:
-          job = await this.queueService.addStandardJob(jobData);
+      // Verificar que la cola existe y está habilitada
+      if (!this.queueService.isQueueAvailable(queueName)) {
+        this.logger.warn(`Queue '${queueName}' not available, falling back to processing`);
+        return next.handle();
       }
 
+      // Crear job en la cola determinada dinámicamente
+      await this.queueService.addJobToQueue(queueName, jobData, {
+        priority: queueDef?.priority,
+        timeout: queueDef ? queueDef.timeout * 1000 : 60000, // Convert to ms
+      });
+
       this.logger.log(
-        `📥 Job ${jobId} queued in ${queueType} queue for ${method} ${url}`,
+        `Job ${jobId} queued in '${queueName}' queue for ${method} ${url}`,
       );
 
       // Notificar WebSocket que el job fue encolado
-      this.jobStatusService.markJobQueued(jobId, queueType);
+      this.jobStatusService.markJobQueued(jobId, queueName);
 
       // Retornar respuesta inmediata con job ID
-      const queueResponse = {
+      const queueResponse: QueueResponse = {
         jobId,
         status: 'queued',
-        estimatedTime: this.getEstimatedTime(queueType),
+        estimatedTime: queueDef?.estimatedTime || 'Unknown',
         checkStatusUrl: `/queues/job/${jobId}/status`,
-        queueType,
+        queueType: queueName as any, // Keep compatibility with existing interface
         timestamp: new Date().toISOString(),
+        metadata: {
+          timeout: queueDef?.timeout || 60,
+          priority: queueDef?.priority || 1,
+          retryCount: 0,
+        },
       };
 
       // Establecer status 202 y devolver el body como Observable para que Nest
@@ -116,33 +121,6 @@ export class QueueInterceptor implements NestInterceptor {
   // Exclusiones del Interceptor - Ahora configurable
   private shouldExcludeFromQueue(url: string): boolean {
     return this.queueConfig.shouldExcludeFromQueue(url);
-  }
-
-  // Determinar cola por prefijo de URL - Routing Logic Simplificado
-  private determineQueueByUrl(
-    url: string,
-  ): 'critical' | 'standard' | 'background' {
-    // Critical Queue - Operaciones que NO pueden esperar
-    if (
-      url.startsWith('/atomic-enrollment/') ||
-      url.startsWith('/auth/login') ||
-      url.startsWith('/auth/logout')
-    ) {
-      return 'critical';
-    }
-
-    // Background Queue - Pueden esperar
-    if (
-      url.startsWith('/reports/') ||
-      url.startsWith('/notifications/') ||
-      url.startsWith('/database-performance/')
-    ) {
-      return 'background';
-    }
-
-    // Standard Queue - Fallback para rutas no definidas
-    // Incluye: /grades/*, /courses/*, /students/*, /academic-validations/*
-    return 'standard';
   }
 
   // Generar job ID simple (timestamp + random)
@@ -177,15 +155,75 @@ export class QueueInterceptor implements NestInterceptor {
 
   // Obtener tiempo estimado por tipo de cola
   private getEstimatedTime(queueType: string): string {
-    switch (queueType) {
-      case 'critical':
-        return '5-30 seconds';
-      case 'standard':
-        return '15-60 seconds';
-      case 'background':
-        return '30-120 seconds';
+    const queueDef = this.queueService.getQueueDefinition(queueType);
+    return queueDef?.estimatedTime || '15-60 seconds';
+  }
+
+  /**
+   * Extrae los datos relevantes de la petición según el método HTTP
+   * @param method - Método HTTP
+   * @param body - Body de la petición
+   * @param queryParams - Query parameters
+   * @returns Los datos a almacenar en el job
+   */
+  private extractRequestData(method: string, body: any, queryParams: any): any {
+    switch (method.toUpperCase()) {
+      case 'GET':
+      case 'DELETE':
+        // Para GET y DELETE, los datos importantes están en query params
+        return Object.keys(queryParams).length > 0 ? queryParams : undefined;
+
+      case 'POST':
+      case 'PUT':
+      case 'PATCH':
+        // Para métodos con body, priorizar body pero incluir query si existe
+        return {
+          ...(body || {}),
+          ...(Object.keys(queryParams).length > 0 && { queryParams }),
+        };
+
       default:
-        return '15-60 seconds';
+        // Para métodos no estándar, incluir todo
+        return {
+          body: body || undefined,
+          queryParams: Object.keys(queryParams).length > 0 ? queryParams : undefined,
+        };
     }
+  }
+
+  /**
+   * Extrae la IP del cliente considerando proxies y load balancers
+   * @param request - Request object
+   * @returns IP del cliente
+   */
+  private extractClientIp(request: any): string {
+    return (
+      request.headers['x-forwarded-for']?.split(',')[0] ||
+      request.headers['x-real-ip'] ||
+      request.connection?.remoteAddress ||
+      request.socket?.remoteAddress ||
+      request.ip ||
+      'unknown'
+    );
+  }
+
+  /**
+   * Obtiene el timeout configurado para cada tipo de cola
+   * @param queueType - Tipo de cola
+   * @returns Timeout en segundos
+   */
+  private getTimeoutForQueue(queueType: string): number {
+    const queueDef = this.queueService.getQueueDefinition(queueType);
+    return queueDef?.timeout || 60;
+  }
+
+  /**
+   * Obtiene la prioridad numérica para cada tipo de cola
+   * @param queueType - Tipo de cola
+   * @returns Prioridad (mayor número = mayor prioridad)
+   */
+  private getPriorityForQueue(queueType: string): number {
+    const queueDef = this.queueService.getQueueDefinition(queueType);
+    return queueDef?.priority || 1;
   }
 }

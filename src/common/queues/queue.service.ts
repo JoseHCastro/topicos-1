@@ -13,16 +13,7 @@ import {
   QUEUE_TIMEOUTS,
 } from './queue.config';
 import { RedisService } from '../redis/redis.service';
-
-export interface JobData {
-  id: string;
-  method: string;
-  url: string;
-  body?: any;
-  headers?: any;
-  userId?: string;
-  timestamp: number;
-}
+import { JobData } from '../interceptors/interfaces/job-data.interface';
 
 export interface QueueJobOptions {
   priority?: number;

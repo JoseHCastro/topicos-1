@@ -8,7 +8,8 @@ import {
 } from '@nestjs/common';
 import { Worker, Job } from 'bullmq';
 import { ModuleRef } from '@nestjs/core';
-import { QueueService, JobData } from '../queues/queue.service';
+import { QueueService } from '../queues/queue.service';
+import { JobData } from '../interceptors/interfaces/job-data.interface';
 import { QUEUE_NAMES, QUEUE_TIMEOUTS } from '../queues/queue.config';
 import { RedisService } from '../redis/redis.service';
 import { ResourceMonitorService } from '../monitoring/resource-monitor.service';
@@ -65,13 +66,13 @@ export class WorkerService implements OnModuleInit, OnModuleDestroy {
   }
 
   private async initializeWorkers() {
-    // Worker para cola CRITICAL
+    // Worker para cola CRITICAL (AWS Free Tier optimized)
     this.criticalWorker = new Worker(
       QUEUE_NAMES.CRITICAL,
       async (job) => this.processJob(job, 'CRITICAL'),
       {
         connection: this.queueService.getCriticalQueue().opts.connection,
-        concurrency: 1, // Procesar un job a la vez
+        concurrency: 3, // Optimizado para CPU único - mayor concurrencia para I/O
       },
     );
 
@@ -81,7 +82,7 @@ export class WorkerService implements OnModuleInit, OnModuleDestroy {
       async (job) => this.processJob(job, 'STANDARD'),
       {
         connection: this.queueService.getStandardQueue().opts.connection,
-        concurrency: 1,
+        concurrency: 3, // Optimizado para Free Tier
       },
     );
 
@@ -91,7 +92,7 @@ export class WorkerService implements OnModuleInit, OnModuleDestroy {
       async (job) => this.processJob(job, 'BACKGROUND'),
       {
         connection: this.queueService.getBackgroundQueue().opts.connection,
-        concurrency: 1,
+        concurrency: 2, // Menor concurrencia para jobs pesados
       },
     );
 
@@ -272,7 +273,7 @@ export class WorkerService implements OnModuleInit, OnModuleDestroy {
         success: true,
         message: `Request processed successfully: ${jobData.method} ${jobData.url}`,
         timestamp: new Date().toISOString(),
-        data: jobData.body || null,
+        data: jobData.data || null,
       };
     } catch (error) {
       this.logger.error(`💥 Error executing HTTP request: ${error.message}`);
@@ -283,7 +284,7 @@ export class WorkerService implements OnModuleInit, OnModuleDestroy {
   // Simulaciones para diferentes tipos de endpoints
   private async simulateUserRegistration(jobData: JobData): Promise<any> {
     this.logger.log(
-      `👤 Simulating user registration for: ${jobData.body?.email}`,
+      `👤 Simulating user registration for: ${jobData.data?.email}`,
     );
 
     // Simular tiempo de procesamiento
@@ -294,10 +295,10 @@ export class WorkerService implements OnModuleInit, OnModuleDestroy {
       message: 'User registered successfully',
       user: {
         id: `user_${Date.now()}`,
-        email: jobData.body?.email,
-        firstName: jobData.body?.firstName,
-        lastName: jobData.body?.lastName,
-        role: jobData.body?.role,
+        email: jobData.data?.email,
+        firstName: jobData.data?.firstName,
+        lastName: jobData.data?.lastName,
+        role: jobData.data?.role,
         createdAt: new Date().toISOString(),
       },
       timestamp: new Date().toISOString(),
@@ -305,7 +306,7 @@ export class WorkerService implements OnModuleInit, OnModuleDestroy {
   }
 
   private async simulateUserLogin(jobData: JobData): Promise<any> {
-    this.logger.log(`🔐 Simulating user login for: ${jobData.body?.email}`);
+    this.logger.log(`🔐 Simulating user login for: ${jobData.data?.email}`);
 
     await new Promise((resolve) => setTimeout(resolve, 500));
 
@@ -314,7 +315,7 @@ export class WorkerService implements OnModuleInit, OnModuleDestroy {
       message: 'Login successful',
       token: `jwt_token_${Date.now()}`,
       user: {
-        email: jobData.body?.email,
+        email: jobData.data?.email,
         loginAt: new Date().toISOString(),
       },
       timestamp: new Date().toISOString(),
@@ -434,7 +435,7 @@ export class WorkerService implements OnModuleInit, OnModuleDestroy {
 
     // También considerar jobs con mucho payload
     const hasLargePayload =
-      jobData.body && JSON.stringify(jobData.body).length > heavyJobThreshold;
+      jobData.data && JSON.stringify(jobData.data).length > heavyJobThreshold;
 
     return isHeavyUrl || hasLargePayload;
   }
