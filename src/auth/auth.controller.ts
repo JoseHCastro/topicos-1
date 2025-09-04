@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Put } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Put, Query } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CreateUserDto, LoginUserDto, UpdateUserDto } from './dto';
 import { Auth, GetUser } from './decorators';
@@ -18,6 +18,15 @@ export class AuthController {
   @Post('login')
   async loginUser(@Body() loginUserDto: LoginUserDto) {
     return await this.authService.login(loginUserDto);
+  }
+
+  /**
+   * Obtener todos los usuarios del sistema
+   */
+  @Get('users')
+  @Auth() // Requiere autenticación
+  async getAllUsers() {
+    return await this.authService.findAllUsers();
   }
 
   @Get('check-status')

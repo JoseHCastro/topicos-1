@@ -320,4 +320,50 @@ export class AuthService {
     });
     return await this.adminRepository.save(admin);
   }
+
+  /**
+   * Obtener todos los usuarios del sistema
+   * SIMPLIFICADO: Solo usar userRepository ya que con Table Inheritance todos están en una tabla
+   */
+  async findAllUsers() {
+    try {
+      // Con Table Inheritance, TODOS los usuarios (Student, Teacher, Admin) están en la tabla user
+      const allUsers = await this.userRepository.find({
+        select: ['id', 'email', 'first_name', 'last_name', 'phone', 'user_type', 'status', 'created_at'],
+        order: { created_at: 'DESC' }
+      });
+
+      // Mapear a formato consistente sin consultas adicionales
+      const mappedUsers = allUsers.map(user => ({
+        id: user.id,
+        email: user.email,
+        firstName: user.first_name,
+        lastName: user.last_name,
+        phone: user.phone,
+        role: user.user_type,
+        status: user.status,
+        createdAt: user.created_at,
+        type: user.user_type || 'USER'
+      }));
+
+      // Crear resumen por tipo
+      const summary = {
+        totalUsers: allUsers.length,
+        totalStudents: allUsers.filter(u => u.user_type === 'STUDENT').length,
+        totalTeachers: allUsers.filter(u => u.user_type === 'TEACHER').length,
+        totalAdmins: allUsers.filter(u => u.user_type === 'ADMIN').length,
+        totalBasicUsers: allUsers.filter(u => !['STUDENT', 'TEACHER', 'ADMIN'].includes(u.user_type)).length,
+        activeUsers: allUsers.filter(u => u.status === 'Active').length,
+        inactiveUsers: allUsers.filter(u => u.status !== 'Active').length,
+      };
+
+      return {
+        total: allUsers.length,
+        users: mappedUsers,
+        summary,
+      };
+    } catch (error) {
+      throw new BadRequestException('Error al obtener usuarios: ' + error.message);
+    }
+  }
 }
