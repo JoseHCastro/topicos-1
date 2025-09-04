@@ -29,7 +29,7 @@ export class QueueAdminController {
       queues: stats.queues,
       workers: workerStats.workers,
       performance: {
-        jobsProcessed: workerStats.jobs.totalProcessed,
+        jobsProcessed: workerStats.jobs.total,
         memoryUsage: workerStats.memory,
         uptime: workerStats.uptime,
       },
@@ -282,11 +282,11 @@ export class QueueAdminController {
       },
       workers: {
         total: workerStats.workers.total,
-        active: workerStats.workers.active.length,
+        active: workerStats.workers.active,
       },
       memory: {
         status: workerStats.memory.status,
-        usagePercent: parseFloat(workerStats.memory.usagePercent),
+        usagePercent: parseFloat(workerStats.memory.usagePercent || '0'),
       },
     };
 
@@ -300,6 +300,114 @@ export class QueueAdminController {
     return {
       message: 'Queue system health check',
       ...health,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  // ========== WORKER CONTROL ENDPOINTS FOR TESTING ==========
+
+  /**
+   * Pause all workers - Jobs will queue but not process
+   */
+  @Post('workers/pause-all')
+  async pauseAllWorkers() {
+    const result = await this.workerService.pauseAllWorkers();
+    
+    return {
+      message: result.success 
+        ? 'All workers paused successfully - jobs will queue but not process'
+        : 'Failed to pause workers',
+      ...result,
+      testing: {
+        note: 'Use this to test queue accumulation without processing',
+        nextStep: 'Send requests to see jobs queue up',
+        resume: 'POST /admin/queues/workers/resume-all',
+      },
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  /**
+   * Resume all workers - Process all queued jobs
+   */
+  @Post('workers/resume-all')
+  async resumeAllWorkers() {
+    const result = await this.workerService.resumeAllWorkers();
+    
+    return {
+      message: result.success 
+        ? 'All workers resumed successfully - processing queued jobs'
+        : 'Failed to resume workers',
+      ...result,
+      testing: {
+        note: 'Workers will now process all accumulated jobs',
+        monitor: 'GET /admin/queues/workers/status',
+      },
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  /**
+   * Pause workers for specific queue
+   */
+  @Post('workers/:queueName/pause')
+  async pauseWorkersByQueue(@Param('queueName') queueName: string) {
+    const result = await this.workerService.pauseWorkersByQueue(queueName);
+    
+    return {
+      message: result.success 
+        ? `Workers for queue '${queueName}' paused successfully`
+        : `Failed to pause workers for queue '${queueName}'`,
+      ...result,
+      testing: {
+        note: `Jobs for '${queueName}' will queue but not process`,
+        resume: `POST /admin/queues/workers/${queueName}/resume`,
+      },
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  /**
+   * Resume workers for specific queue
+   */
+  @Post('workers/:queueName/resume')
+  async resumeWorkersByQueue(@Param('queueName') queueName: string) {
+    const result = await this.workerService.resumeWorkersByQueue(queueName);
+    
+    return {
+      message: result.success 
+        ? `Workers for queue '${queueName}' resumed successfully`
+        : `Failed to resume workers for queue '${queueName}'`,
+      ...result,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  /**
+   * Get detailed workers status (active/paused)
+   */
+  @Get('workers/status')
+  getDetailedWorkerStatus() {
+    const status = this.workerService.getWorkersStatus();
+    const workerStats = this.workerService.getWorkerStats();
+    
+    return {
+      message: 'Detailed worker status',
+      status: status.global,
+      workers: {
+        global: status.global,
+        byQueue: status.byQueue,
+        details: workerStats.workers.details,
+      },
+      testing: {
+        controls: {
+          pauseAll: 'POST /admin/queues/workers/pause-all',
+          resumeAll: 'POST /admin/queues/workers/resume-all',
+          pauseQueue: 'POST /admin/queues/workers/{queueName}/pause',
+          resumeQueue: 'POST /admin/queues/workers/{queueName}/resume',
+        },
+        note: 'Use pause/resume to control job processing for testing',
+      },
       timestamp: new Date().toISOString(),
     };
   }
