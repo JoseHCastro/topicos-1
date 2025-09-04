@@ -7,6 +7,7 @@ export class QueueConfigService {
   // Exclusiones configurables del interceptor
   private readonly defaultExclusions = [
     '/queues/', // Consulta de estado de colas
+    '/admin/queues/', // Administración de workers y colas - NO debe ir a cola
     '/health', // Health checks para load balancers
     '/metrics', // Métricas de Prometheus
     '/queue-dashboard', // Dashboard de monitoreo
