@@ -1,11 +1,11 @@
 import { Controller, Get, Post, Param, Body, Delete } from '@nestjs/common';
-import { QueueService } from '../queues/queue.service';
+import { DynamicQueueService } from '../queues/dynamic-queue.service';
 import { QueueConfigService } from './queue-config.service';
 
 @Controller('queue-control')
 export class QueueControlController {
   constructor(
-    private readonly queueService: QueueService,
+    private readonly queueService: DynamicQueueService,
     private readonly queueConfig: QueueConfigService,
   ) {}
 
@@ -144,18 +144,16 @@ export class QueueControlController {
       timestamp: Date.now(),
     };
 
-    let job;
-    switch (queueType) {
-      case 'critical':
-        job = await this.queueService.addCriticalJob(testJobData);
-        break;
-      case 'standard':
-        job = await this.queueService.addStandardJob(testJobData);
-        break;
-      case 'background':
-        job = await this.queueService.addBackgroundJob(testJobData);
-        break;
+    // Validate queue availability in dynamic system
+    if (!this.queueService.isQueueAvailable(queueType)) {
+      return {
+        error: `Queue '${queueType}' is not available`,
+        availableQueues: this.queueService.getAvailableQueues(),
+        timestamp: new Date().toISOString(),
+      };
     }
+
+    const job = await this.queueService.addJobToQueue(queueType, testJobData);
 
     return {
       message: `Test job added to ${queueType} queue`,

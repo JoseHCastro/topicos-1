@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { QueueService } from '../queues/queue.service';
+import { DynamicQueueService } from '../queues/dynamic-queue.service';
 import { RedisService } from '../redis/redis.service';
 
 export interface LoadTestConfig {
@@ -45,7 +45,7 @@ export class LoadTestService {
   private jobResults = new Map<string, JobResult[]>();
 
   constructor(
-    private readonly queueService: QueueService,
+    private readonly queueService: DynamicQueueService,
     private readonly redisService: RedisService,
   ) {}
 
@@ -164,50 +164,18 @@ export class LoadTestService {
     const jobId = this.generateJobId();
 
     try {
-      // Crear job según el tipo de cola
-      switch (jobData.queueType) {
-        case 'critical':
-          await this.queueService.addCriticalJob({
-            id: jobId,
-            method: jobData.method,
-            url: jobData.url,
-            data: jobData.body,
-            headers: {
-              'content-type': 'application/json',
-              'user-agent': 'load-test-client/1.0',
-            },
-            timestamp: startTime,
-          });
-          break;
-        case 'standard':
-          await this.queueService.addStandardJob({
-            id: jobId,
-            method: jobData.method,
-            url: jobData.url,
-            data: jobData.body,
-            headers: {
-              'content-type': 'application/json',
-              'user-agent': 'load-test-client/1.0',
-            },
-            timestamp: startTime,
-          });
-          break;
-        case 'background':
-          await this.queueService.addBackgroundJob({
-            id: jobId,
-            method: jobData.method,
-            url: jobData.url,
-            data: jobData.body,
-            headers: {
-              'content-type': 'application/json',
-              'user-agent': 'load-test-client/1.0',
-            },
-            timestamp: startTime,
-          });
-          break;
-        default:
-          throw new Error(`Unknown queue type: ${jobData.queueType}`);
-      }
+      // Crear job en la cola dinámica indicada (critical/standard/background)
+      await this.queueService.addJobToQueue(jobData.queueType, {
+        id: jobId,
+        method: jobData.method,
+        url: jobData.url,
+        data: jobData.body,
+        headers: {
+          'content-type': 'application/json',
+          'user-agent': 'load-test-client/1.0',
+        },
+        timestamp: startTime,
+      });
 
       // Iniciar tracking del job
       void this.trackJobCompletion(testId, jobId, startTime);
