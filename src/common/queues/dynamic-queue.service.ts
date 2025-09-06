@@ -7,11 +7,13 @@ import {
 import { Queue } from 'bullmq';
 import { RedisService } from '../redis/redis.service';
 import { JobData } from '../interceptors/interfaces/job-data.interface';
-import { 
-  QueueSystemConfig, 
-  QueueDefinition, 
-  loadQueueConfig 
+import {
+  QueueSystemConfig,
+  QueueDefinition,
+  loadQueueConfig,
 } from './queue-config.interface';
+import * as fs from 'fs';
+import * as path from 'path';
 
 export interface QueueJobOptions {
   priority?: number;
@@ -22,7 +24,7 @@ export interface QueueJobOptions {
 @Injectable()
 export class DynamicQueueService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(DynamicQueueService.name);
-  
+
   // Dynamic queue storage
   private queues: Map<string, Queue> = new Map();
   private queueConfig: QueueSystemConfig;
@@ -31,14 +33,18 @@ export class DynamicQueueService implements OnModuleInit, OnModuleDestroy {
   constructor(private readonly redisService: RedisService) {
     // Load configuration on construction
     this.queueConfig = loadQueueConfig();
-    this.logger.log(`📋 Loaded configuration for ${this.queueConfig.queues.length} queues`);
+    this.logger.log(
+      `📋 Loaded configuration for ${this.queueConfig.queues.length} queues`,
+    );
   }
 
   async onModuleInit() {
     try {
       await this.initializeQueues();
       this.setupQueueEventListeners();
-      this.logger.log(`🚀 ${this.queues.size} dynamic queues initialized successfully`);
+      this.logger.log(
+        `🚀 ${this.queues.size} dynamic queues initialized successfully`,
+      );
     } catch (error) {
       this.logger.error('❌ Error initializing dynamic queues:', error);
       throw error;
@@ -46,7 +52,9 @@ export class DynamicQueueService implements OnModuleInit, OnModuleDestroy {
   }
 
   async onModuleDestroy() {
-    const closePromises = Array.from(this.queues.values()).map(queue => queue.close());
+    const closePromises = Array.from(this.queues.values()).map((queue) =>
+      queue.close(),
+    );
     await Promise.all(closePromises);
     this.logger.log(`🔴 All ${this.queues.size} queues closed`);
   }
@@ -64,13 +72,18 @@ export class DynamicQueueService implements OnModuleInit, OnModuleDestroy {
       try {
         const queueConfig = this.buildQueueConfig(queueDef);
         const queue = new Queue(queueDef.name, queueConfig);
-        
+
         this.queues.set(queueDef.name, queue);
         this.queueDefinitions.set(queueDef.name, queueDef);
-        
-        this.logger.log(`✅ Queue '${queueDef.name}' initialized (concurrency: ${queueDef.concurrency})`);
+
+        this.logger.log(
+          `✅ Queue '${queueDef.name}' initialized (concurrency: ${queueDef.concurrency})`,
+        );
       } catch (error) {
-        this.logger.error(`❌ Failed to initialize queue '${queueDef.name}':`, error);
+        this.logger.error(
+          `❌ Failed to initialize queue '${queueDef.name}':`,
+          error,
+        );
         throw error;
       }
     }
@@ -86,8 +99,14 @@ export class DynamicQueueService implements OnModuleInit, OnModuleDestroy {
         port: parseInt(process.env.REDIS_PORT || '6379', 10),
         password: process.env.REDIS_PASSWORD || undefined,
         db: parseInt(process.env.REDIS_DB || '0', 10),
-        maxRetriesPerRequest: parseInt(process.env.REDIS_MAX_RETRIES || '3', 10),
-        connectTimeout: parseInt(process.env.REDIS_CONNECT_TIMEOUT || '10000', 10),
+        maxRetriesPerRequest: parseInt(
+          process.env.REDIS_MAX_RETRIES || '3',
+          10,
+        ),
+        connectTimeout: parseInt(
+          process.env.REDIS_CONNECT_TIMEOUT || '10000',
+          10,
+        ),
         lazyConnect: true,
         family: 4,
         enableReadyCheck: false,
@@ -125,15 +144,19 @@ export class DynamicQueueService implements OnModuleInit, OnModuleDestroy {
   /**
    * Add job to specific queue
    */
-  async addJobToQueue(queueName: string, jobData: JobData, options?: QueueJobOptions) {
+  async addJobToQueue(
+    queueName: string,
+    jobData: JobData,
+    options?: QueueJobOptions,
+  ) {
     const queue = this.queues.get(queueName);
-    
+
     if (!queue) {
       throw new Error(`Queue '${queueName}' not found`);
     }
 
     const queueDef = this.queueDefinitions.get(queueName);
-    
+
     const job = await queue.add('process-request', jobData, {
       ...options,
       jobId: jobData.id,
@@ -151,17 +174,21 @@ export class DynamicQueueService implements OnModuleInit, OnModuleDestroy {
     // Check each queue's URL patterns
     for (const queueDef of this.queueConfig.queues) {
       if (!queueDef.enabled) continue;
-      
+
       for (const pattern of queueDef.urlPatterns) {
         if (this.matchesPattern(url, pattern)) {
-          this.logger.debug(`🎯 URL '${url}' matched pattern '${pattern}' → queue '${queueDef.name}'`);
+          this.logger.debug(
+            `🎯 URL '${url}' matched pattern '${pattern}' → queue '${queueDef.name}'`,
+          );
           return queueDef.name;
         }
       }
     }
 
     // Fallback to default queue
-    this.logger.debug(`🎯 URL '${url}' no pattern match → default queue '${this.queueConfig.defaultQueue}'`);
+    this.logger.debug(
+      `🎯 URL '${url}' no pattern match → default queue '${this.queueConfig.defaultQueue}'`,
+    );
     return this.queueConfig.defaultQueue;
   }
 
@@ -174,7 +201,7 @@ export class DynamicQueueService implements OnModuleInit, OnModuleDestroy {
       const prefix = pattern.slice(0, -2);
       return url.startsWith(prefix);
     }
-    
+
     // Exact match
     return url === pattern;
   }
@@ -188,23 +215,25 @@ export class DynamicQueueService implements OnModuleInit, OnModuleDestroy {
       const job = await queue.getJob(jobId);
       if (job) {
         const state = await job.getState();
-        
+
         // Get result from Redis if completed
         let result = null;
         let error = null;
-        
+
         if (state === 'completed' || state === 'failed') {
           try {
             const resultKey = `job:result:${jobId}`;
             const resultData = await this.redisService.get(resultKey);
-            
+
             if (resultData) {
               const parsed = JSON.parse(resultData);
               result = parsed.result;
               error = parsed.error;
             }
           } catch (err) {
-            this.logger.error(`Error fetching job result from Redis: ${err.message}`);
+            this.logger.error(
+              `Error fetching job result from Redis: ${err.message}`,
+            );
           }
         }
 
@@ -232,11 +261,11 @@ export class DynamicQueueService implements OnModuleInit, OnModuleDestroy {
    */
   async getQueuesStats() {
     const stats: Record<string, any> = {};
-    
+
     for (const [queueName, queue] of this.queues) {
       const queueDef = this.queueDefinitions.get(queueName);
       const waiting = await queue.getWaiting();
-      
+
       stats[queueName] = {
         name: queueName,
         displayName: queueDef?.displayName || queueName,
@@ -293,23 +322,117 @@ export class DynamicQueueService implements OnModuleInit, OnModuleDestroy {
   }
 
   /**
+   * Persist current queue configuration to config file
+   */
+  private async saveConfigToFile() {
+    try {
+      const configPath = path.join(process.cwd(), 'config', 'queues.json');
+      await fs.promises.writeFile(
+        configPath,
+        JSON.stringify(this.queueConfig, null, 2),
+      );
+      this.logger.log(`💾 Queue configuration saved to ${configPath}`);
+    } catch (error) {
+      this.logger.error(
+        `❌ Failed to save queue configuration: ${error.message}`,
+      );
+      throw error;
+    }
+  }
+
+  /**
+   * Create a new queue at runtime
+   */
+  async createQueue(queueDef: QueueDefinition, persist = true) {
+    if (this.queues.has(queueDef.name)) {
+      throw new Error(`Queue '${queueDef.name}' already exists`);
+    }
+
+    const queueConfig = this.buildQueueConfig(queueDef);
+    const queue = new Queue(queueDef.name, queueConfig);
+
+    this.queues.set(queueDef.name, queue);
+    this.queueDefinitions.set(queueDef.name, queueDef);
+    this.queueConfig.queues.push(queueDef);
+
+    if (persist) {
+      await this.saveConfigToFile();
+    }
+
+    this.logger.log(`➕ Queue '${queueDef.name}' created dynamically`);
+    return queueDef;
+  }
+
+  /**
+   * Remove an existing queue at runtime
+   */
+  async removeQueue(queueName: string, persist = true) {
+    const queue = this.queues.get(queueName);
+    if (!queue) {
+      throw new Error(`Queue '${queueName}' not found`);
+    }
+
+    await queue.close();
+    this.queues.delete(queueName);
+    this.queueDefinitions.delete(queueName);
+    this.queueConfig.queues = this.queueConfig.queues.filter(
+      (q) => q.name !== queueName,
+    );
+
+    if (persist) {
+      await this.saveConfigToFile();
+    }
+
+    this.logger.log(`🗑️ Queue '${queueName}' removed dynamically`);
+  }
+
+  /**
+   * Update an existing queue definition
+   */
+  async updateQueue(
+    queueName: string,
+    newDef: Partial<QueueDefinition>,
+    persist = true,
+  ) {
+    const existing = this.queueDefinitions.get(queueName);
+    if (!existing) {
+      throw new Error(`Queue '${queueName}' not found`);
+    }
+
+    const updatedDef: QueueDefinition = {
+      ...existing,
+      ...newDef,
+      name: queueName,
+    } as QueueDefinition;
+    await this.removeQueue(queueName, false);
+    await this.createQueue(updatedDef, false);
+
+    if (persist) {
+      await this.saveConfigToFile();
+    }
+
+    this.logger.log(`♻️ Queue '${queueName}' updated dynamically`);
+    return updatedDef;
+  }
+
+  /**
    * Reload configuration and reinitialize queues
    * Useful for runtime configuration updates
    */
   async reloadConfiguration() {
     this.logger.log('🔄 Reloading queue configuration...');
-    
+
     // Close existing queues
     await this.onModuleDestroy();
-    
+
     // Clear maps
     this.queues.clear();
     this.queueDefinitions.clear();
-    
+
     // Reload config and reinitialize
     this.queueConfig = loadQueueConfig();
     await this.onModuleInit();
-    
+
     this.logger.log('✅ Queue configuration reloaded successfully');
   }
 }

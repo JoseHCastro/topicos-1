@@ -1,4 +1,12 @@
-import { Controller, Get, Post, Put, Delete, Param, Body } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Param,
+  Body,
+} from '@nestjs/common';
 import { DynamicQueueService } from '../queues/dynamic-queue.service';
 import { DynamicWorkerService } from '../workers/dynamic-worker.service';
 import { QueueDefinition } from '../queues/queue-config.interface';
@@ -18,7 +26,7 @@ export class QueueAdminController {
   @Get('workers/stats')
   async getWorkerStats() {
     const stats = this.workerService.getWorkerStats();
-    
+
     return {
       message: 'Worker statistics',
       ...stats,
@@ -32,7 +40,7 @@ export class QueueAdminController {
   @Get('workers/status')
   async getWorkersStatus() {
     const status = this.workerService.getWorkersStatus();
-    
+
     return {
       message: 'Workers status',
       ...status,
@@ -46,9 +54,9 @@ export class QueueAdminController {
   @Post('workers/pause-all')
   async pauseAllWorkers() {
     const result = await this.workerService.pauseAllWorkers();
-    
+
     return {
-      message: result.success 
+      message: result.success
         ? 'All workers paused successfully - jobs will queue but not process'
         : 'Failed to pause workers',
       ...result,
@@ -67,9 +75,9 @@ export class QueueAdminController {
   @Post('workers/resume-all')
   async resumeAllWorkers() {
     const result = await this.workerService.resumeAllWorkers();
-    
+
     return {
-      message: result.success 
+      message: result.success
         ? 'All workers resumed successfully - processing queued jobs'
         : 'Failed to resume workers',
       ...result,
@@ -87,9 +95,9 @@ export class QueueAdminController {
   @Post('workers/:queueName/pause')
   async pauseWorkersByQueue(@Param('queueName') queueName: string) {
     const result = await this.workerService.pauseWorkersByQueue(queueName);
-    
+
     return {
-      message: result.success 
+      message: result.success
         ? `Workers for queue '${queueName}' paused successfully`
         : `Failed to pause workers for queue '${queueName}'`,
       ...result,
@@ -103,9 +111,9 @@ export class QueueAdminController {
   @Post('workers/:queueName/resume')
   async resumeWorkersByQueue(@Param('queueName') queueName: string) {
     const result = await this.workerService.resumeWorkersByQueue(queueName);
-    
+
     return {
-      message: result.success 
+      message: result.success
         ? `Workers for queue '${queueName}' resumed successfully`
         : `Failed to resume workers for queue '${queueName}'`,
       ...result,
@@ -114,27 +122,72 @@ export class QueueAdminController {
   }
 
   /**
-   * Create workers for specific queue (Not implemented yet)
+   * Create worker for specific queue
    */
   @Post('workers/:queueName')
-  async createWorkersForQueue(@Param('queueName') queueName: string, @Body() config?: any) {
+  async createWorkersForQueue(@Param('queueName') queueName: string) {
+    await this.workerService.addWorkerForQueue(queueName);
+
     return {
-      message: `Worker creation for queue '${queueName}' not implemented yet`,
+      message: `Worker added for queue '${queueName}'`,
       queueName,
-      success: false,
+      success: true,
       timestamp: new Date().toISOString(),
     };
   }
 
   /**
-   * Delete workers for specific queue (Not implemented yet)
+   * Delete worker for specific queue
    */
   @Delete('workers/:queueName')
   async deleteWorkersForQueue(@Param('queueName') queueName: string) {
+    await this.workerService.removeWorkerForQueue(queueName);
+
     return {
-      message: `Worker deletion for queue '${queueName}' not implemented yet`,
+      message: `Worker removed from queue '${queueName}'`,
       queueName,
-      success: false,
+      success: true,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  // ========== QUEUE MANAGEMENT ==========
+
+  /** Create a new queue dynamically */
+  @Post()
+  async createQueue(@Body() queueDef: QueueDefinition) {
+    const queue = await this.queueService.createQueue(queueDef);
+
+    return {
+      message: `Queue '${queueDef.name}' created`,
+      queue,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  /** Update existing queue */
+  @Put(':queueName')
+  async updateQueue(
+    @Param('queueName') queueName: string,
+    @Body() updates: Partial<QueueDefinition>,
+  ) {
+    const queue = await this.queueService.updateQueue(queueName, updates);
+
+    return {
+      message: `Queue '${queueName}' updated`,
+      queue,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  /** Delete a queue */
+  @Delete(':queueName')
+  async deleteQueue(@Param('queueName') queueName: string) {
+    await this.queueService.removeQueue(queueName);
+
+    return {
+      message: `Queue '${queueName}' deleted`,
+      queueName,
       timestamp: new Date().toISOString(),
     };
   }
@@ -147,7 +200,7 @@ export class QueueAdminController {
   @Get('config/current')
   async getCurrentConfig() {
     const config = this.queueService.getQueueConfig();
-    
+
     return {
       message: 'Current queue configuration',
       config,
@@ -164,7 +217,7 @@ export class QueueAdminController {
       // Note: This method doesn't exist yet in DynamicQueueService
       // await this.queueService.reloadConfig();
       const config = this.queueService.getQueueConfig();
-      
+
       return {
         message: 'Queue configuration retrieved (reload not implemented yet)',
         config,
@@ -188,7 +241,7 @@ export class QueueAdminController {
   async healthCheck() {
     const queueStats = await this.queueService.getQueuesStats();
     const workerStats = this.workerService.getWorkerStats();
-    
+
     const health = {
       status: 'healthy',
       queues: {
@@ -198,7 +251,8 @@ export class QueueAdminController {
       workers: {
         total: workerStats.workers.total,
         active: workerStats.workers.active,
-        paused: workerStats.workers.details.filter(w => w.status === 'paused').length,
+        paused: workerStats.workers.details.filter((w) => w.status === 'paused')
+          .length,
       },
       memory: {
         heapUsedMB: workerStats.memory.heapUsedMB,
@@ -282,7 +336,10 @@ export class QueueAdminController {
    * Test queue by adding a sample job
    */
   @Post(':queueName/test')
-  async testQueue(@Param('queueName') queueName: string, @Body() testData?: any) {
+  async testQueue(
+    @Param('queueName') queueName: string,
+    @Body() testData?: any,
+  ) {
     if (!this.queueService.isQueueAvailable(queueName)) {
       return {
         error: `Queue '${queueName}' is not available`,
@@ -292,7 +349,7 @@ export class QueueAdminController {
     }
 
     const jobId = `test_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
-    
+
     const testJobData = {
       id: jobId,
       method: 'GET',
@@ -304,7 +361,7 @@ export class QueueAdminController {
 
     try {
       const job = await this.queueService.addJobToQueue(queueName, testJobData);
-      
+
       return {
         message: `Test job added to queue '${queueName}'`,
         jobId: job.id,
@@ -327,7 +384,7 @@ export class QueueAdminController {
   @Get(':queueName')
   async getQueueInfo(@Param('queueName') queueName: string) {
     const queueDef = this.queueService.getQueueDefinition(queueName);
-    
+
     if (!queueDef) {
       return {
         error: `Queue '${queueName}' not found`,
@@ -337,7 +394,7 @@ export class QueueAdminController {
     }
 
     const stats = await this.queueService.getQueuesStats();
-    
+
     return {
       message: `Queue '${queueName}' information`,
       queue: queueDef,
