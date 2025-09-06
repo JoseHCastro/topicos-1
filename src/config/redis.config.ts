@@ -11,7 +11,7 @@ export const redisConfig = {
     // Configuración básica sin clustering (single instance)
     connectTimeout: parseInt(process.env.REDIS_CONNECT_TIMEOUT || '5000', 10),
     lazyConnect: true,
-    maxRetriesPerRequest: parseInt(process.env.REDIS_MAX_RETRIES || '3', 10),
+    maxRetriesPerRequest: null, // BullMQ requiere que sea null
     retryDelayOnFailure: parseInt(process.env.REDIS_RETRY_DELAY || '100', 10),
 
     // Máximo 10 conexiones concurrentes
@@ -32,7 +32,7 @@ export const redisConnectionOptions = {
   // Configuración de conexión
   connectTimeout: parseInt(process.env.REDIS_CONNECT_TIMEOUT || '5000', 10),
   lazyConnect: true,
-  maxRetriesPerRequest: parseInt(process.env.REDIS_MAX_RETRIES || '3', 10),
+  maxRetriesPerRequest: null, // BullMQ requiere que sea null
   retryDelayOnFailure: parseInt(process.env.REDIS_RETRY_DELAY || '100', 10),
 
   // Pool de conexiones limitado

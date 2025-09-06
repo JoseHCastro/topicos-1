@@ -15,6 +15,13 @@ services:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - postgres_network
+    # AWS RDS t2.micro simulation
+    deploy:
+      resources:
+        limits:
+          memory: 400M
+        reservations:
+          memory: 200M
 
   redis:
     image: redis:7-alpine
@@ -29,6 +36,13 @@ services:
       - postgres_network
     environment:
       - TZ=America/La_Paz
+    # AWS Free Tier memory limit simulation
+    deploy:
+      resources:
+        limits:
+          memory: 250M
+        reservations:
+          memory: 100M
 
   app:
     image: nukesito/topicos-1:latest

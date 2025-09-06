@@ -1,9 +1,9 @@
 import { Controller, Get, Param, Query } from '@nestjs/common';
-import { QueueService } from '../queues/queue.service';
+import { DynamicQueueService } from '../queues/dynamic-queue.service';
 
 @Controller('queues')
 export class QueueController {
-  constructor(private readonly queueService: QueueService) {}
+  constructor(private readonly queueService: DynamicQueueService) {}
 
   @Get('status')
   async getBatchJobStatus(@Query('ids') ids: string) {
@@ -121,14 +121,18 @@ export class QueueController {
     try {
       const stats = await this.queueService.getQueuesStats();
 
+      // Crear resumen de salud usando la nueva estructura
+      const queueSummary: Record<string, string> = {};
+      Object.keys(stats.queues).forEach(queueName => {
+        const queue = stats.queues[queueName];
+        queueSummary[queueName] = `${queue.waiting} jobs waiting`;
+      });
+
       return {
         status: 'healthy',
         message: 'All queues are operational',
-        queues: {
-          critical: stats.critical.waiting + ' jobs waiting',
-          standard: stats.standard.waiting + ' jobs waiting',
-          background: stats.background.waiting + ' jobs waiting',
-        },
+        queues: queueSummary,
+        totalQueues: stats.totalQueues,
         timestamp: new Date().toISOString(),
       };
     } catch (error) {

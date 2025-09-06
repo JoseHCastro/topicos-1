@@ -1,0 +1,348 @@
+import { Controller, Get, Post, Put, Delete, Param, Body } from '@nestjs/common';
+import { DynamicQueueService } from '../queues/dynamic-queue.service';
+import { DynamicWorkerService } from '../workers/dynamic-worker.service';
+import { QueueDefinition } from '../queues/queue-config.interface';
+
+@Controller('admin/queues')
+export class QueueAdminController {
+  constructor(
+    private readonly queueService: DynamicQueueService,
+    private readonly workerService: DynamicWorkerService,
+  ) {}
+
+  // ========== WORKER CONTROL ENDPOINTS (MOST SPECIFIC FIRST) ==========
+
+  /**
+   * Get worker statistics
+   */
+  @Get('workers/stats')
+  async getWorkerStats() {
+    const stats = this.workerService.getWorkerStats();
+    
+    return {
+      message: 'Worker statistics',
+      ...stats,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  /**
+   * Get workers status
+   */
+  @Get('workers/status')
+  async getWorkersStatus() {
+    const status = this.workerService.getWorkersStatus();
+    
+    return {
+      message: 'Workers status',
+      ...status,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  /**
+   * Pause all workers - Jobs will queue but not process
+   */
+  @Post('workers/pause-all')
+  async pauseAllWorkers() {
+    const result = await this.workerService.pauseAllWorkers();
+    
+    return {
+      message: result.success 
+        ? 'All workers paused successfully - jobs will queue but not process'
+        : 'Failed to pause workers',
+      ...result,
+      testing: {
+        note: 'Use this to test queue accumulation without processing',
+        nextStep: 'Send requests to see jobs queue up',
+        resume: 'POST /admin/queues/workers/resume-all',
+      },
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  /**
+   * Resume all workers - Process all queued jobs
+   */
+  @Post('workers/resume-all')
+  async resumeAllWorkers() {
+    const result = await this.workerService.resumeAllWorkers();
+    
+    return {
+      message: result.success 
+        ? 'All workers resumed successfully - processing queued jobs'
+        : 'Failed to resume workers',
+      ...result,
+      testing: {
+        note: 'Workers will now process all accumulated jobs',
+        monitor: 'GET /admin/queues/workers/status',
+      },
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  /**
+   * Pause workers for specific queue
+   */
+  @Post('workers/:queueName/pause')
+  async pauseWorkersByQueue(@Param('queueName') queueName: string) {
+    const result = await this.workerService.pauseWorkersByQueue(queueName);
+    
+    return {
+      message: result.success 
+        ? `Workers for queue '${queueName}' paused successfully`
+        : `Failed to pause workers for queue '${queueName}'`,
+      ...result,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  /**
+   * Resume workers for specific queue
+   */
+  @Post('workers/:queueName/resume')
+  async resumeWorkersByQueue(@Param('queueName') queueName: string) {
+    const result = await this.workerService.resumeWorkersByQueue(queueName);
+    
+    return {
+      message: result.success 
+        ? `Workers for queue '${queueName}' resumed successfully`
+        : `Failed to resume workers for queue '${queueName}'`,
+      ...result,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  /**
+   * Create workers for specific queue (Not implemented yet)
+   */
+  @Post('workers/:queueName')
+  async createWorkersForQueue(@Param('queueName') queueName: string, @Body() config?: any) {
+    return {
+      message: `Worker creation for queue '${queueName}' not implemented yet`,
+      queueName,
+      success: false,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  /**
+   * Delete workers for specific queue (Not implemented yet)
+   */
+  @Delete('workers/:queueName')
+  async deleteWorkersForQueue(@Param('queueName') queueName: string) {
+    return {
+      message: `Worker deletion for queue '${queueName}' not implemented yet`,
+      queueName,
+      success: false,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  // ========== CONFIG ENDPOINTS ==========
+
+  /**
+   * Get current queue configuration
+   */
+  @Get('config/current')
+  async getCurrentConfig() {
+    const config = this.queueService.getQueueConfig();
+    
+    return {
+      message: 'Current queue configuration',
+      config,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  /**
+   * Reload queue configuration
+   */
+  @Post('config/reload')
+  async reloadConfig() {
+    try {
+      // Note: This method doesn't exist yet in DynamicQueueService
+      // await this.queueService.reloadConfig();
+      const config = this.queueService.getQueueConfig();
+      
+      return {
+        message: 'Queue configuration retrieved (reload not implemented yet)',
+        config,
+        timestamp: new Date().toISOString(),
+      };
+    } catch (error) {
+      return {
+        error: 'Failed to get configuration',
+        details: error.message,
+        timestamp: new Date().toISOString(),
+      };
+    }
+  }
+
+  // ========== HEALTH CHECK ==========
+
+  /**
+   * System health check
+   */
+  @Get('health/check')
+  async healthCheck() {
+    const queueStats = await this.queueService.getQueuesStats();
+    const workerStats = this.workerService.getWorkerStats();
+    
+    const health = {
+      status: 'healthy',
+      queues: {
+        total: queueStats.totalQueues,
+        available: Object.keys(queueStats.queues).length,
+      },
+      workers: {
+        total: workerStats.workers.total,
+        active: workerStats.workers.active,
+        paused: workerStats.workers.details.filter(w => w.status === 'paused').length,
+      },
+      memory: {
+        heapUsedMB: workerStats.memory.heapUsedMB,
+        heapTotalMB: workerStats.memory.heapTotalMB,
+        usagePercent: parseFloat(workerStats.memory.usagePercent) || 0,
+      },
+      uptime: workerStats.uptime,
+    };
+
+    // Determine health status
+    if (health.queues.available === 0 || health.workers.total === 0) {
+      health.status = 'unhealthy';
+    } else if (health.memory.usagePercent > 80) {
+      health.status = 'degraded';
+    }
+
+    return {
+      message: 'Queue system health check',
+      ...health,
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  // ========== ROUTING ENDPOINTS ==========
+
+  /**
+   * Get routing patterns (Not implemented yet)
+   */
+  @Get('routing/patterns')
+  async getRoutingPatterns() {
+    return {
+      message: 'Routing patterns not implemented yet',
+      patterns: [],
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  /**
+   * Test routing for a specific request (Not implemented yet)
+   */
+  @Post('routing/test')
+  async testRouting(@Body() requestData: any) {
+    return {
+      message: 'Routing test not implemented yet',
+      input: requestData,
+      determinedQueue: 'standard', // default queue
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  // ========== GENERAL QUEUE ENDPOINTS (LESS SPECIFIC) ==========
+
+  /**
+   * Get all queue configurations and statistics
+   */
+  @Get()
+  async getAllQueues() {
+    const stats = await this.queueService.getQueuesStats();
+    const config = this.queueService.getQueueConfig();
+    const workerStats = this.workerService.getWorkerStats();
+
+    return {
+      message: 'Queue system overview',
+      config: {
+        enabled: config.enabled,
+        defaultQueue: config.defaultQueue,
+        totalQueues: stats.totalQueues,
+      },
+      queues: stats.queues,
+      workers: workerStats.workers,
+      performance: {
+        jobsProcessed: workerStats.jobs.total,
+        memoryUsage: workerStats.memory,
+        uptime: workerStats.uptime,
+      },
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  /**
+   * Test queue by adding a sample job
+   */
+  @Post(':queueName/test')
+  async testQueue(@Param('queueName') queueName: string, @Body() testData?: any) {
+    if (!this.queueService.isQueueAvailable(queueName)) {
+      return {
+        error: `Queue '${queueName}' is not available`,
+        availableQueues: this.queueService.getAvailableQueues(),
+        timestamp: new Date().toISOString(),
+      };
+    }
+
+    const jobId = `test_${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
+    
+    const testJobData = {
+      id: jobId,
+      method: 'GET',
+      url: `/test/${queueName}`,
+      data: testData || { test: true, queueName },
+      headers: {},
+      timestamp: Date.now(),
+    };
+
+    try {
+      const job = await this.queueService.addJobToQueue(queueName, testJobData);
+      
+      return {
+        message: `Test job added to queue '${queueName}'`,
+        jobId: job.id,
+        queueName,
+        testData: testJobData,
+        timestamp: new Date().toISOString(),
+      };
+    } catch (error) {
+      return {
+        error: `Failed to add test job to queue '${queueName}'`,
+        details: error.message,
+        timestamp: new Date().toISOString(),
+      };
+    }
+  }
+
+  /**
+   * Get specific queue information (MOST GENERIC - MUST BE LAST)
+   */
+  @Get(':queueName')
+  async getQueueInfo(@Param('queueName') queueName: string) {
+    const queueDef = this.queueService.getQueueDefinition(queueName);
+    
+    if (!queueDef) {
+      return {
+        error: `Queue '${queueName}' not found`,
+        availableQueues: this.queueService.getAvailableQueues(),
+        timestamp: new Date().toISOString(),
+      };
+    }
+
+    const stats = await this.queueService.getQueuesStats();
+    
+    return {
+      message: `Queue '${queueName}' information`,
+      queue: queueDef,
+      statistics: stats.queues[queueName],
+      timestamp: new Date().toISOString(),
+    };
+  }
+}

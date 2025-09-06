@@ -171,7 +171,11 @@ export class LoadTestService {
             id: jobId,
             method: jobData.method,
             url: jobData.url,
-            body: jobData.body,
+            data: jobData.body,
+            headers: {
+              'content-type': 'application/json',
+              'user-agent': 'load-test-client/1.0',
+            },
             timestamp: startTime,
           });
           break;
@@ -180,7 +184,11 @@ export class LoadTestService {
             id: jobId,
             method: jobData.method,
             url: jobData.url,
-            body: jobData.body,
+            data: jobData.body,
+            headers: {
+              'content-type': 'application/json',
+              'user-agent': 'load-test-client/1.0',
+            },
             timestamp: startTime,
           });
           break;
@@ -189,7 +197,11 @@ export class LoadTestService {
             id: jobId,
             method: jobData.method,
             url: jobData.url,
-            body: jobData.body,
+            data: jobData.body,
+            headers: {
+              'content-type': 'application/json',
+              'user-agent': 'load-test-client/1.0',
+            },
             timestamp: startTime,
           });
           break;

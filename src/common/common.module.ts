@@ -7,6 +7,7 @@ import { InterceptorModule } from './interceptors/interceptor.module';
 import { WorkerModule } from './workers/worker.module';
 import { MonitoringModule } from './monitoring/monitoring.module';
 import { WebSocketModule } from './websockets/websocket.module';
+import { TestingModule } from './testing/testing.module';
 
 @Global()
 @Module({
@@ -15,9 +16,9 @@ import { WebSocketModule } from './websockets/websocket.module';
     HealthModule,
     QueueModule,
     InterceptorModule,
-    WorkerModule,
-    MonitoringModule,
-    WebSocketModule,
+    // Remover dependencias circulares temporalmente
+    // WorkerModule, MonitoringModule, WebSocketModule se manejan por separado
+    TestingModule,
   ],
   providers: [TransactionService, PaginationService],
   exports: [
@@ -25,9 +26,7 @@ import { WebSocketModule } from './websockets/websocket.module';
     PaginationService,
     RedisModule,
     QueueModule,
-    WorkerModule,
-    MonitoringModule,
-    WebSocketModule,
+    TestingModule,
   ],
 })
 export class CommonModule {}

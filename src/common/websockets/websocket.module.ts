@@ -6,7 +6,7 @@ import { QueueModule } from '../queues/queue.module';
 import { RedisModule } from '../redis/redis.module';
 
 @Module({
-  imports: [QueueModule, RedisModule],
+  imports: [forwardRef(() => QueueModule), RedisModule],
   providers: [WebSocketGateway, WebSocketService, JobStatusService],
   exports: [WebSocketGateway, WebSocketService, JobStatusService],
 })
