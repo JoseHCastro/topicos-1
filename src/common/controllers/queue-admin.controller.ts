@@ -8,6 +8,8 @@ import {
   Body,
 } from '@nestjs/common';
 import { DynamicQueueService } from '../queues/dynamic-queue.service';
+import { Inject } from '@nestjs/common';
+import { IQueueConfigRepository, QUEUE_CONFIG_REPOSITORY } from '../queues/queue-config.repository';
 import { DynamicWorkerService } from '../workers/dynamic-worker.service';
 import { QueueDefinition } from '../queues/queue-config.interface';
 
@@ -16,6 +18,8 @@ export class QueueAdminController {
   constructor(
     private readonly queueService: DynamicQueueService,
     private readonly workerService: DynamicWorkerService,
+    @Inject(QUEUE_CONFIG_REPOSITORY)
+    private readonly configRepo: IQueueConfigRepository,
   ) {}
 
   // ========== WORKER CONTROL ENDPOINTS (MOST SPECIFIC FIRST) ==========
@@ -173,6 +177,11 @@ export class QueueAdminController {
   @Post()
   async createQueue(@Body() queueDef: QueueDefinition) {
     const queue = await this.queueService.createQueue(queueDef);
+    // Persist full config to repository as source of truth
+    try {
+      await this.configRepo.saveConfig(this.queueService.getQueueConfig());
+      await this.configRepo.publishUpdate({ type: 'queue-created', queueName: queueDef.name, timestamp: new Date().toISOString() });
+    } catch {}
     // Ensure configured workers are created immediately
     try {
       await this.workerService.ensureWorkersForQueue(queueDef.name);
@@ -220,6 +229,9 @@ export class QueueAdminController {
       if (typeof total === 'number') {
         await this.queueService.setQueueWorkers(queueName, total);
       }
+      // Persist config to repository
+      await this.configRepo.saveConfig(this.queueService.getQueueConfig());
+      await this.configRepo.publishUpdate({ type: 'queue-updated', queueName, timestamp: new Date().toISOString() });
     } catch (err) {
       return {
         message: `Queue '${queueName}' updated (worker reconcile had issues)`,
@@ -242,6 +254,10 @@ export class QueueAdminController {
     // Remove workers first to free resources
     await this.workerService.removeAllWorkersForQueue(queueName).catch(() => undefined);
     await this.queueService.removeQueue(queueName);
+    try {
+      await this.configRepo.saveConfig(this.queueService.getQueueConfig());
+      await this.configRepo.publishUpdate({ type: 'queue-removed', queueName, timestamp: new Date().toISOString() });
+    } catch {}
 
     return {
       message: `Queue '${queueName}' deleted`,
