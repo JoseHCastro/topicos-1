@@ -3,7 +3,6 @@ import { Job } from 'bullmq';
 import { JobData } from '../interceptors/interfaces/job-data.interface';
 import { QueueDefinition } from '../queues/queue-config.interface';
 import { RedisService } from '../redis/redis.service';
-import { JobSimulatorService } from './job-simulator.service';
 import { HttpExecutorService } from './http-executor.service';
 import { JobCacheService } from './job-cache.service';
 
@@ -13,7 +12,6 @@ export class JobProcessorService {
 
   constructor(
     private readonly redisService: RedisService,
-    private readonly simulator: JobSimulatorService,
     private readonly httpExecutor: HttpExecutorService,
     private readonly cache: JobCacheService,
   ) {}
@@ -55,9 +53,9 @@ export class JobProcessorService {
           this.createTimeoutPromise(timeout * 1000),
         ]);
       } else {
-        this.logger.log(`🎭 [${queueName}]${workerInfo} Executing SIMULATED request for job ${job.id}`);
+        this.logger.log(`🌐 [${queueName}]${workerInfo} Executing REAL HTTP request for job ${job.id}`);
         result = await Promise.race([
-          this.simulator.executeRequest(jobData),
+          this.httpExecutor.executeRequest(jobData),
           this.createTimeoutPromise(timeout * 1000),
         ]);
       }
