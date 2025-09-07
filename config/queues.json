@@ -124,7 +124,7 @@
       "retryDelay": 2000,
       "estimatedTime": "15-60 seconds",
       "concurrency": 1,
-      "workers": 2,
+      "workers": 4,
       "processingDelay": 100,
       "removeOnComplete": 100,
       "removeOnFail": 50,
