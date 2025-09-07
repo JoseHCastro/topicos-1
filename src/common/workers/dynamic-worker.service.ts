@@ -15,6 +15,8 @@ export class DynamicWorkerService implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(DynamicWorkerService.name);
   private workers: Map<string, WorkerInfo> = new Map();
   private isShuttingDown = false;
+  private initialized = false;
+  private initPromise: Promise<void> | null = null;
 
   constructor(
     private readonly queueService: DynamicQueueService,
@@ -32,7 +34,15 @@ export class DynamicWorkerService implements OnModuleInit, OnModuleDestroy {
     this.resourceManager.setupResourceMonitoring();
     
     // Create workers for all enabled queues
-    await this.createWorkersForAllQueues();
+    this.initPromise = this.createWorkersForAllQueues()
+      .then(() => {
+        this.initialized = true;
+      })
+      .catch((err) => {
+        this.logger.error(`Failed to initialize workers: ${err.message}`);
+        this.initialized = false;
+      });
+    await this.initPromise;
     
     this.logger.log(`✅ Dynamic Worker Service initialized with ${this.workers.size} workers`);
   }
@@ -61,6 +71,28 @@ export class DynamicWorkerService implements OnModuleInit, OnModuleDestroy {
       } else {
         this.logger.warn(`⚠️ Queue '${queueDef.name}' is disabled, skipping worker creation`);
       }
+    }
+  }
+
+  /**
+   * Ensure workers are initialized before serving status/statistics
+   */
+  private async ensureInitialized(): Promise<void> {
+    if (this.isShuttingDown) return;
+
+    if (!this.initialized || this.workers.size === 0) {
+      this.logger.debug('Workers not initialized yet. Ensuring initialization...');
+      if (!this.initPromise) {
+        this.initPromise = this.createWorkersForAllQueues()
+          .then(() => {
+            this.initialized = true;
+          })
+          .catch((err) => {
+            this.logger.error(`Failed to initialize workers: ${err.message}`);
+            this.initialized = false;
+          });
+      }
+      await this.initPromise;
     }
   }
 
@@ -159,9 +191,66 @@ export class DynamicWorkerService implements OnModuleInit, OnModuleDestroy {
     this.logger.log(`✅ Reloaded workers successfully (${this.workers.size} workers active)`);
   }
 
-  getWorkerStats() {
+  async getWorkerStats() {
+    await this.ensureInitialized();
     const workers = Array.from(this.workers.values());
     return this.statsService.getDetailedWorkerStats(workers);
+  }
+
+  /**
+   * Ensure the number of workers for a queue matches its configured value
+   * (queueDef.workers with env/max limits applied)
+   */
+  async ensureWorkersForQueue(queueName: string): Promise<{ queueName: string; desired: number; final: number }>{
+    if (this.isShuttingDown) {
+      throw new Error('Cannot modify workers during shutdown');
+    }
+
+    const queueDef = this.queueService.getQueueDefinition(queueName);
+    if (!queueDef) {
+      throw new Error(`Queue '${queueName}' not found`);
+    }
+
+    if (!queueDef.enabled) {
+      this.logger.warn(`Queue '${queueName}' is disabled; skipping worker ensure`);
+      return { queueName, desired: 0, final: 0 };
+    }
+
+    const desired = Math.max(0, this.workerFactory.getWorkerCountForQueue(queueDef));
+    const workersArr = Array.from(this.workers.values());
+    const existing = this.healthService.getWorkersForQueue(workersArr, queueName).length;
+
+    if (existing < desired) {
+      const toAdd = desired - existing;
+      for (let i = 0; i < toAdd; i++) {
+        await this.addWorkerForQueue(queueName);
+      }
+    } else if (existing > desired) {
+      const toRemove = existing - desired;
+      for (let i = 0; i < toRemove; i++) {
+        await this.removeWorkerForQueue(queueName);
+      }
+    }
+
+    const finalWorkers = this.healthService.getWorkersForQueue(Array.from(this.workers.values()), queueName).length;
+    this.logger.log(`? Ensured workers for '${queueName}': desired=${desired}, final=${finalWorkers}`);
+    return { queueName, desired, final: finalWorkers };
+  }
+
+  /**
+   * Remove all workers for a given queue
+   */
+  async removeAllWorkersForQueue(queueName: string): Promise<number> {
+    let removed = 0;
+    while (true) {
+      const workersArr = Array.from(this.workers.values());
+      const queueWorkers = this.healthService.getWorkersForQueue(workersArr, queueName);
+      if (queueWorkers.length === 0) break;
+      await this.removeWorkerForQueue(queueName);
+      removed++;
+    }
+    this.logger.log(`? Removed all workers for queue '${queueName}' (removed=${removed})`);
+    return removed;
   }
 
   async performResourceCleanup(): Promise<{ success: boolean; details: any }> {
@@ -327,7 +416,8 @@ export class DynamicWorkerService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  getWorkersStatus(): { global: string; byQueue: Record<string, { active: number; paused: number; total: number }> } {
+  async getWorkersStatus(): Promise<{ global: string; byQueue: Record<string, { active: number; paused: number; total: number }> }> {
+    await this.ensureInitialized();
     const workers = Array.from(this.workers.values());
     const byQueue: Record<string, { active: number; paused: number; total: number }> = {};
     

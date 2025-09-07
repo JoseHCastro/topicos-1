@@ -20,7 +20,7 @@ export class MonitoringController {
    */
   @Get('stats')
   async getSystemStats() {
-    const workerStats = this.workerService.getWorkerStats();
+    const workerStats = await this.workerService.getWorkerStats();
     const memoryStats = this.resourceMonitor.getRecentStats(5);
     const poolStats = this.connectionPool.getRecentStats(5);
     

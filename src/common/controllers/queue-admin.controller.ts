@@ -25,7 +25,7 @@ export class QueueAdminController {
    */
   @Get('workers/stats')
   async getWorkerStats() {
-    const stats = this.workerService.getWorkerStats();
+    const stats = await this.workerService.getWorkerStats();
 
     return {
       message: 'Worker statistics',
@@ -39,7 +39,7 @@ export class QueueAdminController {
    */
   @Get('workers/status')
   async getWorkersStatus() {
-    const status = this.workerService.getWorkersStatus();
+    const status = await this.workerService.getWorkersStatus();
 
     return {
       message: 'Workers status',
@@ -157,6 +157,18 @@ export class QueueAdminController {
   @Post()
   async createQueue(@Body() queueDef: QueueDefinition) {
     const queue = await this.queueService.createQueue(queueDef);
+    // Ensure configured workers are created immediately
+    try {
+      await this.workerService.ensureWorkersForQueue(queueDef.name);
+    } catch (err) {
+      // Return queue created, but warn about worker creation
+      return {
+        message: `Queue '${queueDef.name}' created (workers ensure failed)`,
+        queue,
+        workerError: err.message,
+        timestamp: new Date().toISOString(),
+      };
+    }
 
     return {
       message: `Queue '${queueDef.name}' created`,
@@ -172,6 +184,17 @@ export class QueueAdminController {
     @Body() updates: Partial<QueueDefinition>,
   ) {
     const queue = await this.queueService.updateQueue(queueName, updates);
+    // Reconcile workers with new definition
+    try {
+      await this.workerService.ensureWorkersForQueue(queueName);
+    } catch (err) {
+      return {
+        message: `Queue '${queueName}' updated (workers ensure failed)`,
+        queue,
+        workerError: err.message,
+        timestamp: new Date().toISOString(),
+      };
+    }
 
     return {
       message: `Queue '${queueName}' updated`,
@@ -183,6 +206,8 @@ export class QueueAdminController {
   /** Delete a queue */
   @Delete(':queueName')
   async deleteQueue(@Param('queueName') queueName: string) {
+    // Remove workers first to free resources
+    await this.workerService.removeAllWorkersForQueue(queueName).catch(() => undefined);
     await this.queueService.removeQueue(queueName);
 
     return {
@@ -240,7 +265,7 @@ export class QueueAdminController {
   @Get('health/check')
   async healthCheck() {
     const queueStats = await this.queueService.getQueuesStats();
-    const workerStats = this.workerService.getWorkerStats();
+    const workerStats = await this.workerService.getWorkerStats();
 
     const health = {
       status: 'healthy',
@@ -312,7 +337,7 @@ export class QueueAdminController {
   async getAllQueues() {
     const stats = await this.queueService.getQueuesStats();
     const config = this.queueService.getQueueConfig();
-    const workerStats = this.workerService.getWorkerStats();
+    const workerStats = await this.workerService.getWorkerStats();
 
     return {
       message: 'Queue system overview',
