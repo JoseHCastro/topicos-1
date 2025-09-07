@@ -116,19 +116,27 @@
       "enabled": true
     },
     {
-      "name": "reports",
-      "displayName": "📊 reports Queue",
-      "priority": 2,
-      "timeout": 120,
+      "name": "cola1",
+      "displayName": "🟡 Standard Queue",
+      "priority": 8,
+      "timeout": 60,
       "attempts": 2,
       "retryDelay": 2000,
-      "estimatedTime": "10-30 seconds",
-      "concurrency": 2,
+      "estimatedTime": "15-60 seconds",
+      "concurrency": 1,
       "workers": 2,
+      "processingDelay": 100,
+      "removeOnComplete": 100,
+      "removeOnFail": 50,
       "urlPatterns": [
-        "/reports/*"
+        "/courses/*",
+        "/students/*",
+        "/grades/*",
+        "/academic-validations/*",
+        "/programs/*",
+        "/enrollments/*"
       ],
-      "description": "Report generation queue",
+      "description": "Standard operations with normal priority",
       "enabled": true
     }
   ]
