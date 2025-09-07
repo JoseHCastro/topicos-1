@@ -127,6 +127,14 @@ export class QueueAdminController {
   @Post('workers/:queueName')
   async createWorkersForQueue(@Param('queueName') queueName: string) {
     await this.workerService.addWorkerForQueue(queueName);
+    // Persist workers count to config based on current status
+    try {
+      const status = await this.workerService.getWorkersStatus();
+      const total = status.byQueue?.[queueName]?.total ?? undefined;
+      if (typeof total === 'number') {
+        await this.queueService.setQueueWorkers(queueName, total);
+      }
+    } catch {}
 
     return {
       message: `Worker added for queue '${queueName}'`,
@@ -142,6 +150,14 @@ export class QueueAdminController {
   @Delete('workers/:queueName')
   async deleteWorkersForQueue(@Param('queueName') queueName: string) {
     await this.workerService.removeWorkerForQueue(queueName);
+    // Persist workers count to config based on current status
+    try {
+      const status = await this.workerService.getWorkersStatus();
+      const total = status.byQueue?.[queueName]?.total ?? undefined;
+      if (typeof total === 'number') {
+        await this.queueService.setQueueWorkers(queueName, total);
+      }
+    } catch {}
 
     return {
       message: `Worker removed from queue '${queueName}'`,
@@ -183,13 +199,30 @@ export class QueueAdminController {
     @Param('queueName') queueName: string,
     @Body() updates: Partial<QueueDefinition>,
   ) {
+    const prev = this.queueService.getQueueDefinition(queueName);
+    const prevConcurrency = prev?.concurrency;
+
     const queue = await this.queueService.updateQueue(queueName, updates);
-    // Reconcile workers with new definition
+    // Reconcile workers with new definition and apply new concurrency if changed
     try {
+      if (
+        typeof updates.concurrency === 'number' &&
+        prevConcurrency !== undefined &&
+        updates.concurrency !== prevConcurrency
+      ) {
+        await this.workerService.removeAllWorkersForQueue(queueName);
+      }
       await this.workerService.ensureWorkersForQueue(queueName);
+
+      // Persist current workers count in config for coherence
+      const status = await this.workerService.getWorkersStatus();
+      const total = status.byQueue?.[queueName]?.total ?? undefined;
+      if (typeof total === 'number') {
+        await this.queueService.setQueueWorkers(queueName, total);
+      }
     } catch (err) {
       return {
-        message: `Queue '${queueName}' updated (workers ensure failed)`,
+        message: `Queue '${queueName}' updated (worker reconcile had issues)`,
         queue,
         workerError: err.message,
         timestamp: new Date().toISOString(),

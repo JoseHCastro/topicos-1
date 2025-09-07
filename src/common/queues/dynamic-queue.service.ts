@@ -301,10 +301,126 @@ export class DynamicQueueService implements OnModuleInit, OnModuleDestroy {
   }
 
   /**
+   * Update only the workers count for a queue definition and persist to file
+   * without reinitializing the BullMQ queue (non-destructive update).
+   */
+  async setQueueWorkers(
+    queueName: string,
+    workers: number,
+    persist = true,
+  ): Promise<QueueDefinition> {
+    const existing = this.queueDefinitions.get(queueName);
+    if (!existing) {
+      throw new Error(`Queue '${queueName}' not found`);
+    }
+
+    const sanitized = Math.max(0, Math.floor(workers));
+
+    const updated: QueueDefinition = {
+      ...existing,
+      workers: sanitized,
+    } as QueueDefinition;
+
+    // Update in-memory maps
+    this.queueDefinitions.set(queueName, updated);
+    // Update config array in place
+    const idx = this.queueConfig.queues.findIndex((q) => q.name === queueName);
+    if (idx >= 0) {
+      this.queueConfig.queues[idx] = updated;
+    }
+
+    if (persist) {
+      await this.saveConfigToFile();
+    }
+
+    this.logger.log(
+      `?? Queue '${queueName}' workers updated in config: ${existing.workers ?? 0} -> ${sanitized}`,
+    );
+    return updated;
+  }
+
+  /**
+   * Update only the concurrency for a queue definition and persist to file
+   * without reinitializing the BullMQ queue (non-destructive update).
+   * Note: applying concurrency to active workers requires recreating workers.
+   */
+  async setQueueConcurrency(
+    queueName: string,
+    concurrency: number,
+    persist = true,
+  ): Promise<QueueDefinition> {
+    const existing = this.queueDefinitions.get(queueName);
+    if (!existing) {
+      throw new Error(`Queue '${queueName}' not found`);
+    }
+
+    const sanitized = Math.max(1, Math.floor(concurrency));
+
+    const updated: QueueDefinition = {
+      ...existing,
+      concurrency: sanitized,
+    } as QueueDefinition;
+
+    this.queueDefinitions.set(queueName, updated);
+    const idx = this.queueConfig.queues.findIndex((q) => q.name === queueName);
+    if (idx >= 0) {
+      this.queueConfig.queues[idx] = updated;
+    }
+
+    if (persist) {
+      await this.saveConfigToFile();
+    }
+
+    this.logger.log(
+      `?? Queue '${queueName}' concurrency updated in config: ${existing.concurrency ?? 1} -> ${sanitized}`,
+    );
+    return updated;
+  }
+
+  /**
    * Get all available queue names
    */
   getAvailableQueues(): string[] {
     return Array.from(this.queues.keys());
+  }
+
+  /**
+   * Update only the workers count for a queue definition and persist to file
+   * without reinitializing the BullMQ queue (non-destructive update).
+   */
+  async setQueueWorkers(
+    queueName: string,
+    workers: number,
+    persist = true,
+  ): Promise<QueueDefinition> {
+    const existing = this.queueDefinitions.get(queueName);
+    if (!existing) {
+      throw new Error(`Queue '${queueName}' not found`);
+    }
+
+    const sanitized = Math.max(0, Math.floor(workers));
+
+    const updated: QueueDefinition = {
+      ...existing,
+      workers: sanitized,
+    } as QueueDefinition;
+
+    // Update in-memory maps
+    this.queueDefinitions.set(queueName, updated);
+    // Update config array in place
+    const idx = this.queueConfig.queues.findIndex((q) => q.name === queueName);
+    if (idx >= 0) {
+      this.queueConfig.queues[idx] = updated;
+    }
+
+    if (persist) {
+      await this.saveConfigToFile();
+    }
+
+    this.logger.log(
+      `?? Queue '${queueName}' workers updated in config: ${existing.workers ?? 0} -> ${sanitized}`,
+    );
+    return updated;
   }
 
   /**

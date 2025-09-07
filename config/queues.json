@@ -114,6 +114,22 @@
       ],
       "description": "Notification delivery operations",
       "enabled": true
+    },
+    {
+      "name": "reports",
+      "displayName": "📊 reports Queue",
+      "priority": 2,
+      "timeout": 120,
+      "attempts": 2,
+      "retryDelay": 2000,
+      "estimatedTime": "10-30 seconds",
+      "concurrency": 2,
+      "workers": 2,
+      "urlPatterns": [
+        "/reports/*"
+      ],
+      "description": "Report generation queue",
+      "enabled": true
     }
   ]
 }
