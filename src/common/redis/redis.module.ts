@@ -44,8 +44,23 @@ import { RedisService } from './redis.service';
       },
       inject: [ConfigService],
     },
+    {
+      provide: 'REDIS_SUBSCRIBER',
+      useFactory: (configService: ConfigService) => {
+        const redisOptions = {
+          ...redisConnectionOptions,
+          host: configService.get('REDIS_HOST', 'localhost'),
+          port: configService.get('REDIS_PORT', 6379),
+          password: configService.get('REDIS_PASSWORD'),
+          db: configService.get('REDIS_DB', 0),
+        };
+        const sub = new Redis(redisOptions);
+        return sub;
+      },
+      inject: [ConfigService],
+    },
     RedisService,
   ],
-  exports: ['REDIS_CLIENT', RedisService],
+  exports: ['REDIS_CLIENT', 'REDIS_SUBSCRIBER', RedisService],
 })
 export class RedisModule {}

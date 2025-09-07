@@ -8,6 +8,8 @@ import {
   Body,
 } from '@nestjs/common';
 import { DynamicQueueService } from '../queues/dynamic-queue.service';
+import { Inject } from '@nestjs/common';
+import { IQueueConfigRepository, QUEUE_CONFIG_REPOSITORY } from '../queues/queue-config.repository';
 import { DynamicWorkerService } from '../workers/dynamic-worker.service';
 import { QueueDefinition } from '../queues/queue-config.interface';
 
@@ -16,6 +18,8 @@ export class QueueAdminController {
   constructor(
     private readonly queueService: DynamicQueueService,
     private readonly workerService: DynamicWorkerService,
+    @Inject(QUEUE_CONFIG_REPOSITORY)
+    private readonly configRepo: IQueueConfigRepository,
   ) {}
 
   // ========== WORKER CONTROL ENDPOINTS (MOST SPECIFIC FIRST) ==========
@@ -127,6 +131,14 @@ export class QueueAdminController {
   @Post('workers/:queueName')
   async createWorkersForQueue(@Param('queueName') queueName: string) {
     await this.workerService.addWorkerForQueue(queueName);
+    // Persist workers count to config based on current status
+    try {
+      const status = await this.workerService.getWorkersStatus();
+      const total = status.byQueue?.[queueName]?.total ?? undefined;
+      if (typeof total === 'number') {
+        await this.queueService.setQueueWorkers(queueName, total);
+      }
+    } catch {}
 
     return {
       message: `Worker added for queue '${queueName}'`,
@@ -142,6 +154,14 @@ export class QueueAdminController {
   @Delete('workers/:queueName')
   async deleteWorkersForQueue(@Param('queueName') queueName: string) {
     await this.workerService.removeWorkerForQueue(queueName);
+    // Persist workers count to config based on current status
+    try {
+      const status = await this.workerService.getWorkersStatus();
+      const total = status.byQueue?.[queueName]?.total ?? undefined;
+      if (typeof total === 'number') {
+        await this.queueService.setQueueWorkers(queueName, total);
+      }
+    } catch {}
 
     return {
       message: `Worker removed from queue '${queueName}'`,
@@ -157,6 +177,11 @@ export class QueueAdminController {
   @Post()
   async createQueue(@Body() queueDef: QueueDefinition) {
     const queue = await this.queueService.createQueue(queueDef);
+    // Persist full config to repository as source of truth
+    try {
+      await this.configRepo.saveConfig(this.queueService.getQueueConfig());
+      await this.configRepo.publishUpdate({ type: 'queue-created', queueName: queueDef.name, timestamp: new Date().toISOString() });
+    } catch {}
     // Ensure configured workers are created immediately
     try {
       await this.workerService.ensureWorkersForQueue(queueDef.name);
@@ -183,13 +208,33 @@ export class QueueAdminController {
     @Param('queueName') queueName: string,
     @Body() updates: Partial<QueueDefinition>,
   ) {
+    const prev = this.queueService.getQueueDefinition(queueName);
+    const prevConcurrency = prev?.concurrency;
+
     const queue = await this.queueService.updateQueue(queueName, updates);
-    // Reconcile workers with new definition
+    // Reconcile workers with new definition and apply new concurrency if changed
     try {
+      if (
+        typeof updates.concurrency === 'number' &&
+        prevConcurrency !== undefined &&
+        updates.concurrency !== prevConcurrency
+      ) {
+        await this.workerService.removeAllWorkersForQueue(queueName);
+      }
       await this.workerService.ensureWorkersForQueue(queueName);
+
+      // Persist current workers count in config for coherence
+      const status = await this.workerService.getWorkersStatus();
+      const total = status.byQueue?.[queueName]?.total ?? undefined;
+      if (typeof total === 'number') {
+        await this.queueService.setQueueWorkers(queueName, total);
+      }
+      // Persist config to repository
+      await this.configRepo.saveConfig(this.queueService.getQueueConfig());
+      await this.configRepo.publishUpdate({ type: 'queue-updated', queueName, timestamp: new Date().toISOString() });
     } catch (err) {
       return {
-        message: `Queue '${queueName}' updated (workers ensure failed)`,
+        message: `Queue '${queueName}' updated (worker reconcile had issues)`,
         queue,
         workerError: err.message,
         timestamp: new Date().toISOString(),
@@ -209,6 +254,10 @@ export class QueueAdminController {
     // Remove workers first to free resources
     await this.workerService.removeAllWorkersForQueue(queueName).catch(() => undefined);
     await this.queueService.removeQueue(queueName);
+    try {
+      await this.configRepo.saveConfig(this.queueService.getQueueConfig());
+      await this.configRepo.publishUpdate({ type: 'queue-removed', queueName, timestamp: new Date().toISOString() });
+    } catch {}
 
     return {
       message: `Queue '${queueName}' deleted`,

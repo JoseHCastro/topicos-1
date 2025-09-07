@@ -5,6 +5,7 @@ import { JobProcessorService } from './job-processor.service';
 import { WorkerResourceManagerService } from './worker-resource-manager.service';
 import { WorkerStatsService } from './worker-stats.service';
 import { RedisService } from '../redis/redis.service';
+import { JobStatusService } from '../websockets/job-status.service';
 
 export interface WorkerInfo {
   id: string;
@@ -25,6 +26,7 @@ export class WorkerFactoryService {
     private readonly resourceManager: WorkerResourceManagerService,
     private readonly statsService: WorkerStatsService,
     private readonly redisService: RedisService,
+    private readonly jobStatusService: JobStatusService,
   ) {}
 
   async createWorker(
@@ -93,6 +95,32 @@ export class WorkerFactoryService {
       this.statsService.recordJobCompleted(queueName, job.id!);
       this.resourceManager.checkResourcesAfterJob(job, queueName, this.statsService.getJobsProcessed());
       this.logger.debug(`✅ [${workerId}] Job ${job.id} completed`);
+    });
+
+    // WebSocket notification for completed jobs
+    worker.on('completed', async (job) => {
+      try {
+        const resultKey = `job:result:${job.id}`;
+        let result: any = undefined;
+        try {
+          const stored = await this.redisService.get(resultKey);
+          if (stored) {
+            const parsed = JSON.parse(stored);
+            result = parsed?.result;
+          }
+        } catch (_) {
+          // ignore parse/read errors
+        }
+
+        this.jobStatusService.markJobCompleted(job.id!, result);
+        // explicit server console log
+        // eslint-disable-next-line no-console
+        console.log(`[WS] Job ${job.id} completed on queue '${queueName}' - notifying clients`);
+      } catch (notifyErr: any) {
+        this.logger.warn(
+          `Could not notify completion for job ${job.id}: ${notifyErr?.message || notifyErr}`,
+        );
+      }
     });
 
     worker.on('failed', (job, err) => {

@@ -114,6 +114,30 @@
       ],
       "description": "Notification delivery operations",
       "enabled": true
+    },
+    {
+      "name": "cola1",
+      "displayName": "🟡 Standard Queue",
+      "priority": 8,
+      "timeout": 60,
+      "attempts": 2,
+      "retryDelay": 2000,
+      "estimatedTime": "15-60 seconds",
+      "concurrency": 1,
+      "workers": 4,
+      "processingDelay": 100,
+      "removeOnComplete": 100,
+      "removeOnFail": 50,
+      "urlPatterns": [
+        "/courses/*",
+        "/students/*",
+        "/grades/*",
+        "/academic-validations/*",
+        "/programs/*",
+        "/enrollments/*"
+      ],
+      "description": "Standard operations with normal priority",
+      "enabled": true
     }
   ]
 }
