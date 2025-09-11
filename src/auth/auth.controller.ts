@@ -4,7 +4,7 @@ import { CreateUserDto, LoginUserDto, UpdateUserDto } from './dto';
 import { Auth, GetUser } from './decorators';
 import { User } from './entities';
 import { ChangePasswordDto } from './dto/change-password.dto';
-import { JwtPayload } from './interfaces';
+import { JwtPayload, ValidRoles } from './interfaces';
 import { 
   ApiTags, 
   ApiOperation, 
@@ -95,7 +95,7 @@ export class AuthController {
    * Obtener todos los usuarios del sistema
    */
   @Get('users')
-  @Auth() // Requiere autenticación
+  @Auth(ValidRoles.ADMIN) // Solo ADMIN puede listar todos los usuarios
   async getAllUsers() {
     return await this.authService.findAllUsers();
   }

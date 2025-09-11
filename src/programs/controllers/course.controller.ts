@@ -27,7 +27,7 @@ export class CourseController {
   }
 
   @Get()
-  //  @Auth(ValidRoles.ADMIN, ValidRoles.STUDENT, ValidRoles.TEACHER)
+  @Auth(ValidRoles.ADMIN, ValidRoles.STUDENT, ValidRoles.TEACHER)
   findAll(
     @Query() paginationDto: PaginationDto,
   ): Promise<PaginatedResultDto<Course>> {

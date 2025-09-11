@@ -1,12 +1,13 @@
 import {
   IsNotEmpty,
   IsString,
-  IsDateString,
+  IsDate,
   IsBoolean,
   IsOptional,
   IsUUID,
   MinLength,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class CreateStudyPlanDto {
   @IsUUID()
@@ -27,10 +28,12 @@ export class CreateStudyPlanDto {
   @IsOptional()
   is_current?: boolean = false;
 
-  @IsDateString()
+  @Type(() => Date)
+  @IsDate()
   valid_from: Date;
 
-  @IsDateString()
+  @Type(() => Date)
+  @IsDate()
   @IsOptional()
   valid_to?: Date;
 

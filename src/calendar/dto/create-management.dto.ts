@@ -2,11 +2,12 @@ import {
   IsNotEmpty,
   IsString,
   IsNumber,
-  IsDateString,
+  IsDate,
   IsEnum,
   MinLength,
   Min,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class CreateManagementDto {
   @IsNumber()
@@ -18,9 +19,11 @@ export class CreateManagementDto {
   @MinLength(3)
   name: string;
 
-  @IsDateString()
+  @Type(() => Date)
+  @IsDate()
   start_date: Date;
 
-  @IsDateString()
+  @Type(() => Date)
+  @IsDate()
   end_date: Date;
 }

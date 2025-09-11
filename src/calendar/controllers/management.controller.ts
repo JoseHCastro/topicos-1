@@ -20,7 +20,7 @@ export class ManagementController {
   constructor(private readonly managementService: ManagementService) {}
 
   @Post()
-  @Auth(ValidRoles.ADMIN, ValidRoles.STUDENT, ValidRoles.TEACHER)
+  @Auth(ValidRoles.ADMIN)
   create(@Body() createManagementDto: CreateManagementDto) {
     return this.managementService.create(createManagementDto);
   }
@@ -40,7 +40,7 @@ export class ManagementController {
   }
 
   @Patch(':id')
-  @Auth(ValidRoles.ADMIN, ValidRoles.STUDENT, ValidRoles.TEACHER)
+  @Auth(ValidRoles.ADMIN)
   update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateManagementDto: UpdateManagementDto,

@@ -1,10 +1,11 @@
 import {
-  IsDateString,
+  IsDate,
   IsEnum,
   IsUUID,
   IsOptional,
   IsString,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class CreateEnrollmentDto {
   @IsUUID()
@@ -25,7 +26,8 @@ export class CreateEnrollmentDto {
   @IsOptional()
   term_name?: string;
 
-  @IsDateString()
+  @Type(() => Date)
+  @IsDate()
   enrolled_on: Date;
 
   @IsEnum(['Active', 'Canceled'])

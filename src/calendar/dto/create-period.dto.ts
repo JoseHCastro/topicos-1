@@ -2,13 +2,14 @@ import {
   IsNotEmpty,
   IsUUID,
   IsString,
-  IsDateString,
+  IsDate,
   IsEnum,
   MinLength,
   IsOptional,
   IsInt,
   Min,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class CreatePeriodDto {
   @IsUUID()
@@ -26,10 +27,12 @@ export class CreatePeriodDto {
   @MinLength(3)
   name: string;
 
-  @IsDateString()
+  @Type(() => Date)
+  @IsDate()
   start_date: Date;
 
-  @IsDateString()
+  @Type(() => Date)
+  @IsDate()
   end_date: Date;
 
   @IsEnum(['planned', 'active', 'finished', 'pending', 'completed'])

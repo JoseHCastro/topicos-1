@@ -8,11 +8,10 @@ import {
   PaginatedResultDto,
   PaginationService,
 } from '../../common';
-
-@Injectable()
 import { Student } from '../../auth/entities/student.entity';
 import { Term } from '../../calendar/entities/term.entity';
 
+@Injectable()
 export class EnrollmentService {
   constructor(
     @InjectRepository(Enrollment)

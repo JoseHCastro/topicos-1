@@ -7,11 +7,12 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
 import { JwtStrategy } from './strategies/jwt.strategy';
+import { UserRoleGuard } from './guards/user-role.guard';
 import { TokenCacheService } from './services/token-cache.service';
 
 @Module({
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, TokenCacheService],
+  providers: [AuthService, JwtStrategy, TokenCacheService, UserRoleGuard],
   imports: [
     ConfigModule,
     TypeOrmModule.forFeature([User, Student, Teacher, Admin]),
@@ -34,6 +35,7 @@ import { TokenCacheService } from './services/token-cache.service';
     PassportModule,
     JwtModule,
     TokenCacheService,
+    UserRoleGuard,
   ],
 })
 export class AuthModule {}

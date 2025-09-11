@@ -4,12 +4,13 @@ import {
   IsNotEmpty,
   IsOptional,
   IsString,
-  IsDateString,
+  IsDate,
   Matches,
   MaxLength,
   MinLength,
   ValidateIf,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export enum UserRole {
@@ -82,7 +83,8 @@ export class CreateUserDto {
   @ValidateIf((o) => o.role === UserRole.STUDENT)
   nationalId?: string;
 
-  @IsDateString()
+  @Type(() => Date)
+  @IsDate()
   @IsOptional()
   @ValidateIf((o) => o.role === UserRole.STUDENT)
   birthDate?: Date;
@@ -97,7 +99,8 @@ export class CreateUserDto {
   @ValidateIf((o) => o.role === UserRole.TEACHER)
   teacherNationalId?: string;
 
-  @IsDateString()
+  @Type(() => Date)
+  @IsDate()
   @IsOptional()
   @ValidateIf((o) => o.role === UserRole.TEACHER)
   teacherBirthDate?: Date;

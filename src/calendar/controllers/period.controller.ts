@@ -20,7 +20,7 @@ export class PeriodController {
   constructor(private readonly periodService: PeriodService) {}
 
   @Post()
-  @Auth(ValidRoles.ADMIN, ValidRoles.STUDENT, ValidRoles.TEACHER)
+  @Auth(ValidRoles.ADMIN)
   create(@Body() createPeriodDto: CreatePeriodDto) {
     return this.periodService.create(createPeriodDto);
   }
@@ -40,7 +40,7 @@ export class PeriodController {
   }
 
   @Patch(':id')
-  @Auth(ValidRoles.ADMIN, ValidRoles.STUDENT, ValidRoles.TEACHER)
+  @Auth(ValidRoles.ADMIN)
   update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updatePeriodDto: UpdatePeriodDto,

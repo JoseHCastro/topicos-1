@@ -3,11 +3,12 @@ import {
   IsEnum,
   IsOptional,
   IsNumber,
-  IsDateString,
+  IsDate,
   IsString,
   Min,
   Max,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class CreateEnrollmentDetailDto {
   @IsUUID()
@@ -59,7 +60,8 @@ export class CreateEnrollmentDetailDto {
   @IsOptional()
   attempts?: number = 1;
 
-  @IsDateString()
+  @Type(() => Date)
+  @IsDate()
   @IsOptional()
   closed_on?: Date;
 

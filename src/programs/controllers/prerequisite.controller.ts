@@ -20,7 +20,7 @@ export class PrerequisiteController {
   constructor(private readonly prerequisiteService: PrerequisiteService) {}
 
   @Post()
-  @Auth(ValidRoles.ADMIN, ValidRoles.STUDENT, ValidRoles.TEACHER)
+  @Auth(ValidRoles.ADMIN)
   create(@Body() createPrerequisiteDto: CreatePrerequisiteDto) {
     return this.prerequisiteService.create(createPrerequisiteDto);
   }
@@ -40,7 +40,7 @@ export class PrerequisiteController {
   }
 
   @Patch(':id')
-  @Auth(ValidRoles.ADMIN, ValidRoles.STUDENT, ValidRoles.TEACHER)
+  @Auth(ValidRoles.ADMIN)
   update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updatePrerequisiteDto: UpdatePrerequisiteDto,

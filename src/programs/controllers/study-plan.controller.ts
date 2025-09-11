@@ -20,7 +20,7 @@ export class StudyPlanController {
   constructor(private readonly studyPlanService: StudyPlanService) {}
 
   @Post()
-  @Auth(ValidRoles.ADMIN, ValidRoles.STUDENT, ValidRoles.TEACHER)
+  @Auth(ValidRoles.ADMIN)
   create(@Body() createStudyPlanDto: CreateStudyPlanDto) {
     return this.studyPlanService.create(createStudyPlanDto);
   }
@@ -40,7 +40,7 @@ export class StudyPlanController {
   }
 
   @Patch(':id')
-  @Auth(ValidRoles.ADMIN, ValidRoles.STUDENT, ValidRoles.TEACHER)
+  @Auth(ValidRoles.ADMIN)
   update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateStudyPlanDto: UpdateStudyPlanDto,

@@ -7,7 +7,7 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Observable } from 'rxjs';
-import { JwtPayload } from '../interfaces/jwt-payload.interface';
+import { JwtPayload, ValidRoles } from '../interfaces';
 import { META_ROLES } from '../decorators/role-protected.decorator';
 
 @Injectable()
@@ -17,33 +17,31 @@ export class UserRoleGuard implements CanActivate {
   canActivate(
     context: ExecutionContext,
   ): boolean | Promise<boolean> | Observable<boolean> {
-    const validRoles: string = this.reflector.get(
+    // Get roles defined at method or controller level
+    const validRoles = this.reflector.getAllAndOverride<string[] | undefined>(
       META_ROLES,
-      context.getHandler(),
+      [context.getHandler(), context.getClass()],
     );
 
-    if (!validRoles) {
-      return true;
-    }
-
-    if (validRoles.length === 0) {
-      return true;
-    }
+    // If no roles metadata, allow access
+    if (!validRoles || validRoles.length === 0) return true;
 
     const req = context.switchToHttp().getRequest();
-    const user = req.user as JwtPayload;
+    const user = req.user as JwtPayload | undefined;
 
-    if (!user) {
-      throw new BadRequestException('User not found');
-    }
+    if (!user) throw new BadRequestException('User not found');
 
-    if (validRoles.includes(user.role)) {
-      return true;
-    }
+    // Normalize roles to avoid case/whitespace issues
+    const userRoles = [user.role, ...(user.roles || [])]
+      .filter(Boolean)
+      .map((r) => String(r).toUpperCase().trim());
+    const requiredRoles = validRoles.map((r) => String(r).toUpperCase().trim());
 
-    if (user.roles && user.roles.some((role) => validRoles.includes(role))) {
-      return true;
-    }
+    // Global override: ADMIN can do everything
+    if (userRoles.includes(ValidRoles.ADMIN)) return true;
+
+    // Check any match with required roles
+    if (userRoles.some((r) => requiredRoles.includes(r))) return true;
 
     throw new ForbiddenException(
       `User ${user.first_name} need a valid role: [${validRoles}]`,
