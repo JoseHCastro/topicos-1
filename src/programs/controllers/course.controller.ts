@@ -14,6 +14,7 @@ import { Auth } from '../../auth/decorators';
 import { ValidRoles } from '../../auth/interfaces';
 import { PaginationDto, PaginatedResultDto } from '../../common';
 import { Course } from '../entities';
+import { CreateCourseDto, UpdateCourseDto } from '../dto';
 
 @Controller('courses')
 export class CourseController {
@@ -21,7 +22,7 @@ export class CourseController {
 
   @Post()
   @Auth(ValidRoles.ADMIN)
-  create(@Body() createCourseDto: any) {
+  create(@Body() createCourseDto: CreateCourseDto) {
     return this.courseService.create(createCourseDto);
   }
 
@@ -41,7 +42,10 @@ export class CourseController {
 
   @Patch(':id')
   @Auth(ValidRoles.ADMIN)
-  update(@Param('id', ParseUUIDPipe) id: string, @Body() updateCourseDto: any) {
+  update(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() updateCourseDto: UpdateCourseDto,
+  ) {
     return this.courseService.update(id, updateCourseDto);
   }
 

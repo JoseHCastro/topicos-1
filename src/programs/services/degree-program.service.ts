@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { DegreeProgram } from '../entities';
+import { CreateDegreeProgramDto, UpdateDegreeProgramDto } from '../dto';
 import {
   PaginationDto,
   PaginatedResultDto,
@@ -16,7 +17,7 @@ export class DegreeProgramService {
     private readonly paginationService: PaginationService,
   ) {}
 
-  async create(createDegreeProgramDto: any) {
+  async create(createDegreeProgramDto: CreateDegreeProgramDto) {
     const degreeProgram = this.degreeProgramRepository.create(
       createDegreeProgramDto,
     );
@@ -49,7 +50,7 @@ export class DegreeProgramService {
     return degreeProgram;
   }
 
-  async update(id: string, updateDegreeProgramDto: any) {
+  async update(id: string, updateDegreeProgramDto: UpdateDegreeProgramDto) {
     const degreeProgram = await this.degreeProgramRepository.preload({
       id: id,
       ...updateDegreeProgramDto,

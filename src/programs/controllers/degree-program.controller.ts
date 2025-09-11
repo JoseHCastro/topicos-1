@@ -14,6 +14,7 @@ import { Auth } from '../../auth/decorators';
 import { ValidRoles } from '../../auth/interfaces';
 import { PaginationDto, PaginatedResultDto } from '../../common';
 import { DegreeProgram } from '../entities';
+import { CreateDegreeProgramDto, UpdateDegreeProgramDto } from '../dto';
 import { 
   ApiTags, 
   ApiOperation, 
@@ -55,7 +56,7 @@ export class DegreeProgramController {
   })
   @ApiBadRequestResponse({ description: 'Datos de entrada inválidos' })
   @ApiUnauthorizedResponse({ description: 'Token inválido o permisos insuficientes' })
-  create(@Body() createDegreeProgramDto: any) {
+  create(@Body() createDegreeProgramDto: CreateDegreeProgramDto) {
     return this.degreeProgramService.create(createDegreeProgramDto);
   }
 
@@ -118,7 +119,7 @@ export class DegreeProgramController {
   @Auth(ValidRoles.ADMIN)
   update(
     @Param('id', ParseUUIDPipe) id: string,
-    @Body() updateDegreeProgramDto: any,
+    @Body() updateDegreeProgramDto: UpdateDegreeProgramDto,
   ) {
     return this.degreeProgramService.update(id, updateDegreeProgramDto);
   }

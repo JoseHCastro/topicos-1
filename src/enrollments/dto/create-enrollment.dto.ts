@@ -8,10 +8,22 @@ import {
 
 export class CreateEnrollmentDto {
   @IsUUID()
-  student_id: string;
+  @IsOptional()
+  student_id?: string;
+
+  // Alternativa: identificar estudiante por código
+  @IsString()
+  @IsOptional()
+  student_code?: string;
 
   @IsUUID()
-  term_id: string;
+  @IsOptional()
+  term_id?: string;
+
+  // Alternativa: identificar período por nombre (e.g., "2025-I")
+  @IsString()
+  @IsOptional()
+  term_name?: string;
 
   @IsDateString()
   enrolled_on: Date;

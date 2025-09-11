@@ -3,9 +3,11 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { PassportModule } from '@nestjs/passport';
 import { Enrollment, EnrollmentDetail } from './entities';
 import { CourseSection } from '../teaching/entities';
-import { Prerequisite } from '../programs/entities';
+import { Prerequisite, Course, StudyPlan, DegreeProgram } from '../programs/entities';
 import { Schedule } from '../teaching/entities';
 import { Grade } from '../assessments/entities';
+import { Student } from '../auth/entities/student.entity';
+import { Term } from '../calendar/entities/term.entity';
 import {
   EnrollmentService,
   EnrollmentDetailService,
@@ -33,6 +35,11 @@ import { IdempotencyService } from '../common/services';
       Prerequisite,
       Schedule,
       Grade,
+      Student,
+      Term,
+      Course,
+      StudyPlan,
+      DegreeProgram,
     ]),
     PassportModule.register({ defaultStrategy: 'jwt' }),
     AuthModule,

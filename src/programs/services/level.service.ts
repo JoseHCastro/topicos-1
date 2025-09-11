@@ -2,6 +2,8 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Level } from '../entities/level.entity';
+import { CreateLevelDto } from '../dto/create-level.dto';
+import { UpdateLevelDto } from '../dto/update-level.dto';
 import {
   PaginationDto,
   PaginatedResultDto,
@@ -16,7 +18,7 @@ export class LevelService {
     private readonly paginationService: PaginationService,
   ) {}
 
-  async create(createLevelDto: any) {
+  async create(createLevelDto: CreateLevelDto) {
     const level = this.levelRepository.create(createLevelDto);
     return await this.levelRepository.save(level);
   }
@@ -46,7 +48,7 @@ export class LevelService {
     return level;
   }
 
-  async update(id: string, updateLevelDto: any) {
+  async update(id: string, updateLevelDto: UpdateLevelDto) {
     const level = await this.levelRepository.preload({
       id,
       ...updateLevelDto,

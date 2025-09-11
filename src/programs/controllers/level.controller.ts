@@ -13,6 +13,7 @@ import { Auth } from '../../auth/decorators';
 import { ValidRoles } from '../../auth/interfaces';
 import { PaginationDto, PaginatedResultDto } from '../../common';
 import { Level } from '../entities';
+import { CreateLevelDto, UpdateLevelDto } from '../dto';
 
 @Controller('levels')
 export class LevelController {
@@ -20,7 +21,7 @@ export class LevelController {
 
   @Post()
   @Auth(ValidRoles.ADMIN)
-  create(@Body() createLevelDto: any) {
+  create(@Body() createLevelDto: CreateLevelDto) {
     return this.levelService.create(createLevelDto);
   }
 
@@ -40,7 +41,7 @@ export class LevelController {
 
   @Patch(':id')
   @Auth(ValidRoles.ADMIN)
-  update(@Param('id') id: string, @Body() updateLevelDto: any) {
+  update(@Param('id') id: string, @Body() updateLevelDto: UpdateLevelDto) {
     return this.levelService.update(id, updateLevelDto);
   }
 

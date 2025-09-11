@@ -17,6 +17,11 @@ import {
 } from '../exceptions';
 import { AcademicValidationService } from './academic-validation.service';
 import { MultipleValidationException } from '../exceptions/academic-validation.exceptions';
+import { Student } from '../../auth/entities/student.entity';
+import { Term } from '../../calendar/entities/term.entity';
+import { Course } from '../../programs/entities/course.entity';
+import { StudyPlan } from '../../programs/entities/study-plan.entity';
+import { DegreeProgram } from '../../programs/entities/degree-program.entity';
 
 export interface EnrollmentResult {
   enrollmentDetail: EnrollmentDetail;
@@ -35,6 +40,16 @@ export class AtomicEnrollmentService {
     private readonly enrollmentDetailRepository: Repository<EnrollmentDetail>,
     @InjectRepository(CourseSection)
     private readonly courseSectionRepository: Repository<CourseSection>,
+    @InjectRepository(Student)
+    private readonly studentRepository: Repository<Student>,
+    @InjectRepository(Term)
+    private readonly termRepository: Repository<Term>,
+    @InjectRepository(Course)
+    private readonly courseRepository: Repository<Course>,
+    @InjectRepository(StudyPlan)
+    private readonly studyPlanRepository: Repository<StudyPlan>,
+    @InjectRepository(DegreeProgram)
+    private readonly degreeProgramRepository: Repository<DegreeProgram>,
     private readonly transactionService: TransactionService,
     private readonly academicValidationService: AcademicValidationService,
   ) {}
@@ -46,26 +61,31 @@ export class AtomicEnrollmentService {
   async enrollStudentInCourseSection(
     createEnrollmentDetailDto: CreateEnrollmentDetailDto,
   ): Promise<EnrollmentResult> {
+    // Resolver identificadores alternativos, si vienen
+    const resolved = await this.resolveIdsForEnrollmentDetail(
+      createEnrollmentDetailDto,
+    );
+
     this.logger.log(
-      `Iniciando inscripción: Enrollment ${createEnrollmentDetailDto.enrollment_id} -> CourseSection ${createEnrollmentDetailDto.course_section_id}`,
+      `Iniciando inscripción: Enrollment ${resolved.enrollment_id} -> CourseSection ${resolved.course_section_id}`,
     );
 
     return await this.transactionService.executeWithRetry(
       async (manager: EntityManager) => {
         const enrollment = await this.validateEnrollmentExists(
           manager,
-          createEnrollmentDetailDto.enrollment_id,
+          resolved.enrollment_id,
         );
 
         const courseSection = await this.getCourseSectionWithLock(
           manager,
-          createEnrollmentDetailDto.course_section_id,
+          resolved.course_section_id,
         );
 
         await this.validateNoDuplicateEnrollment(
           manager,
-          createEnrollmentDetailDto.enrollment_id,
-          createEnrollmentDetailDto.course_section_id,
+          resolved.enrollment_id,
+          resolved.course_section_id,
         );
 
         await this.performAcademicValidations(
@@ -78,7 +98,7 @@ export class AtomicEnrollmentService {
 
         const enrollmentDetail = await this.createEnrollmentDetail(
           manager,
-          createEnrollmentDetailDto,
+          { ...createEnrollmentDetailDto, ...resolved },
         );
 
         const updatedCourseSection = await this.decrementQuota(
@@ -99,6 +119,103 @@ export class AtomicEnrollmentService {
       3,
       10000,
     );
+  }
+
+  private async resolveIdsForEnrollmentDetail(dto: CreateEnrollmentDetailDto): Promise<{ enrollment_id: string; course_section_id: string }> {
+    let { enrollment_id, course_section_id } = dto;
+
+    const usingIds = !!enrollment_id && !!course_section_id;
+    const canResolveEnrollment = !!dto.student_code && !!dto.term_name;
+    const canResolveSection =
+      !!dto.course_code &&
+      !!dto.group_label &&
+      !!dto.term_name &&
+      (!!dto.degree_program_code || !!dto.study_plan_version); // at least one context
+
+    if (!usingIds) {
+      // Resolver enrollment por (student_code, term_name)
+      if (!canResolveEnrollment) {
+        throw new BadRequestException(
+          'Provide enrollment_id or (student_code, term_name)'
+        );
+      }
+      const student = await this.studentRepository.findOne({
+        where: { code: dto.student_code! },
+      });
+      if (!student) {
+        throw new NotFoundException(`Student with code '${dto.student_code}' not found`);
+      }
+      const term = await this.termRepository.findOne({
+        where: { name: dto.term_name! },
+      });
+      if (!term) {
+        throw new NotFoundException(`Term with name '${dto.term_name}' not found`);
+      }
+
+      const enrollment = await this.enrollmentRepository.findOne({
+        where: { student_id: student.id, term_id: term.id },
+      });
+      if (!enrollment) {
+        throw new NotFoundException(
+          `Enrollment not found for student_code='${dto.student_code}' and term_name='${dto.term_name}'`
+        );
+      }
+      enrollment_id = enrollment.id;
+    }
+
+    if (!course_section_id) {
+      if (!canResolveSection) {
+        throw new BadRequestException(
+          'Provide course_section_id or (course_code, group_label, term_name, [degree_program_code|study_plan_version])'
+        );
+      }
+
+      // Resolver Course por código (con contexto opcional para evitar ambigüedad)
+      const qb = this.courseRepository
+        .createQueryBuilder('c')
+        .innerJoin('c.study_plan', 'sp')
+        .innerJoin('sp.degree_program', 'dp')
+        .where('c.code = :courseCode', { courseCode: dto.course_code! });
+
+      if (dto.degree_program_code) {
+        qb.andWhere('dp.code = :dpCode', { dpCode: dto.degree_program_code });
+      }
+      if (dto.study_plan_version) {
+        qb.andWhere('sp.version = :version', { version: dto.study_plan_version });
+      }
+
+      const course = await qb.getOne();
+      if (!course) {
+        throw new NotFoundException(
+          `Course not found for code='${dto.course_code}' with provided context`,
+        );
+      }
+
+      const term = await this.termRepository.findOne({
+        where: { name: dto.term_name! },
+      });
+      if (!term) {
+        throw new NotFoundException(`Term with name '${dto.term_name}' not found`);
+      }
+
+      const courseSection = await this.courseSectionRepository.findOne({
+        where: {
+          course_id: course.id,
+          term_id: term.id,
+          group_label: dto.group_label!,
+        } as any,
+      });
+
+      if (!courseSection) {
+        throw new NotFoundException(
+          `CourseSection not found for course_code='${dto.course_code}', group='${dto.group_label}', term='${dto.term_name}'`,
+        );
+      }
+
+      course_section_id = courseSection.id;
+    }
+
+    return { enrollment_id: enrollment_id!, course_section_id: course_section_id! };
   }
 
   /**

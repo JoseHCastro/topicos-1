@@ -11,10 +11,38 @@ import {
 
 export class CreateEnrollmentDetailDto {
   @IsUUID()
-  enrollment_id: string;
+  @IsOptional()
+  enrollment_id?: string;
+
+  // Alternativa: identificar enrollment por (student_code + term_name)
+  @IsString()
+  @IsOptional()
+  student_code?: string;
+
+  @IsString()
+  @IsOptional()
+  term_name?: string;
 
   @IsUUID()
-  course_section_id: string;
+  @IsOptional()
+  course_section_id?: string;
+
+  // Alternativa: identificar sección por (course_code + group_label + term_name [+ degree_program_code + study_plan_version])
+  @IsString()
+  @IsOptional()
+  course_code?: string;
+
+  @IsString()
+  @IsOptional()
+  group_label?: string;
+
+  @IsString()
+  @IsOptional()
+  degree_program_code?: string;
+
+  @IsString()
+  @IsOptional()
+  study_plan_version?: string;
 
   @IsEnum(['Enrolled', 'Approved', 'Failed', 'Withdrawn'])
   @IsOptional()

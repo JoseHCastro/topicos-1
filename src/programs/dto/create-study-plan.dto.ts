@@ -10,7 +10,13 @@ import {
 
 export class CreateStudyPlanDto {
   @IsUUID()
-  degree_program_id: string;
+  @IsOptional()
+  degree_program_id?: string;
+
+  // Alternativa por código de programa (sin ID)
+  @IsString()
+  @IsOptional()
+  degree_program_code?: string;
 
   @IsString()
   @IsNotEmpty()
