@@ -90,12 +90,12 @@ async function bootstrap() {
     `,
   });
 
-  console.log('🚀 Queue Interceptor registered globally');
-  console.log('📝 Use POST /queue-control/enable to activate queue system');
-  console.log('🔌 WebSocket Demo available at: http://localhost:3000/websocket-demo.html');
-  console.log('📋 Polling Demo available at: http://localhost:3000/queue-demo.html');
-  console.log('📚 API Documentation available at: http://localhost:3000/api-docs');
+  console.log('Queue Interceptor registered globally');
+  console.log('Use POST /queue-control/enable to activate queue system');
+  console.log('WebSocket Demo available at: http://localhost:3000/websocket-demo.html');
+  console.log('Polling Demo available at: http://localhost:3000/queue-demo.html');
+  console.log('API Documentation available at: http://localhost:3000/api-docs');
 
-  await app.listen(process.env.PORT ?? 3000);
+  await app.listen(process.env.PORT ?? 3000,'0.0.0.0');
 }
 bootstrap();

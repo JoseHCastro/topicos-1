@@ -227,6 +227,7 @@ export class AtomicEnrollmentService {
   ): Promise<Enrollment> {
     const enrollment = await manager.findOne(Enrollment, {
       where: { id: enrollmentId },
+      relations: ['student'],
     });
 
     if (!enrollment) {

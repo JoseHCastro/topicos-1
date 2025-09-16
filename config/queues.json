@@ -5,138 +5,27 @@
   "pollingTimeout": 300000,
   "queues": [
     {
-      "name": "critical",
-      "displayName": "🔴 Critical Queue",
-      "priority": 10,
-      "timeout": 30,
-      "attempts": 3,
-      "retryDelay": 1000,
-      "estimatedTime": "5-30 seconds",
-      "concurrency": 3,
-      "workers": 2,
-      "processingDelay": 0,
-      "removeOnComplete": 100,
-      "removeOnFail": 50,
-      "urlPatterns": [
-        "/atomic-enrollment/*",
-        "/auth/login",
-        "/auth/logout",
-        "/emergency/*"
-      ],
-      "description": "High priority operations that cannot wait",
-      "enabled": true
+      "name": "test-queue",
+      "concurrency": 5,
+      "default": false
     },
     {
       "name": "standard",
-      "displayName": "🟡 Standard Queue",
+      "displayName": "Unified Queue",
       "priority": 5,
       "timeout": 60,
       "attempts": 2,
       "retryDelay": 2000,
       "estimatedTime": "15-60 seconds",
-      "concurrency": 3,
-      "workers": 3,
+      "concurrency": 1,
+      "workers": 1,
       "processingDelay": 100,
       "removeOnComplete": 100,
       "removeOnFail": 50,
       "urlPatterns": [
-        "/courses/*",
-        "/students/*",
-        "/grades/*",
-        "/academic-validations/*",
-        "/programs/*",
-        "/enrollments/*"
+        "/*"
       ],
-      "description": "Standard operations with normal priority",
-      "enabled": true
-    },
-    {
-      "name": "background",
-      "displayName": "🟢 Background Queue",
-      "priority": 1,
-      "timeout": 120,
-      "attempts": 1,
-      "retryDelay": 5000,
-      "estimatedTime": "30-120 seconds",
-      "concurrency": 2,
-      "workers": 1,
-      "processingDelay": 1000,
-      "removeOnComplete": 50,
-      "removeOnFail": 25,
-      "urlPatterns": [
-        "/reports/*",
-        "/notifications/*",
-        "/database-performance/*",
-        "/analytics/*",
-        "/batch-operations/*"
-      ],
-      "description": "Background operations that can be processed later",
-      "enabled": true
-    },
-    {
-      "name": "batch",
-      "displayName": "📦 Batch Queue",
-      "priority": 2,
-      "timeout": 300,
-      "attempts": 1,
-      "retryDelay": 10000,
-      "estimatedTime": "2-5 minutes",
-      "concurrency": 1,
-      "workers": 1,
-      "processingDelay": 2000,
-      "removeOnComplete": 25,
-      "removeOnFail": 10,
-      "urlPatterns": [
-        "/batch-import/*",
-        "/data-migration/*",
-        "/bulk-operations/*"
-      ],
-      "description": "Large batch operations that require extensive processing",
-      "enabled": true
-    },
-    {
-      "name": "notifications",
-      "displayName": "📧 Notifications Queue",
-      "priority": 3,
-      "timeout": 45,
-      "attempts": 2,
-      "retryDelay": 3000,
-      "estimatedTime": "30-45 seconds",
-      "concurrency": 4,
-      "workers": 2,
-      "processingDelay": 500,
-      "removeOnComplete": 75,
-      "removeOnFail": 30,
-      "urlPatterns": [
-        "/notifications/email/*",
-        "/notifications/sms/*",
-        "/notifications/push/*"
-      ],
-      "description": "Notification delivery operations",
-      "enabled": true
-    },
-    {
-      "name": "cola1",
-      "displayName": "🟡 Standard Queue",
-      "priority": 8,
-      "timeout": 60,
-      "attempts": 2,
-      "retryDelay": 2000,
-      "estimatedTime": "15-60 seconds",
-      "concurrency": 1,
-      "workers": 4,
-      "processingDelay": 100,
-      "removeOnComplete": 100,
-      "removeOnFail": 50,
-      "urlPatterns": [
-        "/courses/*",
-        "/students/*",
-        "/grades/*",
-        "/academic-validations/*",
-        "/programs/*",
-        "/enrollments/*"
-      ],
-      "description": "Standard operations with normal priority",
+      "description": "Single queue handling all endpoints",
       "enabled": true
     }
   ]
