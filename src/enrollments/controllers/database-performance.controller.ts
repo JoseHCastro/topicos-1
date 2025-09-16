@@ -14,7 +14,7 @@ export class DatabasePerformanceController {
    * Verificar prerrequisitos de una materia con consulta optimizada
    */
   @Get('prerequisites')
-  @RoleProtected(ValidRoles.ADMIN)
+  //@RoleProtected(ValidRoles.ADMIN)
   async getPrerequisitesPerformance(@Query('courseId') courseId: string) {
     const startTime = Date.now();
 
@@ -47,7 +47,7 @@ export class DatabasePerformanceController {
    * Verificar materias aprobadas de un estudiante con consulta optimizada
    */
   @Get('approved-courses')
-  @RoleProtected(ValidRoles.ADMIN)
+  //@RoleProtected(ValidRoles.ADMIN)
   async getApprovedCoursesPerformance(
     @Query('studentId') studentId: string,
     @Query('courseIds') courseIds: string,
@@ -90,7 +90,7 @@ export class DatabasePerformanceController {
    * Obtener horarios de secciones con consulta optimizada
    */
   @Get('schedules')
-  @RoleProtected(ValidRoles.ADMIN)
+  //@RoleProtected(ValidRoles.ADMIN)
   async getSchedulesPerformance(
     @Query('courseSectionIds') courseSectionIds: string,
   ) {
@@ -131,7 +131,7 @@ export class DatabasePerformanceController {
    * Contar materias inscritas con consulta optimizada
    */
   @Get('enrolled-count')
-  @RoleProtected(ValidRoles.ADMIN)
+  //@RoleProtected(ValidRoles.ADMIN)
   async getEnrolledCountPerformance(
     @Query('studentId') studentId: string,
     @Query('termId') termId: string,
@@ -162,7 +162,7 @@ export class DatabasePerformanceController {
    * Verificar prerrequisitos en lote con consulta optimizada
    */
   @Get('batch-prerequisites')
-  @RoleProtected(ValidRoles.ADMIN)
+  //@RoleProtected(ValidRoles.ADMIN)
   async getBatchPrerequisitesPerformance(
     @Query('studentId') studentId: string,
     @Query('courseIds') courseIds: string,
@@ -198,7 +198,7 @@ export class DatabasePerformanceController {
    * Verificar si un estudiante ya aprobó una materia con consulta optimizada
    */
   @Get('has-passed')
-  @RoleProtected(ValidRoles.ADMIN)
+  //@RoleProtected(ValidRoles.ADMIN)
   async getHasPassedPerformance(
     @Query('studentId') studentId: string,
     @Query('courseId') courseId: string,
@@ -228,7 +228,7 @@ export class DatabasePerformanceController {
    * Obtener detalles de inscripción del estudiante con consulta optimizada
    */
   @Get('student-enrollment-details')
-  @RoleProtected(ValidRoles.ADMIN)
+  //@RoleProtected(ValidRoles.ADMIN)
   async getStudentEnrollmentDetailsPerformance(
     @Query('studentId') studentId: string,
     @Query('termId') termId: string,

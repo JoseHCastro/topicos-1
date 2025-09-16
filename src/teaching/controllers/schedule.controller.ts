@@ -20,13 +20,13 @@ export class ScheduleController {
   constructor(private readonly scheduleService: ScheduleService) {}
 
   @Post()
-  @Auth(ValidRoles.ADMIN)
+  //@Auth(ValidRoles.ADMIN)
   create(@Body() createScheduleDto: CreateScheduleDto) {
     return this.scheduleService.create(createScheduleDto);
   }
 
   @Get()
-  @Auth(ValidRoles.ADMIN, ValidRoles.TEACHER, ValidRoles.STUDENT)
+  //@Auth(ValidRoles.ADMIN, ValidRoles.TEACHER, ValidRoles.STUDENT)
   findAll(
     @Query() paginationDto: PaginationDto,
   ): Promise<PaginatedResultDto<Schedule>> {
@@ -34,13 +34,13 @@ export class ScheduleController {
   }
 
   @Get(':id')
-  @Auth(ValidRoles.ADMIN, ValidRoles.TEACHER, ValidRoles.STUDENT)
+  //@Auth(ValidRoles.ADMIN, ValidRoles.TEACHER, ValidRoles.STUDENT)
   findOne(@Param('id') id: string) {
     return this.scheduleService.findOne(id);
   }
 
   @Patch(':id')
-  @Auth(ValidRoles.ADMIN)
+  //@Auth(ValidRoles.ADMIN)
   update(
     @Param('id') id: string,
     @Body() updateScheduleDto: UpdateScheduleDto,
@@ -49,7 +49,7 @@ export class ScheduleController {
   }
 
   @Delete(':id')
-  @Auth(ValidRoles.ADMIN)
+  //@Auth(ValidRoles.ADMIN)
   remove(@Param('id') id: string) {
     return this.scheduleService.remove(id);
   }

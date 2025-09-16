@@ -20,13 +20,13 @@ export class CourseSectionController {
   constructor(private readonly courseSectionService: CourseSectionService) {}
 
   @Post()
-  @Auth(ValidRoles.ADMIN)
+  //@Auth(ValidRoles.ADMIN)
   create(@Body() createCourseSectionDto: CreateCourseSectionDto) {
     return this.courseSectionService.create(createCourseSectionDto);
   }
 
   @Get()
-  @Auth(ValidRoles.ADMIN, ValidRoles.TEACHER, ValidRoles.STUDENT)
+  //@Auth(ValidRoles.ADMIN, ValidRoles.TEACHER, ValidRoles.STUDENT)
   findAll(
     @Query() paginationDto: PaginationDto,
   ): Promise<PaginatedResultDto<CourseSection>> {
@@ -34,13 +34,13 @@ export class CourseSectionController {
   }
 
   @Get(':id')
-  @Auth(ValidRoles.ADMIN, ValidRoles.TEACHER, ValidRoles.STUDENT)
+  //@Auth(ValidRoles.ADMIN, ValidRoles.TEACHER, ValidRoles.STUDENT)
   findOne(@Param('id') id: string) {
     return this.courseSectionService.findOne(id);
   }
 
   @Patch(':id')
-  @Auth(ValidRoles.ADMIN)
+  //@Auth(ValidRoles.ADMIN)
   update(
     @Param('id') id: string,
     @Body() updateCourseSectionDto: UpdateCourseSectionDto,
@@ -49,7 +49,7 @@ export class CourseSectionController {
   }
 
   @Delete(':id')
-  @Auth(ValidRoles.ADMIN)
+  //@Auth(ValidRoles.ADMIN)
   remove(@Param('id') id: string) {
     return this.courseSectionService.remove(id);
   }

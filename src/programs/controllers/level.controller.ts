@@ -20,13 +20,13 @@ export class LevelController {
   constructor(private readonly levelService: LevelService) {}
 
   @Post()
-  @Auth(ValidRoles.ADMIN)
+  //@Auth(ValidRoles.ADMIN)
   create(@Body() createLevelDto: CreateLevelDto) {
     return this.levelService.create(createLevelDto);
   }
 
   @Get()
-  @Auth(ValidRoles.ADMIN, ValidRoles.STUDENT, ValidRoles.TEACHER)
+  //@Auth(ValidRoles.ADMIN, ValidRoles.STUDENT, ValidRoles.TEACHER)
   findAll(
     @Query() paginationDto: PaginationDto,
   ): Promise<PaginatedResultDto<Level>> {
@@ -34,19 +34,19 @@ export class LevelController {
   }
 
   @Get(':id')
-  @Auth(ValidRoles.ADMIN, ValidRoles.STUDENT, ValidRoles.TEACHER)
+  //@Auth(ValidRoles.ADMIN, ValidRoles.STUDENT, ValidRoles.TEACHER)
   findOne(@Param('id') id: string) {
     return this.levelService.findOne(id);
   }
 
   @Patch(':id')
-  @Auth(ValidRoles.ADMIN)
+  //@Auth(ValidRoles.ADMIN)
   update(@Param('id') id: string, @Body() updateLevelDto: UpdateLevelDto) {
     return this.levelService.update(id, updateLevelDto);
   }
 
   @Delete(':id')
-  @Auth(ValidRoles.ADMIN)
+  //@Auth(ValidRoles.ADMIN)
   remove(@Param('id') id: string) {
     return this.levelService.remove(id);
   }

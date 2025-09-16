@@ -34,7 +34,7 @@ export class DegreeProgramController {
   constructor(private readonly degreeProgramService: DegreeProgramService) {}
 
   @Post()
-  @Auth(ValidRoles.ADMIN)
+  ////@Auth(ValidRoles.ADMIN)
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ 
     summary: 'Crear nuevo programa de grado',
@@ -61,7 +61,7 @@ export class DegreeProgramController {
   }
 
   @Get()
-  @Auth(ValidRoles.ADMIN, ValidRoles.STUDENT, ValidRoles.TEACHER)
+  //@Auth(ValidRoles.ADMIN, ValidRoles.STUDENT, ValidRoles.TEACHER)
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ 
     summary: 'Listar programas de grado',
@@ -110,13 +110,13 @@ export class DegreeProgramController {
   }
 
   @Get(':id')
-  @Auth(ValidRoles.ADMIN, ValidRoles.STUDENT, ValidRoles.TEACHER)
+  //@Auth(ValidRoles.ADMIN, ValidRoles.STUDENT, ValidRoles.TEACHER)
   findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.degreeProgramService.findOne(id);
   }
 
   @Patch(':id')
-  @Auth(ValidRoles.ADMIN)
+  //@Auth(ValidRoles.ADMIN)
   update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateDegreeProgramDto: UpdateDegreeProgramDto,
@@ -125,7 +125,7 @@ export class DegreeProgramController {
   }
 
   @Delete(':id')
-  @Auth(ValidRoles.ADMIN)
+  //@Auth(ValidRoles.ADMIN)
   remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.degreeProgramService.remove(id);
   }

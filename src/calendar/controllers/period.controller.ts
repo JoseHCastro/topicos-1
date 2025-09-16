@@ -20,13 +20,13 @@ export class PeriodController {
   constructor(private readonly periodService: PeriodService) {}
 
   @Post()
-  @Auth(ValidRoles.ADMIN)
+  //@Auth(ValidRoles.ADMIN)
   create(@Body() createPeriodDto: CreatePeriodDto) {
     return this.periodService.create(createPeriodDto);
   }
 
   @Get()
-  @Auth(ValidRoles.ADMIN, ValidRoles.STUDENT, ValidRoles.TEACHER)
+  //@Auth(ValidRoles.ADMIN, ValidRoles.STUDENT, ValidRoles.TEACHER)
   findAll(
     @Query() paginationDto: PaginationDto,
   ): Promise<PaginatedResultDto<Term>> {
@@ -34,13 +34,13 @@ export class PeriodController {
   }
 
   @Get(':id')
-  @Auth(ValidRoles.ADMIN, ValidRoles.STUDENT, ValidRoles.TEACHER)
+  //@Auth(ValidRoles.ADMIN, ValidRoles.STUDENT, ValidRoles.TEACHER)
   findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.periodService.findOne(id);
   }
 
   @Patch(':id')
-  @Auth(ValidRoles.ADMIN)
+  //@Auth(ValidRoles.ADMIN)
   update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updatePeriodDto: UpdatePeriodDto,

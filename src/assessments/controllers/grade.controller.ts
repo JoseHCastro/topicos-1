@@ -20,13 +20,13 @@ export class GradeController {
   constructor(private readonly gradeService: GradeService) {}
 
   @Post()
-  @Auth(ValidRoles.ADMIN, ValidRoles.TEACHER)
+  //@Auth(ValidRoles.ADMIN, ValidRoles.TEACHER)
   create(@Body() createGradeDto: CreateGradeDto) {
     return this.gradeService.create(createGradeDto);
   }
 
   @Get()
-  @Auth(ValidRoles.ADMIN, ValidRoles.TEACHER, ValidRoles.STUDENT)
+  //@Auth(ValidRoles.ADMIN, ValidRoles.TEACHER, ValidRoles.STUDENT)
   findAll(
     @Query() paginationDto: PaginationDto,
     @Query('student_id') studentId?: string,
@@ -45,19 +45,19 @@ export class GradeController {
   }
 
   @Get(':id')
-  @Auth(ValidRoles.ADMIN, ValidRoles.TEACHER, ValidRoles.STUDENT)
+  //@Auth(ValidRoles.ADMIN, ValidRoles.TEACHER, ValidRoles.STUDENT)
   findOne(@Param('id') id: string) {
     return this.gradeService.findOne(id);
   }
 
   @Patch(':id')
-  @Auth(ValidRoles.ADMIN, ValidRoles.TEACHER)
+  //@Auth(ValidRoles.ADMIN, ValidRoles.TEACHER)
   update(@Param('id') id: string, @Body() updateGradeDto: UpdateGradeDto) {
     return this.gradeService.update(id, updateGradeDto);
   }
 
   @Delete(':id')
-  @Auth(ValidRoles.ADMIN)
+  //@Auth(ValidRoles.ADMIN)
   remove(@Param('id') id: string) {
     return this.gradeService.remove(id);
   }

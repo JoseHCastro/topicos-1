@@ -17,7 +17,7 @@ export class AcademicValidationController {
    * Verificación rápida de prerequisitos para un estudiante y materia
    */
   @Get('prerequisites/check')
-  @Auth(ValidRoles.STUDENT, ValidRoles.ADMIN)
+  //@Auth(ValidRoles.STUDENT, ValidRoles.ADMIN)
   async checkPrerequisites(
     @Query('studentId') studentId: string,
     @Query('courseId') courseId: string,
@@ -32,7 +32,7 @@ export class AcademicValidationController {
    * Validación académica completa para inscripción
    */
   @Get('enrollment/validate')
-  @Auth(ValidRoles.STUDENT, ValidRoles.ADMIN)
+  //@Auth(ValidRoles.STUDENT, ValidRoles.ADMIN)
   async validateEnrollmentEligibility(
     @Query('studentId') studentId: string,
     @Query('courseSectionId') courseSectionId: string,

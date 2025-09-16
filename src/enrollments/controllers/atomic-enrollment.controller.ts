@@ -29,7 +29,7 @@ export class AtomicEnrollmentController {
    */
   @Post('enroll')
   @HttpCode(HttpStatus.CREATED)
-  @Auth(ValidRoles.ADMIN, ValidRoles.STUDENT)
+  //@Auth(ValidRoles.ADMIN, ValidRoles.STUDENT)
   async enrollStudent(
     @Body() createEnrollmentDetailDto: CreateEnrollmentDetailDto,
     @IdempotencyKey() idempotencyKey: string | null,
@@ -68,7 +68,7 @@ export class AtomicEnrollmentController {
    * Obtiene el estado actual de cupos de una sección de curso
    */
   @Get('course-section/:id/quota-status')
-  @Auth(ValidRoles.ADMIN, ValidRoles.STUDENT, ValidRoles.TEACHER)
+  //@Auth(ValidRoles.ADMIN, ValidRoles.STUDENT, ValidRoles.TEACHER)
   async getQuotaStatus(@Param('id', ParseUUIDPipe) courseSectionId: string) {
     const status =
       await this.atomicEnrollmentService.getCourseSectionQuotaStatus(
@@ -85,7 +85,7 @@ export class AtomicEnrollmentController {
    * Obtiene estadísticas del sistema de idempotencia
    */
   @Get('idempotency/stats')
-  @Auth(ValidRoles.ADMIN)
+  //@Auth(ValidRoles.ADMIN)
   async getIdempotencyStats() {
     const stats = this.idempotencyService.getStats();
 
