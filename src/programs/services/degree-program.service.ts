@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { DegreeProgram } from '../entities';
@@ -18,6 +18,16 @@ export class DegreeProgramService {
   ) {}
 
   async create(createDegreeProgramDto: CreateDegreeProgramDto) {
+    const existing = await this.degreeProgramRepository.findOne({
+      where: { code: createDegreeProgramDto.code },
+    });
+
+    if (existing) {
+      throw new BadRequestException(
+        `Degree Program with code '${createDegreeProgramDto.code}' already exists`,
+      );
+    }
+
     const degreeProgram = this.degreeProgramRepository.create(
       createDegreeProgramDto,
     );

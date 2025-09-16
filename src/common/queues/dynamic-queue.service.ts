@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { Queue } from 'bullmq';
 import { RedisService } from '../redis/redis.service';
+import { JobResultRecord } from '../workers/interfaces/job-result.interface';
 import { Inject } from '@nestjs/common';
 import { EventEmitter } from 'events';
 import { IQueueConfigRepository, QUEUE_CONFIG_REPOSITORY } from './queue-config.repository';
@@ -33,10 +34,13 @@ export class DynamicQueueService implements OnModuleInit, OnModuleDestroy {
   private queueConfig: QueueSystemConfig;
   private queueDefinitions: Map<string, QueueDefinition> = new Map();
   private readonly configEvents = new EventEmitter();
+  private readonly resultHistoryLimit: number;
+
 
   constructor(private readonly redisService: RedisService, @Inject(QUEUE_CONFIG_REPOSITORY) private readonly configRepo: IQueueConfigRepository) {
     // Load configuration on construction
     this.queueConfig = loadQueueConfig();
+    this.resultHistoryLimit = this.resolveHistoryLimit();
     this.logger.log(
       `📋 Loaded configuration for ${this.queueConfig.queues.length} queues`,
     );
@@ -290,6 +294,67 @@ export class DynamicQueueService implements OnModuleInit, OnModuleDestroy {
     };
   }
 
+  async getCompletedJobResults(limit = 50, queueName?: string): Promise<JobResultRecord[]> {
+    return this.fetchJobHistory('jobs:history:completed', limit, queueName);
+  }
+
+  async getFailedJobResults(limit = 50, queueName?: string): Promise<JobResultRecord[]> {
+    return this.fetchJobHistory('jobs:history:failed', limit, queueName);
+  }
+
+  private async fetchJobHistory(
+    listKey: string,
+    limit: number,
+    queueName?: string,
+  ): Promise<JobResultRecord[]> {
+    const requested = Number.isFinite(limit) ? limit : this.resultHistoryLimit;
+    const finalLimit = Math.max(
+      1,
+      Math.min(Math.trunc(requested), this.resultHistoryLimit),
+    );
+
+    try {
+      const rawEntries = await this.redisService.lrange(
+        listKey,
+        0,
+        finalLimit - 1,
+      );
+
+      const records = rawEntries
+        .map((entry) => this.parseJobHistoryEntry(entry))
+        .filter(
+          (record): record is JobResultRecord =>
+            !!record && (!queueName || record.queueName === queueName),
+        );
+
+      return records;
+    } catch (error: any) {
+      this.logger.error(
+        `Failed to fetch job history from ${listKey}: ${error?.message || error}`,
+      );
+      return [];
+    }
+  }
+
+  private parseJobHistoryEntry(entry: string): JobResultRecord | null {
+    if (!entry) {
+      return null;
+    }
+
+    try {
+      const parsed = JSON.parse(entry) as JobResultRecord;
+      if (!parsed.finishedAt) {
+        parsed.finishedAt = new Date().toISOString();
+      }
+      return parsed;
+    } catch (error: any) {
+      this.logger.warn(
+        `Could not parse job history entry: ${error?.message || error}`,
+      );
+      return null;
+    }
+  }
+
   /**
    * Get queue configuration
    */
@@ -519,5 +584,19 @@ export class DynamicQueueService implements OnModuleInit, OnModuleDestroy {
     await this.onModuleInit();
 
     this.logger.log('✅ Queue configuration reloaded successfully');
+  }
+  private resolveHistoryLimit(): number {
+    const raw = process.env.QUEUE_RESULT_HISTORY_LIMIT;
+    if (!raw) {
+      return 100;
+    }
+
+    const parsed = parseInt(raw, 10);
+
+    if (Number.isNaN(parsed) || parsed <= 0) {
+      return 100;
+    }
+
+    return parsed;
   }
 }

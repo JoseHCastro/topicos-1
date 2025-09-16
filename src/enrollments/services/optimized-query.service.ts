@@ -213,11 +213,18 @@ export class OptimizedQueryService {
       .where('p.main_course_id IN (:...courseIds)', { courseIds })
       .getMany();
 
+    if (prerequisites.length === 0) {
+      return courseIds.map((courseId) => ({
+        courseId,
+        hasPrerequisites: true,
+        missingPrerequisites: [],
+      }));
+    }
+
     const allRequiredCourseIds = prerequisites.map((p) => p.required_course_id);
-    const approvedGrades = await this.getApprovedCoursesByStudent(
-      studentId,
-      allRequiredCourseIds,
-    );
+    const approvedGrades = allRequiredCourseIds.length
+      ? await this.getApprovedCoursesByStudent(studentId, allRequiredCourseIds)
+      : [];
     const approvedCourseIds = new Set(
       approvedGrades.map((g) => g.course_section.course.id),
     );

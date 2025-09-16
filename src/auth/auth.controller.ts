@@ -95,7 +95,7 @@ export class AuthController {
    * Obtener todos los usuarios del sistema
    */
   @Get('users')
-  @Auth(ValidRoles.ADMIN) // Solo ADMIN puede listar todos los usuarios
+  //@Auth(ValidRoles.ADMIN) // Solo ADMIN puede listar todos los usuarios
   async getAllUsers() {
     return await this.authService.findAllUsers();
   }

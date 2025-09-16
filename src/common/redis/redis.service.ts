@@ -41,6 +41,18 @@ export class RedisService implements OnModuleDestroy {
     return this.redisClient.keys(pattern);
   }
 
+  async lpush(key: string, value: string): Promise<number> {
+    return this.redisClient.lpush(key, value);
+  }
+
+  async lrange(key: string, start: number, stop: number): Promise<string[]> {
+    return this.redisClient.lrange(key, start, stop);
+  }
+
+  async ltrim(key: string, start: number, stop: number): Promise<'OK'> {
+    return this.redisClient.ltrim(key, start, stop);
+  }
+
   // Método para obtener info de Redis para debugging
   async getInfo(): Promise<string> {
     return this.redisClient.info();

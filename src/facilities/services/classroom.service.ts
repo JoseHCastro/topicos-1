@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Classroom } from '../entities';
@@ -18,6 +18,16 @@ export class ClassroomService {
   ) {}
 
   async create(createClassroomDto: CreateClassroomDto): Promise<Classroom> {
+    const existing = await this.classroomRepository.findOne({
+      where: { code: createClassroomDto.code },
+    });
+
+    if (existing) {
+      throw new BadRequestException(
+        `Classroom with code '${createClassroomDto.code}' already exists`,
+      );
+    }
+
     const classroom = this.classroomRepository.create(createClassroomDto);
     return await this.classroomRepository.save(classroom);
   }

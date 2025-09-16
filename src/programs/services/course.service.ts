@@ -76,6 +76,23 @@ export class CourseService {
       level_id = level.id;
     }
 
+    const [existingByCode, existingByName] = await Promise.all([
+      this.courseRepository.findOne({ where: { code: createCourseDto.code } }),
+      this.courseRepository.findOne({ where: { name: createCourseDto.name } }),
+    ]);
+
+    if (existingByCode) {
+      throw new BadRequestException(
+        `Course with code '${createCourseDto.code}' already exists`,
+      );
+    }
+
+    if (existingByName) {
+      throw new BadRequestException(
+        `Course with name '${createCourseDto.name}' already exists`,
+      );
+    }
+
     const course = this.courseRepository.create({
       study_plan_id: study_plan_id!,
       level_id: level_id!,

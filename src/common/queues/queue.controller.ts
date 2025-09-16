@@ -98,6 +98,54 @@ export class QueueController {
     };
   }
 
+  @Get('results/success')
+  async getSuccessfulResults(
+    @Query('limit') limit?: string,
+    @Query('queue') queue?: string,
+  ) {
+    const parsedLimit = this.parseLimit(limit);
+    const queueName = queue?.trim() || undefined;
+    const jobs = await this.queueService.getCompletedJobResults(
+      parsedLimit,
+      queueName,
+    );
+
+    return {
+      jobs,
+      meta: {
+        total: jobs.length,
+        limit: parsedLimit,
+        queue: queueName ?? null,
+        type: 'success',
+      },
+      timestamp: new Date().toISOString(),
+    };
+  }
+
+  @Get('results/failure')
+  async getFailedResults(
+    @Query('limit') limit?: string,
+    @Query('queue') queue?: string,
+  ) {
+    const parsedLimit = this.parseLimit(limit);
+    const queueName = queue?.trim() || undefined;
+    const jobs = await this.queueService.getFailedJobResults(
+      parsedLimit,
+      queueName,
+    );
+
+    return {
+      jobs,
+      meta: {
+        total: jobs.length,
+        limit: parsedLimit,
+        queue: queueName ?? null,
+        type: 'failure',
+      },
+      timestamp: new Date().toISOString(),
+    };
+  }
+
   @Get('job/:jobId/status')
   async getJobStatus(@Param('jobId') jobId: string) {
     const jobStatus = await this.queueService.getJobStatus(jobId);
@@ -143,5 +191,20 @@ export class QueueController {
         timestamp: new Date().toISOString(),
       };
     }
+  }
+  private parseLimit(limit?: string): number {
+    const defaultLimit = 50;
+
+    if (!limit) {
+      return defaultLimit;
+    }
+
+    const parsed = parseInt(limit, 10);
+
+    if (Number.isNaN(parsed) || parsed <= 0) {
+      return defaultLimit;
+    }
+
+    return Math.min(parsed, 500);
   }
 }

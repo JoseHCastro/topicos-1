@@ -67,7 +67,7 @@ export class StudyPlanService {
   async findOne(id: string) {
     const studyPlan = await this.studyPlanRepository.findOne({
       where: { id: id },
-      relations: ['degree_program', 'study_plan_courses'],
+      relations: ['degree_program', 'courses'],
     });
 
     if (!studyPlan) {
