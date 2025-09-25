@@ -178,28 +178,71 @@ export class DynamicQueueService implements OnModuleInit, OnModuleDestroy {
   /**
    * Determine which queue to use based on URL
    */
-  determineQueueForUrl(url: string): string {
-    // Check each queue's URL patterns
+  async determineQueueForUrl(url: string): Promise<string> {
+    const matchingQueues: { def: QueueDefinition; load: number }[] = [];
     for (const queueDef of this.queueConfig.queues) {
       if (!queueDef.enabled) continue;
-
-      for (const pattern of queueDef.urlPatterns) {
-        if (this.matchesPattern(url, pattern)) {
-          this.logger.debug(
-            `🎯 URL '${url}' matched pattern '${pattern}' → queue '${queueDef.name}'`,
-          );
-          return queueDef.name;
+      const matches = queueDef.urlPatterns?.some((pattern) =>
+        this.matchesPattern(url, pattern),
+      );
+      if (!matches) continue;
+      const queueInstance = this.queues.get(queueDef.name);
+      if (!queueInstance) {
+        this.logger.warn(
+          `Queue '${queueDef.name}' matches URL '${url}' but is not initialized`,
+        );
+        continue;
+      }
+      const load = await this.getQueueLoad(queueDef.name, queueInstance);
+      matchingQueues.push({ def: queueDef, load });
+    }
+    if (matchingQueues.length > 0) {
+      let selected = matchingQueues[0];
+      for (let i = 1; i < matchingQueues.length; i++) {
+        const candidate = matchingQueues[i];
+        if (candidate.load < selected.load) {
+          selected = candidate;
+          continue;
+        }
+        if (candidate.load === selected.load) {
+          const candidatePriority = candidate.def.priority ?? 0;
+          const selectedPriority = selected.def.priority ?? 0;
+          if (candidatePriority > selectedPriority) {
+            selected = candidate;
+          }
         }
       }
+      this.logger.debug(
+        `dYZ_ URL '${url}' routed to queue '${selected.def.name}' (load: ${selected.load})`,
+      );
+      return selected.def.name;
     }
-
-    // Fallback to default queue
     this.logger.debug(
-      `🎯 URL '${url}' no pattern match → default queue '${this.queueConfig.defaultQueue}'`,
+      `dYZ_ URL '${url}' no pattern match -> default queue '${this.queueConfig.defaultQueue}'`,
     );
     return this.queueConfig.defaultQueue;
   }
-
+  private async getQueueLoad(queueName: string, queueInstance: Queue): Promise<number> {
+    try {
+      const counts = await queueInstance.getJobCounts(
+        'waiting',
+        'active',
+        'delayed',
+        'paused',
+      );
+      return (
+        (counts.waiting ?? 0) +
+        (counts.active ?? 0) +
+        (counts.delayed ?? 0) +
+        (counts.paused ?? 0)
+      );
+    } catch (error: any) {
+      this.logger.warn(
+        `Failed to read load for queue '${queueName}': ${error?.message || error}`,
+      );
+      return Number.MAX_SAFE_INTEGER;
+    }
+  }
   /**
    * Match URL against pattern (supports wildcards)
    */

@@ -71,7 +71,7 @@ export class QueueInterceptor implements NestInterceptor {
       };
 
       // Determinar cola dinámicamente por URL
-      const queueName = this.queueService.determineQueueForUrl(url);
+      const queueName = await this.queueService.determineQueueForUrl(url);
       const queueDef = this.queueService.getQueueDefinition(queueName);
 
       // Verificar que la cola existe y está habilitada

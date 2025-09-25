@@ -10,15 +10,72 @@
       "default": false
     },
     {
-      "name": "standard",
-      "displayName": "Unified Queue",
-      "priority": 5,
+      "name": "cola1",
+      "displayName": "Cola 1",
+      "priority": 1,
       "timeout": 60,
       "attempts": 2,
       "retryDelay": 2000,
       "estimatedTime": "15-60 seconds",
-      "concurrency": 10,
-      "workers": 5,
+      "concurrency": 1,
+      "workers": 1,
+      "processingDelay": 100,
+      "removeOnComplete": 100,
+      "removeOnFail": 50,
+      "urlPatterns": [
+        "/*"
+      ],
+      "description": "Single queue handling all endpoints",
+      "enabled": true
+    },
+    {
+      "name": "cola2",
+      "displayName": "Unified Queue",
+      "priority": 1,
+      "timeout": 60,
+      "attempts": 2,
+      "retryDelay": 2000,
+      "estimatedTime": "15-60 seconds",
+      "concurrency": 1,
+      "workers": 1,
+      "processingDelay": 100,
+      "removeOnComplete": 100,
+      "removeOnFail": 50,
+      "urlPatterns": [
+        "/*"
+      ],
+      "description": "Single queue handling all endpoints",
+      "enabled": true
+    },
+    {
+      "name": "cola3",
+      "displayName": "Unified Queue",
+      "priority": 1,
+      "timeout": 60,
+      "attempts": 2,
+      "retryDelay": 2000,
+      "estimatedTime": "15-60 seconds",
+      "concurrency": 1,
+      "workers": 1,
+      "processingDelay": 100,
+      "removeOnComplete": 100,
+      "removeOnFail": 50,
+      "urlPatterns": [
+        "/*"
+      ],
+      "description": "Single queue handling all endpoints",
+      "enabled": true
+    },
+    {
+      "name": "cola4",
+      "displayName": "Unified Queue",
+      "priority": 1,
+      "timeout": 60,
+      "attempts": 2,
+      "retryDelay": 2000,
+      "estimatedTime": "15-60 seconds",
+      "concurrency": 1,
+      "workers": 1,
       "processingDelay": 100,
       "removeOnComplete": 100,
       "removeOnFail": 50,
